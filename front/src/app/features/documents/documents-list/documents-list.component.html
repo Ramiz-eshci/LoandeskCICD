@@ -1,0 +1,39 @@
+    <ui-page-header title="Document Centre" [subtitle]="subtitle()">
+      <button uiButton variant="accent" type="button">Upload Document</button>
+    </ui-page-header>
+
+    <div class="filterbar">
+      <ui-search-input variant="field" width="220px" placeholder="Search documents…" [(value)]="query" />
+
+      <select class="form-select" [value]="type()" (change)="type.set($any($event.target).value)">
+        @for (t of types; track t.key) {
+          <option [value]="t.key">{{ t.label }}</option>
+        }
+      </select>
+
+      <select class="form-select" [value]="status()" (change)="status.set($any($event.target).value)">
+        @for (s of statuses; track s.key) {
+          <option [value]="s.key">{{ s.label }}</option>
+        }
+      </select>
+    </div>
+
+    <ui-card bodyClass="">
+      <ui-data-table [columns]="columns" [rows]="filtered()" emptyText="No documents match these filters.">
+        <ng-template uiCell="verified" let-row>
+          <ui-tag [tone]="row.verifiedTone">{{ row.verified }}</ui-tag>
+        </ng-template>
+
+        <ng-template uiCell="status" let-row>
+          <ui-badge [status]="row.statusTone">{{ row.status }}</ui-badge>
+        </ng-template>
+
+        <ng-template uiCell="actions">
+          <div class="actions">
+            <button uiButton variant="ghost" size="sm" type="button">Preview</button>
+            <button uiButton variant="ghost" size="sm" type="button">Download</button>
+          </div>
+        </ng-template>
+      </ui-data-table>
+    </ui-card>
+  

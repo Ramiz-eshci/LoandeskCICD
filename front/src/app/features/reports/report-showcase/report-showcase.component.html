@@ -1,0 +1,170 @@
+<div class="report-head">
+  <ui-page-header
+    title="Lending Performance Showcase"
+    subtitle="A single live view across Enquiry, Underwriting and Portfolio"
+  />
+  @if (!loading() && !failed()) {
+    <button type="button" class="btn-primary btn-sm report-pdf" (click)="exportPdf()" [disabled]="exporting() === 'pdf'">
+      <i class="bi bi-file-earmark-pdf"></i>
+      {{ exporting() === 'pdf' ? 'Preparing…' : 'Export PDF' }}
+    </button>
+  }
+</div>
+
+@if (loading()) {
+  <div class="state">Loading showcase…</div>
+} @else if (failed()) {
+  <div class="state state--error">Could not load the showcase report. Please try again.</div>
+} @else {
+  @if (generatedAt()) {
+    <p class="generated">Generated {{ generatedAt() }}</p>
+  }
+
+  <!-- ===================== HIGH-LEVEL DASHBOARD ===================== -->
+  @if (headline().length) {
+    <div class="row g-3 mb-4">
+      @for (tile of headline(); track tile.label) {
+        <div class="col-12 col-sm-6 col-xl-3">
+          <ui-kpi-card [label]="tile.label" [value]="tileValue(tile)" [caption]="tile.caption" [icon]="tile.icon" [valueSize]="30" />
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Enquiry -->
+  @if (enquiry(); as enq) {
+    <section class="module">
+      <div class="module-head">
+        <span class="module-badge module-badge--enquiry"><i class="bi bi-file-earmark-text"></i></span>
+        <div><h2 class="module-title">Enquiry</h2><p class="module-sub">Top of funnel — demand, pipeline and conversion</p></div>
+        <span class="module-metric">{{ enq.conversion.rate_pct }}%<small>enquiry → converted</small></span>
+      </div>
+      <div class="row g-3 mb-3">
+        @for (tile of enq.tiles; track tile.label) {
+          <div class="col-6 col-xl-3"><ui-kpi-card [label]="tile.label" [value]="tileValue(tile)" [caption]="tile.caption" [icon]="tile.icon" /></div>
+        }
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-xl-7">
+          <ui-card title="6-Month Enquiry Trend" bodyClass="p-3 pt-0">
+            @if (hasEnquiryTrend()) {
+              <ui-line-chart [labels]="enquiryTrendLabels()" [series]="enquiryTrend()" [height]="240" ariaLabel="Enquiries per month over six months" />
+            } @else { <p class="empty">No enquiry activity in the last six months.</p> }
+          </ui-card>
+        </div>
+        <div class="col-12 col-xl-5">
+          <ui-card title="Pipeline by Stage">
+            @if (enquiryPipeline().length) { <ui-bar-list [items]="enquiryPipeline()" /> } @else { <p class="empty">No enquiries in the pipeline.</p> }
+          </ui-card>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Underwriting -->
+  @if (underwriting(); as uw) {
+    <section class="module">
+      <div class="module-head">
+        <span class="module-badge module-badge--uw"><i class="bi bi-clipboard-check"></i></span>
+        <div><h2 class="module-title">Underwriting</h2><p class="module-sub">The decision engine — casebook, workload and outcomes</p></div>
+        <span class="module-metric">{{ uw.approval.rate_pct }}%<small>approval rate</small></span>
+      </div>
+      <div class="row g-3 mb-3">
+        @for (tile of uw.tiles; track tile.label) {
+          <div class="col-6 col-xl-3"><ui-kpi-card [label]="tile.label" [value]="tileValue(tile)" [caption]="tile.caption" [icon]="tile.icon" /></div>
+        }
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-xl-7">
+          <ui-card title="Open Cases by Step" bodyClass="p-3 pt-0">
+            @if (hasUwSteps()) {
+              <ui-bar-chart [data]="uwStepData()" [series]="uwStepSeries" [height]="260" columnWidth="28%" ariaLabel="Open underwriting cases by step" />
+            } @else { <p class="empty">No open underwriting cases.</p> }
+          </ui-card>
+        </div>
+        <div class="col-12 col-xl-5">
+          <ui-card title="Cases by Status">
+            @if (uwByStatus().length) { <ui-bar-list [items]="uwByStatus()" /> } @else { <p class="empty">No underwriting cases yet.</p> }
+          </ui-card>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Portfolio -->
+  @if (portfolio(); as pf) {
+    <section class="module">
+      <div class="module-head">
+        <span class="module-badge module-badge--portfolio"><i class="bi bi-window-stack"></i></span>
+        <div><h2 class="module-title">Portfolio</h2><p class="module-sub">The live book — facilities, value and risk</p></div>
+        <span class="module-metric">{{ gbpShort(pf.written_off) }}<small>written off</small></span>
+      </div>
+      <div class="row g-3 mb-3">
+        @for (tile of pf.tiles; track tile.label) {
+          <div class="col-6 col-xl-3"><ui-kpi-card [label]="tile.label" [value]="tileValue(tile)" [caption]="tile.caption" [icon]="tile.icon" /></div>
+        }
+      </div>
+      <div class="row g-3">
+        <div class="col-12 col-xl-7">
+          <ui-card title="Maturity Ladder — Next 6 Months" bodyClass="p-3 pt-0">
+            @if (hasMaturities()) {
+              <ui-bar-chart [data]="pfMaturityData()" [series]="pfMaturitySeries" [height]="260" columnWidth="30%" ariaLabel="Active facilities maturing per month" />
+            } @else { <p class="empty">No facilities maturing in the next six months.</p> }
+          </ui-card>
+        </div>
+        <div class="col-12 col-xl-5">
+          <ui-card title="Facilities by Status">
+            @if (pfByStatus().length) { <ui-bar-list [items]="pfByStatus()" /> } @else { <p class="empty">No facilities on the book yet.</p> }
+          </ui-card>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ===================== DETAIL LEVEL ===================== -->
+  @if (segments().length) {
+    <section class="detail">
+      <div class="detail-head">
+        <h2 class="detail-title"><i class="bi bi-table"></i> Detailed Records</h2>
+        <ui-segmented [options]="segments()" [value]="activeSection()" (valueChange)="onSectionChange($event)" />
+      </div>
+
+      <div class="filters">
+        <div class="filter">
+          <label>From</label>
+          <input type="date" class="form-input" [value]="from()" (change)="setFrom($event)" />
+        </div>
+        <div class="filter">
+          <label>To</label>
+          <input type="date" class="form-input" [value]="to()" (change)="setTo($event)" />
+        </div>
+        <div class="filter">
+          <label>Status</label>
+          <select class="form-select" [value]="status()" (change)="setStatus($event)">
+            <option value="">All statuses</option>
+            @for (s of statusOptions(); track s) { <option [value]="s">{{ s }}</option> }
+          </select>
+        </div>
+        <div class="filter filter--grow">
+          <label>Search</label>
+          <input type="text" class="form-input" placeholder="Reference or name…" [value]="search()" (input)="setSearch($event)" (keyup.enter)="applyFilters()" />
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+          <button type="button" class="btn-ghost btn-sm" (click)="resetFilters()">Reset</button>
+          <button type="button" class="btn-ghost btn-sm" (click)="exportCsv()" [disabled]="exporting() === 'csv'">
+            <i class="bi bi-download"></i> {{ exporting() === 'csv' ? 'Preparing…' : 'Export CSV' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="detail-table" [class.is-loading]="detailLoading()">
+        <ui-data-table [columns]="currentColumns()" [rows]="currentRows()" [pageSize]="10" emptyText="No records match these filters." />
+      </div>
+    </section>
+  }
+
+  @if (!enquiry() && !underwriting() && !portfolio()) {
+    <div class="state">You don't have permission to view any report modules.</div>
+  }
+}

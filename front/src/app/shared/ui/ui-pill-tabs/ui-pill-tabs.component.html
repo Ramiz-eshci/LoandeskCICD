@@ -1,0 +1,16 @@
+    <div class="pills">
+      @for (tab of tabs(); track tab.key) {
+        <button
+          type="button"
+          class="pill"
+          [class.active]="active() === tab.key"
+          (click)="active.set(tab.key)"
+        >
+          @if (tab.icon) {
+            <i class="bi" [class]="tab.icon"></i>
+          }
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+  

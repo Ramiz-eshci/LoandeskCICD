@@ -1,0 +1,24 @@
+    <div class="rail">
+      @for (step of steps(); track step.key; let i = $index; let last = $last) {
+        <button
+          type="button"
+          class="chip"
+          [class]="state(i)"
+          [disabled]="i > current()"
+          (click)="stepSelected.emit(i)"
+        >
+          <span class="chip-marker">
+            @if (state(i) === 'done') {
+              <i class="bi bi-check-lg"></i>
+            } @else {
+              {{ i + 1 }}
+            }
+          </span>
+          <span class="chip-label">{{ step.label }}</span>
+        </button>
+        @if (!last) {
+          <i class="bi bi-chevron-right chip-sep"></i>
+        }
+      }
+    </div>
+  

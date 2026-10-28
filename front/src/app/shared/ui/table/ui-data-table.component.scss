@@ -1,0 +1,25 @@
+:host { display: block; }
+.table-responsive { overflow-x: auto; }
+.ui-row-click { cursor: pointer; }
+
+/* Client 20-10-2026: no horizontal scroll on listings - fixed layout, long text cut with "…"
+   (full value in a hover tooltip, see onHover). Cells with controls are left uncut. */
+table.ui-fit { table-layout: fixed; width: 100%; }
+table.ui-fit th,
+table.ui-fit td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+table.ui-fit th { white-space: normal; overflow-wrap: anywhere; }
+:host ::ng-deep table.ui-fit td > div,
+:host ::ng-deep table.ui-fit td > span:not(.badge) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:host ::ng-deep table.ui-fit td > span:not(.badge) { display: inline-block; vertical-align: middle; }
+:host ::ng-deep table.ui-fit td:has(button, input, select, textarea, .dropdown-menu) { overflow: visible; white-space: nowrap; }
+/* Client 26-10-2026: button groups (e.g. Edit / Deactivate / Delete) are never cut off. */
+:host ::ng-deep table.ui-fit td:has(button) > div { max-width: none; overflow: visible; }

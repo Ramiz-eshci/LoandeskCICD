@@ -1,0 +1,18 @@
+      .rf-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .rf-toggle { display: inline-flex; align-items: center; gap: 8px; height: 38px; }
+      .rf-matrix-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+      .rf-count { font-size: 13px; color: var(--muted-foreground); }
+      .rf-tools { display: flex; gap: 8px; }
+      .rf-loading { color: var(--muted-foreground); padding: 12px 0; }
+      .rf-matrix-scroll { max-height: 65vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+      .rf-matrix { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .rf-matrix th, .rf-matrix td { padding: 8px 10px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
+      .rf-matrix thead th { position: sticky; top: 0; z-index: 2; background: var(--muted, #f5f7fa); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); }
+      .rf-modcol { text-align: left !important; position: sticky; left: 0; z-index: 1; background: var(--background, #fff); }
+      .rf-matrix thead .rf-modcol { z-index: 3; }
+      .rf-grouprow td { background: var(--muted, #eef2f7); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: var(--foreground); }
+      .rf-leaf { font-weight: 600; color: var(--foreground); padding-left: 18px !important; }
+      .rf-allcol { background: var(--muted, #f5f7fa); }
+      .rf-dash { color: var(--muted-foreground); }
+      .rf-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+      textarea.form-input { resize: vertical; }

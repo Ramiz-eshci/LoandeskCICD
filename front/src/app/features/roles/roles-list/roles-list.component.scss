@@ -1,0 +1,6 @@
+      .rl-new { display: inline-flex; align-items: center; gap: 8px; }
+      .rl-filterbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      .rl-name { font-size: 14px; font-weight: 600; color: var(--foreground); }
+      .rl-actions { display: flex; gap: 8px; }
+      .rl-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .rl-modal-footer { display: flex; gap: 10px; justify-content: flex-end; }

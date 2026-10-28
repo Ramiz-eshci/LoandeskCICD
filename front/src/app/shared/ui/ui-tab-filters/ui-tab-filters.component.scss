@@ -1,0 +1,11 @@
+      :host { display: block; }
+      .ui-tabs {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        overflow-x: auto;
+        border-bottom: 1px solid var(--border);
+      }
+      .ui-tab-count { margin-left: 6px; font-weight: 700; color: var(--muted-foreground); }
+      .ui-tab-count--lead { margin-left: 0; margin-right: 6px; }
+      .tab-btn.active .ui-tab-count { color: var(--primary); }

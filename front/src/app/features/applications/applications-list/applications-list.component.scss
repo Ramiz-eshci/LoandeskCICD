@@ -1,0 +1,15 @@
+      .icon-btn { display: inline-flex; align-items: center; gap: 8px; }
+      .filterbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      /* "My deals" toggle - same look as the Underwriting list. */
+      .own-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-left: auto; }
+      .own-btn { background: #fff; border: 0; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; color: var(--muted-foreground); }
+      .own-btn + .own-btn { border-left: 1px solid var(--border); }
+      .own-btn.on { background: #0F2244; color: #fff; font-weight: 700; }
+      .subtext { margin-top: 1px; font-size: 12px; color: var(--muted-foreground); }
+      /* Client 16-10-2026: one line + ellipsis, full name in the title tooltip (as Enquiries). */
+      .app-applicant { font-size: 14px; font-weight: 500; color: var(--foreground); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .app-subtext { margin-top: 1px; font-size: 12px; color: var(--muted-foreground); max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .app-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .sla-ok { color: var(--foreground); }
+      .sla-warn { color: #b7791f; }
+      .sla-breach { color: #b42318; font-weight: 600; }

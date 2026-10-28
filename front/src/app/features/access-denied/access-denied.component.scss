@@ -1,0 +1,6 @@
+      .ad-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 80px 24px; text-align: center; }
+      .ad-icon { font-size: 48px; color: var(--danger, #b42318); }
+      h1 { margin: 0; font-size: 22px; }
+      p { margin: 0; color: var(--muted-foreground); max-width: 420px; }
+      .ad-link { margin-top: 8px; color: var(--primary, #2563eb); text-decoration: none; font-weight: 600; }
+      .ad-link:hover { text-decoration: underline; }

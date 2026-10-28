@@ -1,0 +1,407 @@
+      /* Header & Breadcrumbs */
+      .f-header { background: #fff; padding: 20px 32px 0; border-bottom: 1px solid var(--border); margin: -24px -32px 0; font-family: 'Inter', system-ui, sans-serif; }
+      .f-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+      .f-breadcrumbs { font-size: 13px; color: #5A7394; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex: 0 0 auto; }
+      .f-breadcrumbs a { color: #5A7394; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+      .f-breadcrumbs a:hover { color: #0F2244; }
+      .f-breadcrumbs strong { color: #0F2244; font-weight: 600; }
+      
+      .f-top-actions { display: flex; gap: 10px; align-items: center; justify-content: flex-end; flex-wrap: wrap; min-width: 0; }
+      .f-top-actions button { white-space: nowrap; }
+      .f-btn-dark { background-color: #0F2244; color: #fff; border: 1px solid #0F2244; padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+      .f-btn-dark:hover { background-color: #16305C; }
+      .f-btn-outline { background-color: #fff; color: #0F2244; border: 1px solid #C8D8E8; padding: 5px 12px; font-size: 12px; font-weight: 500; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+      .f-btn-outline:hover { background-color: #F8FAFC; border-color: #C8D8E8; }
+      .f-btn-danger-outline { background-color: #fff; color: #DC2626; border: 1px solid #C8D8E8; padding: 5px 12px; font-size: 12px; font-weight: 500; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+      .f-btn-danger-outline:hover { background-color: #FEF2F2; border-color: #FECACA; }
+      .f-btn-yellow { background-color: #EAAB00; color: #0F2244; border: 1px solid #EAAB00; padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+      .f-btn-yellow:hover { background-color: #F5B917; }
+      .text-danger { color: #DC2626 !important; }
+      .text-success { color: #059669 !important; }
+
+      /* Title & Metrics inline */
+      .f-header-main { display: flex; align-items: center; margin-bottom: 16px; gap: 40px; }
+      .f-header-top { gap: 24px; }
+      .f-header-title { flex: 0 0 auto; }
+      .f-header-title h1 { margin: 0 0 2px 0; font-size: 14px; font-weight: 700; color: #0F2244; line-height: 20px; }
+      .f-subtitle { font-size: 12px; color: #5A7394; }
+      
+      .f-metrics-container { flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+      .f-metrics { display: flex; gap: 8px 28px; align-items: center; flex-wrap: wrap; }
+      .f-metric { display: flex; gap: 6px; align-items: baseline; white-space: nowrap; }
+      .f-metric-label { font-size: 12px; font-weight: 400; color: #8CA8C0; }
+      .f-metric-value { font-size: 12px; font-weight: 700; color: #0F2244; }
+
+      .f-header-badges { display: flex; gap: 12px; align-items: center; flex: 0 0 auto; }
+      .f-badge-outline { font-size: 12px; font-weight: 600; color: #5A7394; border: 1px solid #E4EBF3; padding: 4px 14px; border-radius: 100px; }
+      .f-badge-blue { font-size: 12px; font-weight: 700; color: #7C3AED; border: 1px solid #DDD6FE; background: #F5F3FF; padding: 6px 12px; border-radius: 100px; white-space: nowrap; }
+      .f-badge-offer { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 4px; border: 1px solid transparent; white-space: nowrap; }
+      .f-offer-incomplete { color: #5A7394; border-color: #E4EBF3; background: #F8FAFC; }
+      .f-offer-chasing { color: #CA8A04; border-color: #FDE047; background: #FEF9C3; }
+      .f-offer-converted { color: #15803D; border-color: #BBF7D0; background: #ECFDF3; }
+      .f-offer-rejected { color: #DC2626; border-color: #FECACA; background: #FEF2F2; }
+      
+      /* Stepper — matches Figma tokens (blue completed, navy active, gold accents) */
+      .f-stepper-row { margin-bottom: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+      /* The stepper keeps its full width (never squeezed into a scroll box); when the row runs
+         out of room the Decline / Delete pair wraps under it, still on the right. */
+      .f-stepper-row > .f-stepper, .f-stepper-row > .f-declined { flex: 0 1 auto; min-width: 0; }
+      /* Client 27-10-2026: Decline / Delete - small buttons at the right of the stepper row,
+         the same height as the step pills. */
+      .f-danger-actions { display: flex; gap: 8px; flex: 0 0 auto; margin-left: auto; }
+      .f-danger-actions .f-btn-danger-outline { padding: 3px 10px; font-size: 11px; gap: 5px; border-radius: 4px; line-height: 16px; white-space: nowrap; }
+      .f-stepper { display: flex; align-items: center; overflow-x: auto; gap: 0; scrollbar-width: none; }
+      .f-stepper::-webkit-scrollbar { display: none; }
+      
+      .f-step-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: #8CA8C0 !important; padding: 4px 10px !important; border-radius: 4px !important; white-space: nowrap; transition: all 0.2s; background: #F8FAFC !important; cursor: pointer; }
+      .f-step-circle { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50% !important; background: #E4EBF3 !important; color: #8CA8C0 !important; font-size: 10px; font-weight: 700; }
+      
+      .f-step-item.active { background: #0F2244 !important; color: #FFFFFF !important; font-weight: 600; padding: 4px 10px !important; }
+      .f-step-item.active .f-step-circle { background: #EAAB00 !important; color: #0F2244 !important; }
+      
+      .f-step-item.completed { background: #EEF4FF !important; color: #0F2244 !important; font-weight: 500; padding: 4px 10px !important; }
+      .f-step-item.completed .f-step-circle { background: #EAAB00 !important; color: #0F2244 !important; font-size: 10px; }
+      .f-step-item.completed .f-step-circle i { color: #0F2244 !important; }
+      
+      .f-step-line { height: 1px; width: 20px; background: #E4EBF3; margin: 0 8px; flex-shrink: 0; }
+      .f-step-line.completed { background: #EAAB00; }
+
+      /* Tabs */
+      .f-tabs { display: flex; gap: 0; border-bottom: 1px solid #E4EBF3; overflow-x: auto; margin: 0 -32px; padding: 0 24px; }
+      .f-tab { background: none; border: none; padding: 10px 16px; font-size: 12px; font-weight: 500; color: #5A7394; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; margin-bottom: -1px; }
+      .f-tab:hover { color: #0F2244; }
+      .f-tab.active { color: #0F2244; border-bottom-color: #0F2244; font-weight: 600; }
+      
+      .f-tab-content { padding-bottom: 24px; font-family: 'Inter', system-ui, sans-serif; padding-top: 20px; }
+
+      /* Grid Layouts */
+      .d-grid { display: grid; grid-template-columns: 1fr 340px; gap: 16px; align-items: start; }
+      @media (max-width: 900px) { .d-grid { grid-template-columns: 1fr; } }
+      .d-main { display: flex; flex-direction: column; gap: 16px; }
+      .d-side { display: flex; flex-direction: column; gap: 16px; }
+
+      /* Custom Figma Style Cards */
+      .f-card { background: #FFFFFF; border: 1px solid #E4EBF3; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); overflow: hidden; margin-bottom: 16px; }
+      // Read-only figures carried from the chosen indicative in the offer modal.
+      .d-readonly-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; margin-top: 6px;
+        background: #F6F9FC; border: 1px solid #E4EBF3; border-radius: 6px; padding: 12px 14px;
+        > div { display: flex; flex-direction: column; gap: 2px; }
+        span { font-size: 10px; font-weight: 700; color: #5A7394; letter-spacing: 0.03em; }
+        strong { font-size: 13px; color: #0F2244; }
+      }
+      .f-card-header { padding: 20px 20px 8px; font-size: 12px; font-weight: 700; color: #5A7394; text-transform: uppercase; letter-spacing: 0.03em; border-bottom: none; }
+      // Same header row as the application Documents tab: title left, yellow upload button right.
+      .f-card-header-flex { padding: 16px 20px 8px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: #5A7394; text-transform: uppercase; letter-spacing: 0.03em; }
+      .f-card-body { padding: 0 20px 20px 20px; }
+      .pt-3 { padding-top: 12px; }
+
+      /* Figma styling for Deal Summary */
+      .f-deal-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .f-field { display: flex; flex-direction: column; gap: 4px; }
+      .f-field-full { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px; }
+      .f-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #8CA8C0; font-weight: 600; }
+      .f-val { font-size: 14px; color: #0F2244; font-weight: 500; }
+      .f-val i { color: #8CA8C0; margin-right: 6px; font-size: 13px; }
+      .f-notes-box { background: #F8FAFC; border: 1px solid #E4EBF3; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #0F2244; min-height: 60px; line-height: 1.5; margin-top: 4px; }
+      
+      /* Figma styling for Financials */
+      .f-fin-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F0F4F8; }
+      .f-fin-row.border-0 { border-bottom: none; padding-bottom: 0; }
+      .f-fin-row:first-child { padding-top: 0; }
+      .f-fin-label { font-size: 12px; color: #5A7394; font-weight: 400; }
+      .f-fin-value { font-size: 12px; font-weight: 700; color: #0F2244; text-align: right; }
+
+      /* Figma styling for Applicant Card */
+      .f-applicant-card { display: flex; flex-direction: column; gap: 16px; }
+      .f-app-header { display: flex; align-items: center; gap: 16px; }
+      .f-app-avatar { width: 40px; height: 40px; border-radius: 50%; background: #EEF4FF; color: #0F2244; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+      .f-app-title { display: flex; flex-direction: column; gap: 2px; }
+      .f-app-name { font-size: 14px; font-weight: 600; color: #0F2244; }
+      .f-app-type { font-size: 12px; color: #5A7394; }
+      .f-app-contact { display: flex; flex-direction: column; gap: 10px; }
+      .f-app-contact-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5A7394; }
+      .f-app-contact-row i { font-size: 14px; color: #8CA8C0; }
+      .text-muted-fg { color: #8CA8C0; }
+      .m-0 { margin: 0; }
+
+      /* Edit Mode & Modals */
+      .d-editgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .d-editgrid label, .d-modal-field { display: flex; flex-direction: column; gap: 6px; font-size: 11px; font-weight: 600; color: #8CA8C0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+      .d-editgrid input, .d-editgrid select, .d-editgrid textarea, .d-modal-field input, .d-modal-field select, .d-modal-field textarea { font-size: 14px; font-weight: 400; color: #0F2244; text-transform: none; letter-spacing: normal; }
+      .f-checkbox-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+      .f-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #0F2244; font-weight: 500; cursor: pointer; text-transform: none; letter-spacing: normal; }
+      .f-checkbox input { margin: 0; cursor: pointer; }
+      .d-editgrid .d-full { grid-column: 1 / -1; }
+      .d-editactions, .d-modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+      .d-addnote { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; margin-bottom: 20px; }
+      .d-addnote textarea { width: 100%; resize: vertical; }
+      .d-subhead, .d-modal-field { margin-top: 14px; }
+      // Convert popup: optional credit-paper notes, 2 x 2 (client 15-10-2026).
+      .d-credit-head { margin-top: 6px; font-size: 11px; font-weight: 700; color: #0F2244; letter-spacing: 0.05em; }
+      .d-credit-head .d-opt { margin-left: 6px; font-weight: 500; color: #8CA8C0; text-transform: lowercase; }
+      .d-credit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+      .d-credit-grid .d-modal-field { margin-top: 8px; margin-bottom: 4px; }
+      @media (max-width: 640px) { .d-credit-grid { grid-template-columns: 1fr; } }
+      .d-subhead { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #8CA8C0; }
+      .d-warn { color: #DC2626; display: flex; align-items: center; gap: 8px; }
+      .d-missing { margin: 6px 0 0 18px; }
+      .d-error { margin: 0; color: #DC2626; }
+      .d-modal-field { display: block; margin-bottom: 10px; }
+      .mb-4 { margin-bottom: 24px; }
+      /* Documents tab */
+      .d-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+      .d-upload-type { max-width: 220px; }
+      .d-upload-name { font-size: 13px; color: #5A7394; }
+      .d-doc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .d-doc-table th { text-align: left; font-size: 10px; letter-spacing: 0.05em; color: #8CA8C0; font-weight: 600; padding: 8px 10px; border-bottom: 1px solid #E4EBF3; text-transform: uppercase; }
+      .d-doc-table td { padding: 10px; border-bottom: 1px solid #F0F4F8; color: #0F2244; }
+      .d-doc-table td i { color: #8CA8C0; margin-right: 4px; }
+      .d-doc-actions { text-align: right; white-space: nowrap; }
+      .d-linkbtn { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 600; color: #0F2244; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; }
+      .d-linkbtn:hover { color: #16305C; }
+      .d-linkbtn.d-danger { color: #DC2626; }
+      .d-docbar { justify-content: flex-start; margin: 0 0 16px; }
+
+/* ---- Indicatives + Offer v2 ---- */
+.ind-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-bottom: 14px;
+}
+.fee-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.fee-row .fee-mode {
+  flex: 0 0 64px;
+  width: 64px;
+}
+.fee-row .form-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ind-dd {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 4px 0 14px;
+  background: #f8fafc;
+}
+.ind-dd .dd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8CA8C0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+.ind-dd .dd-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ind-dd .dd-row:last-child { margin-bottom: 0; }
+.ind-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.ind-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ececec;
+}
+.ind-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.ind-table tr.strong td { font-weight: 700; }
+.ind-table tr.net td { font-weight: 700; color: #b00020; font-size: 15px; border-top: 2px solid #0d2340; }
+
+.d-note {
+  background: #eef3fb;
+  border: 1px solid #cddcf3;
+  color: #0d2340;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  margin-bottom: 12px;
+}
+
+.offer-history { margin-top: 16px; border-top: 1px solid #ececec; padding-top: 10px; }
+.offer-history .oh-title { font-size: 11px; letter-spacing: .04em; color: #888; font-weight: 700; margin-bottom: 8px; }
+.oh-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; flex-wrap: wrap; font-size: 12.5px; }
+.oh-tag { font-weight: 700; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.oh-tag.ind { background: #eef3fb; color: #0d2340; }
+.oh-tag.offer { background: #fdf3e0; color: #7a5300; }
+.oh-status { color: #555; }
+.oh-email.fail { color: #b00020; }
+.oh-when { color: #999; margin-left: auto; }
+.oh-link { background: none; border: none; color: #0d5bd0; cursor: pointer; font-size: 12px; padding: 2px 4px; }
+.oh-link.warn { color: #b00020; }
+.oh-link.ok { color: #157347; }
+
+.uw-applicant { border: 1px solid var(--border, #e5e7eb); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+.uw-applicant:last-child { margin-bottom: 0; }
+.uw-applicant-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.uw-applicant-name { font-weight: 700; font-size: 14px; }
+.uw-applicant-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; background: #111; color: #fff; border-radius: 4px; padding: 2px 6px; }
+.uw-applicant-rel { font-size: 12px; color: var(--muted-foreground, #6b7280); }
+.mt-3 { margin-top: 16px; }
+
+/* ---- indicative: shown instead of the table until the inputs are usable ---- */
+.ind-hint {
+  display: flex; align-items: center; gap: 8px; margin: 12px 0 0;
+  padding: 10px 12px; font-size: 13px; color: #475569;
+  background: #f1f5f9; border: 1px dashed #cbd5e1; border-radius: 6px;
+}
+
+/* ---- indicative: one-click "use Max LTV" helper under the gross loan box ---- */
+.ind-fill {
+  align-self: flex-start; margin-top: 4px; padding: 2px 6px;
+  font-size: 11px; font-weight: 600; color: #1d4ed8;
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; cursor: pointer;
+}
+.ind-fill:hover { background: #dbeafe; }
+
+/* ---- Audit history: chronological timeline ---- */
+.aud-scroll { overflow: visible; }
+.aud-timeline { list-style: none; margin: 6px 0 0; padding: 0; position: relative; }
+.aud-event { position: relative; display: grid; grid-template-columns: 22px 1fr; gap: 14px; padding-bottom: 14px; }
+.aud-event:last-child { padding-bottom: 2px; }
+.aud-event__rail { position: relative; display: flex; justify-content: center; }
+.aud-event__rail::before { content: ""; position: absolute; top: 6px; bottom: -14px; left: 50%; width: 2px; transform: translateX(-50%); background: linear-gradient(#e2e8f0, #eef2f7); }
+.aud-event:last-child .aud-event__rail::before { display: none; }
+.aud-event__dot { position: relative; z-index: 1; width: 12px; height: 12px; margin-top: 5px; border-radius: 50%; background: #cbd5e1; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px #e2e8f0; }
+.aud-event__card { background: #fff; border: 1px solid #eef2f7; border-left: 3px solid #cbd5e1; border-radius: 12px; padding: 11px 14px; box-shadow: 0 1px 2px rgba(16,34,68,.05); transition: box-shadow .16s ease, transform .16s ease; }
+.aud-event__card:hover { box-shadow: 0 6px 18px rgba(16,34,68,.10); transform: translateY(-1px); }
+.aud-event__head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.aud-action { display: inline-block; padding: 2px 10px; border-radius: 8px; background: #eef2ff; color: #3730a3; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+.aud-mod { display: inline-block; padding: 2px 9px; border-radius: 999px; white-space: nowrap; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; background: #f1f5f9; color: #64748b; }
+.aud-when { margin-left: auto; white-space: nowrap; color: #94a3b8; font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.aud-event__who { margin-top: 6px; font-size: 12px; color: #475569; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.aud-role { padding: 1px 8px; border-radius: 6px; background: #f8fafc; border: 1px solid #eef2f7; color: #94a3b8; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.aud-detail { margin-top: 8px; color: #475569; font-size: 12.5px; line-height: 1.55; white-space: pre-line; word-break: break-word; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px; padding: 8px 11px; }
+/* Stage accents */
+.aud-mod[data-mod="Enquiry"]      { background: #ecfeff; color: #0e7490; }
+.aud-mod[data-mod="Application"]  { background: #eff6ff; color: #1d4ed8; }
+.aud-mod[data-mod="Underwriting"] { background: #fffbeb; color: #b45309; }
+.aud-event[data-mod="Enquiry"]      .aud-event__dot { background: #06b6d4; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px #cffafe; }
+.aud-event[data-mod="Application"]  .aud-event__dot { background: #3b82f6; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px #dbeafe; }
+.aud-event[data-mod="Underwriting"] .aud-event__dot { background: #f59e0b; box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px #fef3c7; }
+.aud-event[data-mod="Enquiry"]      .aud-event__card { border-left-color: #06b6d4; }
+.aud-event[data-mod="Application"]  .aud-event__card { border-left-color: #3b82f6; }
+.aud-event[data-mod="Underwriting"] .aud-event__card { border-left-color: #f59e0b; }
+
+
+/* Detail — Other/Additional securities (view + edit) */
+.sec-view { padding: 10px 0; border-bottom: 1px solid #EEF2F7; }
+.sec-view:last-child { border-bottom: 0; }
+.sec-view-title { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #0F2244; margin-bottom: 8px; }
+.sec-card { margin-bottom: 14px; padding: 16px; border: 1px solid #E4EBF3; border-radius: 10px; background: #F8FAFC; }
+.sec-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #E9EEF5; }
+.sec-card-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #0F2244; }
+.sec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+.sec-fld { display: flex; flex-direction: column; gap: 4px; }
+.sec-fld--full { grid-column: 1 / -1; }
+.sec-empty { padding: 16px; text-align: center; color: #7A8CA3; font-size: 13px; border: 1px dashed #D4DEEA; border-radius: 10px; background: #FBFCFE; }
+.sec-add { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; }
+@media (max-width: 640px) { .sec-grid { grid-template-columns: 1fr; } }
+
+/* ---- Send Indicatives: Feeder Info layout (Calc with DDs.xlsx) ---- */
+.ind-calc-type { display: block; margin: 4px 0 6px; }
+.ind-sec-title { margin: 14px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #0d2340; }
+.ind-sub { display: block; margin-top: 3px; font-size: 11px; font-weight: 500; color: #5A7394; text-transform: none; letter-spacing: 0; }
+.dd-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.dd-table th { text-align: left; font-size: 10px; font-weight: 700; color: #5A7394; padding: 4px 4px; white-space: normal; line-height: 1.2; vertical-align: bottom; }
+.dd-table th:nth-child(1) { width: 84px; }
+.dd-table th:last-child { width: 72px; }
+.dd-table th:nth-child(2) { width: 22%; }
+.dd-table th:nth-child(3) { width: 12%; }
+.dd-table td { padding: 3px 4px; vertical-align: middle; }
+.dd-table .form-input { width: 100%; min-width: 0; padding-left: 8px; padding-right: 6px; }
+.dd-table .dd-lbl { font-weight: 600; white-space: nowrap; color: #0d2340; }
+.dd-table .dd-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-table th.dd-num { white-space: normal; }
+.ind-adv { margin: 12px 0 4px; font-size: 12px; }
+.ind-adv summary { cursor: pointer; font-weight: 600; color: #5A7394; margin-bottom: 8px; }
+.ind-table td.ind-rate { text-align: right; color: #5A7394; width: 70px; }
+.ind-table tr.gap td { padding-top: 12px; }
+.ind-dd { overflow-x: auto; }
+@media (max-width: 640px) { .dd-table { min-width: 520px; } }
+
+/* Loan Request — drawdowns */
+.dd-chip { display: inline-block; margin: 2px 6px 2px 0; padding: 2px 8px; border-radius: 99px; background: #f1f3f6; font-size: 12px; }
+.dd-chip--total { font-weight: 600; }
+.dd-edit { display: grid; gap: 8px; }
+.dd-edit-row { display: grid; grid-template-columns: 110px 1fr 1fr auto; gap: 8px; align-items: center; }
+@media (max-width: 575px) { .dd-edit-row { grid-template-columns: 1fr 1fr auto; } .dd-edit-row .f-label { grid-column: 1 / -1; } }
+
+/* Security — Google Maps */
+.sec-map { margin-top: 6px; height: 280px; border: 1px solid #e3e6eb; border-radius: 8px; overflow: hidden; }
+.sec-map iframe { width: 100%; height: 100%; border: 0; display: block; }
+.sec-map-link { display: inline-block; margin-top: 6px; font-size: 13px; }
+.d-err { display: block; margin-top: 4px; font-size: 12px; color: #dc2626; font-weight: 500; text-transform: none; }
+
+/* Other / additional securities block in Send Indicatives (client point #5). */
+.ind-secs { margin-top: 10px; }
+.sec-table th:nth-child(1) { width: 44px; }
+.sec-table th:nth-child(2) { width: auto; }
+.sec-table th:nth-child(3), .sec-table th:nth-child(4) { width: 22%; }
+.sec-table .sec-name { font-weight: 600; color: #0d2340; white-space: normal; }
+.sec-table tr.sec-off td { opacity: 0.5; }
+.ind-table td.sec-sub { padding-left: 18px; color: #5A7394; }
+
+/* Declined state (replaces the workflow stepper) + Decline popup */
+.f-declined { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.f-badge-declined { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #DC2626; border: 1px solid #FECACA; background: #FEF2F2; padding: 5px 12px; border-radius: 100px; }
+.f-declined-reasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.f-declined-chip { font-size: 11px; font-weight: 600; color: #7F1D1D; background: #FFF5F5; border: 1px solid #FECACA; padding: 3px 8px; border-radius: 4px; }
+.f-declined-meta { font-size: 11px; color: #5A7394; }
+.f-declined-notes { flex-basis: 100%; font-size: 12px; color: #334155; }
+.f-btn-danger { background-color: #DC2626; color: #fff; border: 1px solid #DC2626; padding: 5px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; cursor: pointer; }
+.f-btn-danger:disabled { opacity: .5; cursor: not-allowed; }
+.d-reason-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.d-reason { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #0F2244; text-transform: none; letter-spacing: 0; border: 1px solid #E4EBF3; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.d-reason.on { border-color: #FECACA; background: #FEF2F2; }
+@media (max-width: 560px) { .d-reason-grid { grid-template-columns: 1fr; } }
+
+.oh-accepted {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 700; color: #0f8a4f;
+  background: rgba(16, 160, 92, 0.12); border-radius: 4px; padding: 1px 7px;
+}
+
+/* Indicative calc: blocking error (loan goes to zero / negative, or inputs missing). */
+.ind-error {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid #f3c6c2;
+  border-left: 3px solid #d64535;
+  border-radius: 8px;
+  background: #fdf3f2;
+  color: #8a2a1e;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ind-error i { margin-top: 2px; font-size: 15px; color: #d64535; }
+.ind-error ul { margin: 0; padding-left: 18px; }
+.ind-error li { margin: 2px 0; }
+.ind-error b { color: #6f1f16; }
+
+/* Indicative: PROPERTY VALUE (£) is derived from securities and read-only (09-10-2026). */
+.d-modal-field .form-input[readonly] { background: #f1f3f5; color: #495057; cursor: not-allowed; }
+.f-val.pre-line { white-space: pre-line; }
+
+/* Client 20-10-2026: Day 1 row on the Drawdowns table + editable Drawdown Net */
+.dd-table tr.dd-day1 td { background: #f4f7fb; border-top: 1px solid #dfe6ef; }
+.dd-table .dd-day1-m { color: #5A7394; font-weight: 600; }
+.dd-table .form-input.dd-net { text-align: right; }
+.ind-notes { margin-top: 14px; }
+.ind-notes textarea { width: 100%; resize: vertical; min-height: 64px; }

@@ -1,0 +1,7 @@
+      .uf-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .uf-toggle { display: inline-flex; align-items: center; gap: 8px; height: 38px; }
+      .uf-hint { font-size: 13px; color: var(--muted-foreground); margin: 0 0 12px; }
+      .uf-roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 16px; }
+      .uf-role { display: flex; align-items: center; gap: 8px; }
+      .uf-count { margin: 12px 0 0; font-size: 13px; color: var(--muted-foreground); }
+      .uf-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }

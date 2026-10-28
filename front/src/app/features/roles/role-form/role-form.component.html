@@ -1,0 +1,92 @@
+    <ui-page-header [title]="editMode() ? 'Edit Role' : 'New Role'" [subtitle]="subtitle()">
+      <button uiButton variant="ghost" type="button" (click)="cancel()">
+        <i class="bi bi-arrow-left"></i> Back to Roles
+      </button>
+    </ui-page-header>
+
+    @if (error()) {
+      <ui-card class="mb-3"><p class="rf-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <ui-card title="Role Details" class="mb-3">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Role name *" [error]="nameError()">
+              <input class="form-input" formControlName="roleName" placeholder="e.g. Regional Underwriter" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Status">
+              <label class="rf-toggle">
+                <input type="checkbox" formControlName="isActive" />
+                <span>{{ form.controls.isActive.value ? 'Active' : 'Inactive' }}</span>
+              </label>
+            </ui-form-field>
+          </div>
+        </div>
+        <ui-form-field label="Description">
+          <textarea class="form-input" rows="2" formControlName="description" placeholder="What this role is responsible for…"></textarea>
+        </ui-form-field>
+      </ui-card>
+
+      <ui-card title="Module Permissions">
+        <div class="rf-matrix-toolbar">
+          <span class="rf-count">{{ selectedCount() }} permission(s) selected</span>
+          <div class="rf-tools">
+            <button uiButton variant="ghost" size="sm" type="button" (click)="selectAll()">Select all</button>
+            <button uiButton variant="ghost" size="sm" type="button" (click)="clearAll()">Clear all</button>
+          </div>
+        </div>
+
+        @if (loading()) {
+          <p class="rf-loading">Loading modules &amp; permissions…</p>
+        } @else if (!grouped().length) {
+          <p class="rf-loading">No modules found. Run the DB seed and sign in as System Administrator.</p>
+        } @else {
+          <div class="rf-matrix-scroll">
+            <table class="rf-matrix">
+              <thead>
+                <tr>
+                  <th class="rf-modcol">Module / Screen</th>
+                  @for (a of actions(); track a) { <th>{{ label(a) }}</th> }
+                  <th class="rf-allcol">All</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (grp of grouped(); track grp.code) {
+                  <tr class="rf-grouprow">
+                    <td class="rf-modcol" [attr.colspan]="actions().length + 2">{{ grp.name }}</td>
+                  </tr>
+                  @for (leaf of grp.leaves; track leaf.code) {
+                    <tr>
+                      <td class="rf-modcol rf-leaf">{{ leaf.name }}</td>
+                      @for (a of actions(); track a) {
+                        <td>
+                          @if (permId(leaf.code, a); as pid) {
+                            <input type="checkbox" [checked]="isChecked(pid)" (change)="toggle(pid)" />
+                          } @else {
+                            <span class="rf-dash">–</span>
+                          }
+                        </td>
+                      }
+                      <td class="rf-allcol">
+                        <input type="checkbox" [checked]="moduleAllChecked(leaf.code)" (change)="toggleModule(leaf.code)" />
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </ui-card>
+
+      <div class="rf-actions">
+        <button uiButton variant="ghost" type="button" (click)="cancel()">Cancel</button>
+        <button uiButton variant="accent" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : (editMode() ? 'Save Changes' : 'Create Role') }}
+        </button>
+      </div>
+    </form>
+  

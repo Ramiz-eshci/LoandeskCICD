@@ -1,0 +1,90 @@
+    <ui-page-header title="Reports" subtitle="Analytics and reporting across the lending platform" />
+
+    <ui-pill-tabs class="mb-4" [tabs]="categories" [(active)]="category" />
+
+    <a class="showcase-cta" routerLink="/reports/showcase">
+      <span class="showcase-cta__icon"><i class="bi bi-stars"></i></span>
+      <span class="showcase-cta__body">
+        <span class="showcase-cta__title">Lending Performance Showcase</span>
+        <span class="showcase-cta__desc">One live report across Enquiry, Underwriting &amp; Portfolio</span>
+      </span>
+      <span class="showcase-cta__go">Open Report <i class="bi bi-chevron-right"></i></span>
+    </a>
+
+
+    <div class="row g-3 mb-3">
+      @for (kpi of kpis; track kpi.label) {
+        <div class="col-12 col-sm-6 col-xl-3">
+          <ui-kpi-card [label]="kpi.label" [value]="kpi.value" [caption]="kpi.caption" [valueSize]="30" />
+        </div>
+      }
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-xl-7">
+        <ui-card title="6-Month Pipeline" bodyClass="p-3 pt-0">
+          <div class="legend">
+            @for (s of pipelineSeries; track s.name) {
+              <span class="legend-item"><span class="dot" [style.background]="s.color"></span>{{ s.name }}</span>
+            }
+          </div>
+          <ui-line-chart
+            [labels]="pipelineMonths"
+            [series]="pipelineSeries"
+            [height]="250"
+            ariaLabel="Six month enquiry, application and approval pipeline"
+          />
+        </ui-card>
+      </div>
+      <div class="col-12 col-xl-5">
+        <ui-card title="Product Mix">
+          <ui-bar-list [items]="productMix" />
+        </ui-card>
+      </div>
+    </div>
+
+    <ui-card title="Branch Performance" bodyClass="p-3 pt-0" class="mb-4">
+      <div class="legend">
+        @for (s of branchSeries; track s.name) {
+          <span class="legend-item"><span class="dot" [style.background]="s.color"></span>{{ s.name }}</span>
+        }
+      </div>
+      <ui-bar-chart
+        [data]="branchData"
+        [series]="branchSeries"
+        [height]="280"
+        columnWidth="30%"
+        ariaLabel="Enquiries and applications by branch"
+      />
+    </ui-card>
+
+    <div class="catalogue-head">
+      <h2 class="catalogue-title">
+        {{ categoryLabel() }} Reports <span class="catalogue-count">({{ filtered().length }})</span>
+      </h2>
+      <ui-search-input variant="field" width="260px" placeholder="Search reports…" [(value)]="query" />
+    </div>
+
+    <ui-card bodyClass="">
+      <ul class="report-list">
+        @for (report of filtered(); track report.title) {
+          <li class="report-row">
+            <span class="report-icon"><i class="bi bi-bar-chart-line"></i></span>
+            <span class="report-body">
+              <span class="report-title">{{ report.title }}</span>
+              <span class="report-desc">{{ report.description }}</span>
+            </span>
+            <span class="report-type" [class]="'report-type--' + report.typeTone">{{ report.type }}</span>
+            <button type="button" class="btn-primary btn-sm report-view">
+              View Report <i class="bi bi-chevron-right"></i>
+            </button>
+            <button type="button" class="btn-ghost btn-sm report-export">
+              <i class="bi bi-download"></i> Export CSV
+            </button>
+          </li>
+        } @empty {
+          <li class="report-empty">No reports match this search.</li>
+        }
+      </ul>
+    </ui-card>
+  

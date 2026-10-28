@@ -1,0 +1,59 @@
+      .legal-title { display: flex; align-items: flex-start; gap: 12px; }
+      .legal-title > i { font-size: 24px; line-height: 1.2; color: var(--foreground); }
+      .legal-title ui-page-header { flex: 1 1 auto; }
+      .clamp { display: block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.legal-title { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.clamp { display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+
+.lc-ref { font-size: 12px; color: var(--muted-foreground, #6b7280); margin-bottom: 12px; }
+.lc-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--border, #e5e7eb); background: #fff; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; }
+.lc-row:hover { border-color: #94a3b8; }
+.lc-row.done { background: #f0fdf4; border-color: #bbf7d0; }
+.lc-row i { font-size: 18px; color: #16a34a; }
+.lc-row i.bi-square { color: #cbd5e1; }
+.lc-name { flex: 1; font-size: 14px; font-weight: 500; }
+.lc-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #b45309; background: #fef3c7; border-radius: 6px; padding: 3px 8px; }
+.lc-status.sat { color: #166534; background: #dcfce7; }
+.lc-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+.cc-lead { font-size: 14px; margin: 0 0 12px; }
+.cc-card { border: 1px solid var(--border, #e5e7eb); border-radius: 10px; padding: 14px 16px; }
+.cc-name { font-weight: 700; font-size: 15px; }
+.cc-ref { font-size: 12px; color: var(--muted-foreground, #6b7280); font-family: 'DM Mono', monospace; }
+.cc-amt { font-weight: 700; margin-top: 6px; }
+.cc-prop { font-size: 13px; color: var(--muted-foreground, #6b7280); }
+.cc-warn { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; margin-top: 14px; }
+
+/* ---- Credit Paper modal ---- */
+.cp-wrap { max-height: 60vh; overflow-y: auto; padding-right: 4px; }
+.cp-muted { color: #6b7280; font-size: 13px; padding: 10px 0; }
+.cp-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: #6b7280; padding-bottom: 6px; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb;
+}
+.cp-upload { display: inline-block; cursor: pointer; margin-bottom: 12px; }
+.cp-docs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cp-doc {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;
+}
+.cp-doc i { color: #6b7280; }
+.cp-doc-name {
+  flex: 1 1 auto; min-width: 0; text-align: left; background: none; border: none; padding: 0;
+  font: inherit; font-size: 13px; color: #1d4ed8; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cp-doc-name:hover { text-decoration: underline; }
+.cp-doc-act {
+  flex: 0 0 auto; width: 26px; height: 26px; border: none; border-radius: 4px;
+  background: transparent; color: #4b5563; cursor: pointer;
+}
+.cp-doc-act:hover { background: #e5e7eb; color: #111827; }
+.cp-doc-x {
+  flex: 0 0 auto; width: 24px; height: 24px; border: none; border-radius: 50%;
+  background: transparent; color: #6b7280; cursor: pointer;
+}
+.cp-doc-x:hover { background: #fee2e2; color: #b00020; }

@@ -1,0 +1,28 @@
+    <div class="auth-centred">
+      <div class="ws-panel">
+        <app-auth-brand />
+
+        <h1 class="auth-title text-center">Select Your Workspace</h1>
+        <p class="auth-subtitle text-center">
+          You have access to multiple roles. Choose a workspace to continue.
+        </p>
+
+        <div class="ws-list">
+          @for (ws of session.workspaces(); track ws.id) {
+            <button type="button" class="card ws-item" (click)="choose(ws.id)">
+              <span class="ws-icon"><i class="bi bi-buildings"></i></span>
+              <span class="ws-body">
+                <span class="ws-head">
+                  <span class="ws-branch">{{ ws.branch }}</span>
+                  <span class="ws-role">{{ ws.role }}</span>
+                </span>
+                <span class="ws-scope">LoanDesk · Scope: {{ ws.scope }}</span>
+                <span class="ws-last">Last accessed: {{ ws.lastAccessed }}</span>
+              </span>
+              <i class="bi bi-chevron-right ws-chevron"></i>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+  

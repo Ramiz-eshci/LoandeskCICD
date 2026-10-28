@@ -1,0 +1,3 @@
+      .drawer-actions { display: flex; gap: 10px; }
+      .drawer-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+      textarea.form-input { resize: vertical; }

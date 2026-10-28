@@ -1,0 +1,1282 @@
+{
+ "modules": [
+  {
+   "code": "STRUCTURE_DATABASE",
+   "name": "Structure & Database",
+   "parent": null,
+   "sort": 1
+  },
+  {
+   "code": "STRUCTURE_DATABASE.CORE_DB_STRUCTURE",
+   "name": "Core DB Structure",
+   "parent": "STRUCTURE_DATABASE",
+   "sort": 2
+  },
+  {
+   "code": "STRUCTURE_DATABASE.ORGANISATION_STRUCTURE",
+   "name": "Organisation Structure",
+   "parent": "STRUCTURE_DATABASE",
+   "sort": 3
+  },
+  {
+   "code": "MASTERS",
+   "name": "Masters",
+   "parent": null,
+   "sort": 4
+  },
+  {
+   "code": "MASTERS.BRANCH_MASTER",
+   "name": "Branch Master",
+   "parent": "MASTERS",
+   "sort": 5
+  },
+  {
+   "code": "MASTERS.ROLES_MASTER",
+   "name": "Roles Master",
+   "parent": "MASTERS",
+   "sort": 6
+  },
+  {
+   "code": "MASTERS.USER_MASTER",
+   "name": "User Master",
+   "parent": "MASTERS",
+   "sort": 7
+  },
+  {
+   "code": "MASTERS.PRODUCT_MASTER",
+   "name": "Product Master",
+   "parent": "MASTERS",
+   "sort": 8
+  },
+  {
+   "code": "MASTERS.COMMON_MASTERS",
+   "name": "Common Masters",
+   "parent": "MASTERS",
+   "sort": 9
+  },
+  {
+   "code": "MASTERS.BROKER_MASTER",
+   "name": "Broker Master",
+   "parent": "MASTERS",
+   "sort": 10
+  },
+  {
+   "code": "MASTERS.SOLICITOR_VALUER_MASTER",
+   "name": "Solicitor / Valuer Master",
+   "parent": "MASTERS",
+   "sort": 11
+  },
+  {
+   "code": "ENQUIRIES",
+   "name": "Enquiries",
+   "parent": null,
+   "sort": 12
+  },
+  {
+   "code": "ENQUIRIES.ENQUIRY_LIST",
+   "name": "Enquiry List",
+   "parent": "ENQUIRIES",
+   "sort": 13
+  },
+  {
+   "code": "ENQUIRIES.ENQUIRY_EMAIL",
+   "name": "Enquiry - Email",
+   "parent": "ENQUIRIES",
+   "sort": 14
+  },
+  {
+   "code": "ENQUIRIES.NOTIFICATIONS",
+   "name": "Notifications",
+   "parent": "ENQUIRIES",
+   "sort": 21
+  },
+  {
+   "code": "APPLICATIONS",
+   "name": "Applications",
+   "parent": null,
+   "sort": 22
+  },
+  {
+   "code": "APPLICATIONS.APPLICATION_LIST",
+   "name": "Application List",
+   "parent": "APPLICATIONS",
+   "sort": 23
+  },
+  {
+   "code": "APPLICATIONS.APPLICANT_DETAILS",
+   "name": "Applicant Details",
+   "parent": "APPLICATIONS",
+   "sort": 24
+  },
+  {
+   "code": "APPLICATIONS.LOAN_DETAILS",
+   "name": "Loan Details",
+   "parent": "APPLICATIONS",
+   "sort": 25
+  },
+  {
+   "code": "APPLICATIONS.SECURITY_PROPERTY",
+   "name": "Security / Property",
+   "parent": "APPLICATIONS",
+   "sort": 26
+  },
+  {
+   "code": "APPLICATIONS.DOCUMENTS",
+   "name": "Documents",
+   "parent": "APPLICATIONS",
+   "sort": 27
+  },
+  {
+   "code": "APPLICATIONS.APPLICATION_READINESS",
+   "name": "Application Readiness",
+   "parent": "APPLICATIONS",
+   "sort": 28
+  },
+  {
+   "code": "APPLICATIONS.SUBMIT_TO_UNDERWRITING",
+   "name": "Submit to Underwriting",
+   "parent": "APPLICATIONS",
+   "sort": 29
+  },
+  {
+   "code": "UNDERWRITING_WORK_QUEUE",
+   "name": "Underwriting Work Queue",
+   "parent": null,
+   "sort": 30
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "name": "Underwirting Workflow / Checklist",
+   "parent": null,
+   "sort": 31
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW",
+   "name": "Initial Overview",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 32
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.VALUATION",
+   "name": "Valuation",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 33
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS",
+   "name": "Borrower Solicitor Checks",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 34
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.KYC_AML",
+   "name": "KYC / AML",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 35
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.SECURITY_PROPERTY_REVIEW",
+   "name": "Security Property Review",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 36
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.CREDIT_BACKGROUND_CHECKS",
+   "name": "Credit / Background Checks",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 37
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.UNDERWRITING_ASSESSMENT",
+   "name": "Underwriting Assessment",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 38
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL",
+   "name": "Legal",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 39
+  },
+  {
+   "code": "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL",
+   "name": "Section Pass & Final Approval",
+   "parent": "UNDERWIRTING_WORKFLOW_CHECKLIST",
+   "sort": 40
+  },
+  {
+   "code": "PORTFOLIO",
+   "name": "Portfolio",
+   "parent": null,
+   "sort": 41
+  },
+  {
+   "code": "PORTFOLIO.CUSTOMER_CONVERSION",
+   "name": "Customer Conversion",
+   "parent": "PORTFOLIO",
+   "sort": 42
+  },
+  {
+   "code": "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING",
+   "name": "Introduce Mail / Checbox for completed meeting",
+   "parent": "PORTFOLIO",
+   "sort": 43
+  },
+  {
+   "code": "PORTFOLIO.CUSTOMER_360",
+   "name": "Customer 360",
+   "parent": "PORTFOLIO",
+   "sort": 44
+  },
+  {
+   "code": "PORTFOLIO.CLIENT_MONITORING",
+   "name": "Client Monitoring",
+   "parent": "PORTFOLIO",
+   "sort": 45
+  },
+  {
+   "code": "PORTFOLIO.EXTENSION",
+   "name": "Extension",
+   "parent": "PORTFOLIO",
+   "sort": 46
+  },
+  {
+   "code": "PORTFOLIO.FURTHER_ADVANCE",
+   "name": "Further Advance",
+   "parent": "PORTFOLIO",
+   "sort": 47
+  },
+  {
+   "code": "PORTFOLIO.PORTFOLIO_MATURITY",
+   "name": "Portfolio Maturity",
+   "parent": "PORTFOLIO",
+   "sort": 48
+  },
+  {
+   "code": "PORTFOLIO.EXIT_FEE",
+   "name": "Exit Fee",
+   "parent": "PORTFOLIO",
+   "sort": 49
+  },
+  {
+   "code": "REPORTS",
+   "name": "Reports",
+   "parent": null,
+   "sort": 50
+  },
+  {
+   "code": "REPORTS.EXECUTIVE_REPORTS",
+   "name": "Executive Reports",
+   "parent": "REPORTS",
+   "sort": 51
+  },
+  {
+   "code": "REPORTS.SALES_REPORTS",
+   "name": "Sales Reports",
+   "parent": "REPORTS",
+   "sort": 52
+  },
+  {
+   "code": "REPORTS.UNDERWRITING_REPORTS",
+   "name": "Underwriting Reports",
+   "parent": "REPORTS",
+   "sort": 53
+  },
+  {
+   "code": "REPORTS.PORTFOLIO_REPORTS",
+   "name": "Portfolio Reports",
+   "parent": "REPORTS",
+   "sort": 54
+  },
+  {
+   "code": "REPORTS.FINANCE_REPORTS",
+   "name": "Finance Reports",
+   "parent": "REPORTS",
+   "sort": 55
+  },
+  {
+   "code": "REPORTS.COLLECTIONS_REPORTS",
+   "name": "Collections Reports",
+   "parent": "REPORTS",
+   "sort": 56
+  },
+  {
+   "code": "REPORTS.NOTIFICATIONS",
+   "name": "Notifications",
+   "parent": "REPORTS",
+   "sort": 57
+  },
+  {
+   "code": "REPORTS.REJECT_REASON",
+   "name": "Reject Reason",
+   "parent": "REPORTS",
+   "sort": 58
+  },
+  {
+   "code": "REPORTS.PAYMENT_COLLECTION_REPORT",
+   "name": "Payment Collection/ Report",
+   "parent": "REPORTS",
+   "sort": 59
+  },
+  {
+   "code": "AUDIT",
+   "name": "Audit",
+   "parent": null,
+   "sort": 60
+  },
+  {
+   "code": "AUDIT.AUDIT_LOG",
+   "name": "Audit Log",
+   "parent": "AUDIT",
+   "sort": 61
+  }
+ ],
+ "grants": {
+  "System Administrator": {
+   "MASTERS.BRANCH_MASTER": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "MASTERS.ROLES_MASTER": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "MASTERS.USER_MASTER": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "MASTERS.PRODUCT_MASTER": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "MASTERS.COMMON_MASTERS": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "MASTERS.BROKER_MASTER": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "MASTERS.SOLICITOR_VALUER_MASTER": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "add",
+    "approve",
+    "configure",
+    "convert",
+    "delete",
+    "edit",
+    "reject",
+    "submit",
+    "view"
+   ],
+   "ENQUIRIES.ENQUIRY_EMAIL": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "ENQUIRIES.NOTIFICATIONS": [
+    "ADD",
+    "CONFIGURE",
+    "DELETE",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "VIEW"
+   ],
+   "UNDERWRITING_WORK_QUEUE": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.VALUATION": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.KYC_AML": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECURITY_PROPERTY_REVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.CREDIT_BACKGROUND_CHECKS": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.UNDERWRITING_ASSESSMENT": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "VIEW"
+   ],
+   "REPORTS.EXECUTIVE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.SALES_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.UNDERWRITING_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.PORTFOLIO_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.FINANCE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.COLLECTIONS_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.NOTIFICATIONS": [
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "VIEW"
+   ],
+   "REPORTS.PAYMENT_COLLECTION_REPORT": [
+    "VIEW"
+   ],
+   "AUDIT.AUDIT_LOG": [
+    "EXPORT",
+    "VIEW"
+   ]
+  },
+  "Sales / BDM": {
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "add",
+    "approve",
+    "convert",
+    "edit",
+    "reject",
+    "submit",
+    "view"
+   ],
+   "ENQUIRIES.ENQUIRY_EMAIL": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "ENQUIRIES.NOTIFICATIONS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "EDIT",
+    "SUBMIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "REPORTS.SALES_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.NOTIFICATIONS": [
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "VIEW"
+   ]
+  },
+  "Head Sales": {
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "add",
+    "approve",
+    "convert",
+    "edit",
+    "reject",
+    "submit",
+    "view"
+   ],
+   "ENQUIRIES.ENQUIRY_EMAIL": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "ENQUIRIES.NOTIFICATIONS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "EDIT",
+    "SUBMIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "REPORTS.SALES_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.NOTIFICATIONS": [
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "VIEW"
+   ]
+  },
+  "Underwriter": {
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "view"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "VIEW"
+   ],
+   "UNDERWRITING_WORK_QUEUE": [
+    "ASSIGN",
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.VALUATION": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.KYC_AML": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECURITY_PROPERTY_REVIEW": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.CREDIT_BACKGROUND_CHECKS": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.UNDERWRITING_ASSESSMENT": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL": [
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "CONVERT",
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "VIEW"
+   ],
+   "REPORTS.UNDERWRITING_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "VIEW"
+   ]
+  },
+  "Credit Manager": {
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "view"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "VIEW"
+   ],
+   "UNDERWRITING_WORK_QUEUE": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.VALUATION": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.KYC_AML": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECURITY_PROPERTY_REVIEW": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.CREDIT_BACKGROUND_CHECKS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.UNDERWRITING_ASSESSMENT": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "APPROVE",
+    "EDIT",
+    "REJECT",
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "APPROVE",
+    "EDIT",
+    "REJECT",
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "APPROVE",
+    "VIEW"
+   ],
+   "REPORTS.EXECUTIVE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.UNDERWRITING_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.PORTFOLIO_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.FINANCE_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.COLLECTIONS_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "VIEW"
+   ],
+   "REPORTS.PAYMENT_COLLECTION_REPORT": [
+    "VIEW"
+   ]
+  },
+  "Branch Manager": {
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "add",
+    "approve",
+    "assign",
+    "convert",
+    "edit",
+    "reject",
+    "submit",
+    "view"
+   ],
+   "ENQUIRIES.ENQUIRY_EMAIL": [
+    "ADD",
+    "ASSIGN",
+    "EDIT",
+    "VIEW"
+   ],
+   "ENQUIRIES.NOTIFICATIONS": [
+    "ADD",
+    "ASSIGN",
+    "EDIT",
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "VIEW"
+   ],
+   "UNDERWRITING_WORK_QUEUE": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "VIEW"
+   ],
+   "REPORTS.EXECUTIVE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.SALES_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.UNDERWRITING_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.PORTFOLIO_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.COLLECTIONS_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.NOTIFICATIONS": [
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "VIEW"
+   ],
+   "REPORTS.PAYMENT_COLLECTION_REPORT": [
+    "VIEW"
+   ]
+  },
+  "Auditor / Compliance": {
+   "ENQUIRIES.ENQUIRY_LIST": [
+    "view"
+   ],
+   "ENQUIRIES.ENQUIRY_EMAIL": [
+    "VIEW"
+   ],
+   "ENQUIRIES.NOTIFICATIONS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_LIST": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICANT_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.LOAN_DETAILS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.APPLICATION_READINESS": [
+    "VIEW"
+   ],
+   "APPLICATIONS.SUBMIT_TO_UNDERWRITING": [
+    "VIEW"
+   ],
+   "UNDERWRITING_WORK_QUEUE": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.VALUATION": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.KYC_AML": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECURITY_PROPERTY_REVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.CREDIT_BACKGROUND_CHECKS": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.UNDERWRITING_ASSESSMENT": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "VIEW"
+   ],
+   "REPORTS.EXECUTIVE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.SALES_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.UNDERWRITING_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.PORTFOLIO_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.FINANCE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.COLLECTIONS_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.NOTIFICATIONS": [
+    "VIEW"
+   ],
+   "REPORTS.REJECT_REASON": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.PAYMENT_COLLECTION_REPORT": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "AUDIT.AUDIT_LOG": [
+    "EXPORT",
+    "VIEW"
+   ]
+  },
+  "Legal": {
+   "APPLICATIONS.SECURITY_PROPERTY": [
+    "VIEW"
+   ],
+   "APPLICATIONS.DOCUMENTS": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.VALUATION": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.KYC_AML": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECURITY_PROPERTY_REVIEW": [
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "EDIT",
+    "VIEW"
+   ]
+  },
+  "Solicitor": {
+   "APPLICATIONS.DOCUMENTS": [
+    "ADD",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.BORROWER_SOLICITOR_CHECKS": [
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.LEGAL": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.SECTION_PASS_FINAL_APPROVAL": [
+    "VIEW"
+   ]
+  },
+  "Portfolio": {
+   "UNDERWIRTING_WORKFLOW_CHECKLIST.INITIAL_OVERVIEW": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "ADD",
+    "EDIT",
+    "SUBMIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "ADD",
+    "EDIT",
+    "SUBMIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ],
+   "REPORTS.EXECUTIVE_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.PORTFOLIO_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.FINANCE_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.COLLECTIONS_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.PAYMENT_COLLECTION_REPORT": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ]
+  },
+  "Collection Officer": {
+   "PORTFOLIO.CUSTOMER_CONVERSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.INTRODUCE_MAIL_CHECBOX_FOR_COMPLETED_MEETING": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CUSTOMER_360": [
+    "VIEW"
+   ],
+   "PORTFOLIO.CLIENT_MONITORING": [
+    "EDIT",
+    "VIEW"
+   ],
+   "PORTFOLIO.EXTENSION": [
+    "VIEW"
+   ],
+   "PORTFOLIO.FURTHER_ADVANCE": [
+    "VIEW"
+   ],
+   "PORTFOLIO.PORTFOLIO_MATURITY": [
+    "VIEW"
+   ],
+   "PORTFOLIO.EXIT_FEE": [
+    "VIEW"
+   ],
+   "REPORTS.PORTFOLIO_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.FINANCE_REPORTS": [
+    "VIEW"
+   ],
+   "REPORTS.COLLECTIONS_REPORTS": [
+    "EXPORT",
+    "VIEW"
+   ],
+   "REPORTS.PAYMENT_COLLECTION_REPORT": [
+    "ADD",
+    "EDIT",
+    "VIEW"
+   ]
+  }
+ }
+}

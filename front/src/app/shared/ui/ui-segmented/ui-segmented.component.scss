@@ -1,0 +1,19 @@
+      :host { display: block; }
+      .seg { display: flex; flex-wrap: wrap; gap: 8px; }
+      .seg-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--muted-foreground);
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .seg-btn:hover { color: var(--foreground); border-color: var(--muted-foreground); }
+      .seg-btn.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+      }

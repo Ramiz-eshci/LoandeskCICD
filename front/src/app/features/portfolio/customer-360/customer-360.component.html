@@ -1,0 +1,409 @@
+@if (loading()) {
+  <ui-card>Loading customer…</ui-card>
+} @else if (error()) {
+  <ui-card>
+    <div class="alert alert-warning mb-0">{{ error() }}</div>
+  </ui-card>
+} @else if (profile(); as p) {
+  <div class="customer-page">
+    <div class="crumb-row">
+      <button uiButton variant="ghost" size="sm" type="button" (click)="back()">← Customers</button>
+      <span class="crumb-sep">›</span>
+      <span class="crumb-id">{{ customerId() }} — {{ p.customer_name }}</span>
+      <span class="spacer"></span>
+      <ui-badge status="active">Active Customer</ui-badge>
+    </div>
+
+    <div class="cust-hero">
+      <div class="avatar">{{ initials() }}</div>
+      <div class="who">
+        <h1>{{ p.customer_name }}</h1>
+        <p>{{ customerType() }} · {{ customerId() }} · {{ branch() }}</p>
+      </div>
+      <div class="stat">
+        <span>Facilities</span>
+        <strong>{{ facilities().length }}</strong>
+      </div>
+      <div class="stat">
+        <span>Applications</span>
+        <strong>{{ applications().length }}</strong>
+      </div>
+      <div class="stat">
+        <span class="stat-head">Total Exposure
+          <span class="basis-toggle">
+            <button type="button" [class.on]="basis() === 'gross'" (click)="basis.set('gross')">Gross</button>
+            <button type="button" [class.on]="basis() === 'net'" (click)="basis.set('net')">Net</button>
+          </span>
+        </span>
+        <strong class="mono">{{ money(totalExposure()) }}</strong>
+      </div>
+      <div class="stat">
+        <span>Total Lent ({{ basis() === 'gross' ? 'Gross' : 'Net' }})</span>
+        <strong class="mono">{{ money(totalLent()) }}</strong>
+      </div>
+    </div>
+
+    <ui-tab-filters class="tabs" [tabs]="tabs()" [(active)]="activeTab" />
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <div class="content-grid">
+          <ui-card bodyClass="">
+            <div class="pad-card">
+              <div class="eyebrow profile-head">
+                <span>Customer Profile</span>
+                @if (canEdit()) {
+                  <button uiButton variant="ghost" size="sm" type="button" (click)="openEdit()"><i class="bi bi-pencil"></i> Edit</button>
+                }
+              </div>
+              <div class="profile-grid">
+                <div>
+                  <span>Name</span>
+                  <strong><i class="bi bi-building"></i>{{ p.customer_name }}</strong>
+                </div>
+                <div>
+                  <span>Type</span>
+                  <strong><i class="bi bi-building"></i>{{ customerType() }}</strong>
+                </div>
+                <div>
+                  <span>Email</span>
+                  <strong><i class="bi bi-envelope"></i>{{ p.email || '—' }}</strong>
+                </div>
+                <div>
+                  <span>Phone</span>
+                  <strong><i class="bi bi-telephone"></i>{{ p.phone || '—' }}</strong>
+                </div>
+                <div>
+                  <span>Branch</span>
+                  <strong><i class="bi bi-building"></i>{{ branch() }}</strong>
+                </div>
+                <div>
+                  <span>Customer Since</span>
+                  <strong><i class="bi bi-calendar3"></i>{{ formatDate(p.created_at) }}</strong>
+                </div>
+              </div>
+            </div>
+          </ui-card>
+
+          <ui-card bodyClass="">
+            <div class="pad-card">
+              <div class="eyebrow">Exposure Summary</div>
+              <div class="kv">
+                <div><span>Facilities</span><strong>{{ facilities().length }}</strong></div>
+                <div><span>Total Exposure</span><strong class="mono">{{ money(totalExposure()) }}</strong></div>
+                <div><span>Arrears</span><strong>{{ arrearsTotal() ? money(arrearsTotal()) : 'None' }}</strong></div>
+              </div>
+            </div>
+          </ui-card>
+        </div>
+      }
+      @case ('journey') {
+        <ui-card bodyClass="">
+          <div class="pad-card">
+            <div class="eyebrow">Lifecycle — Enquiry → Underwriting → Portfolio</div>
+            <ol class="journey">
+              @for (e of enquiries(); track e['enquiry_id']) {
+                <li class="journey-item journey-clickable" role="button" tabindex="0" (click)="openEnquiry(e['enquiry_id'])">
+                  <span class="journey-stage stage-enquiry">Enquiry</span>
+                  <div class="journey-body">
+                    <strong>{{ e['enquiry_ref'] }}</strong> · {{ e['status'] || '—' }}
+                    <div class="journey-meta">Created {{ formatDate((e['created_at'] || '').toString()) }}@if (e['converted_at']) { · Converted {{ formatDate((e['converted_at'] || '').toString()) }}}</div>
+                  </div>
+                </li>
+              }
+              @for (a of applications(); track a.application_id) {
+                <li class="journey-item journey-clickable" role="button" tabindex="0" (click)="openApplication(a.application_id)">
+                  <span class="journey-stage stage-app">Application</span>
+                  <div class="journey-body">
+                    <strong>{{ a.application_ref }}</strong> · {{ a.status || 'Pending' }} · {{ a.product || '—' }}
+                    <div class="journey-meta">{{ a.amount_requested != null ? money(a.amount_requested) : '—' }} · {{ formatDate(a.created_at) }}</div>
+                  </div>
+                </li>
+              }
+              @for (u of underwriting(); track u['application_id']) {
+                <li class="journey-item journey-clickable" role="button" tabindex="0" (click)="openUnderwriting(u['underwriting_case_id'])">
+                  <span class="journey-stage stage-uw">Underwriting</span>
+                  <div class="journey-body">
+                    <strong>{{ u['application_ref'] }}</strong> · {{ u['status'] || '—' }}
+                    <div class="journey-meta">Step {{ u['current_step'] || '—' }}@if (u['updated_at']) { · Updated {{ formatDate((u['updated_at'] || '').toString()) }}}</div>
+                  </div>
+                </li>
+              }
+              @for (f of facilities(); track f.loan_id) {
+                <li class="journey-item journey-clickable" role="button" tabindex="0" (click)="openFacility(f.loan_number)">
+                  <span class="journey-stage stage-portfolio">Portfolio</span>
+                  <div class="journey-body">
+                    <strong>{{ f.loan_number }}</strong> · {{ f.status }} · {{ money(f.outstanding_balance ?? f.principal) }}
+                    <div class="journey-meta">Matures {{ formatDate2(f.maturity_date) }}</div>
+                  </div>
+                </li>
+              }
+              @if (!enquiries().length && !applications().length && !underwriting().length && !facilities().length) {
+                <li class="journey-empty">No lifecycle records found.</li>
+              }
+            </ol>
+          </div>
+        </ui-card>
+      }
+      @case ('applications') {
+        <ui-card bodyClass="">
+          <div class="table-wrap">
+            <div class="table-scroll">
+              <table class="c360-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Application ID</th>
+                    <th scope="col">Product</th>
+                    <th scope="col" class="num">Amount</th>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Date</th>
+                    <th scope="col" class="actions-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (a of applications(); track a.application_id) {
+                    <tr>
+                      <td class="app-id mono">{{ a.application_ref }}</td>
+                      <td>{{ a.product || '—' }}</td>
+                      <td class="num mono">{{ a.amount_requested != null ? money(a.amount_requested) : '—' }}</td>
+                      <td><span class="pill">{{ (a.status || 'Pending').toLowerCase() }}</span></td>
+                      <td class="date">{{ formatDate(a.created_at) }}</td>
+                      <td class="actions-col">
+                        <button type="button" class="row-btn" (click)="openApplication(a.application_id)">Open</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="6" class="empty">No applications found.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ui-card>
+      }
+      @case ('facilities') {
+        <ui-card bodyClass="">
+          <div class="table-wrap">
+            <div class="table-scroll">
+              <table class="c360-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Facility ID</th>
+                    <th scope="col">Product</th>
+                    <th scope="col" class="num">Balance</th>
+                    <th scope="col">Rate</th>
+                    <th scope="col">Maturity</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="actions-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (f of facilities(); track f.loan_id) {
+                    <tr>
+                      <td class="app-id mono">{{ f.loan_number }}</td>
+                      <td>{{ f.product || '—' }}</td>
+                      <td class="num mono strong">{{ money(f.outstanding_balance ?? f.principal) }}</td>
+                      <td class="mono">{{ f.rate_pct }}% pm</td>
+                      <td class="date">{{ formatDate2(f.maturity_date) }}</td>
+                      <td><span class="pill" [class.pill-overdue]="f.status !== 'Active'">{{ f.status }}</span></td>
+                      <td class="actions-col">
+                        <button type="button" class="row-btn" (click)="openFacility(f.loan_number)">Open</button>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="7" class="empty">No facilities found.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ui-card>
+      }
+      @case ('contacts') {
+        <ui-card bodyClass="">
+          <div class="table-wrap">
+            <div class="table-scroll">
+              <table class="c360-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Facility</th>
+                    <th scope="col">Person</th>
+                    <th scope="col">Method</th>
+                    <th scope="col">Notes</th>
+                    <th scope="col">Follow-up</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Outcome</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of contacts(); track c.log_id) {
+                    <tr>
+                      <td class="date">{{ formatDate(c.contact_date) }}</td>
+                      <td class="mono">{{ c.loan_number }}</td>
+                      <td>{{ c.person }}</td>
+                      <td>{{ c.method }}</td>
+                      <td>{{ c.contact_notes || '—' }}</td>
+                      <td class="date">{{ c.followup_date ? formatDate(c.followup_date) : '—' }}</td>
+                      <td><span class="pill">{{ c.followup_status }}</span></td>
+                      <td>{{ c.contact_outcome || '—' }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="8" class="empty">No contact history found.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ui-card>
+      }
+      @case ('exposure') {
+        <ui-card bodyClass="">
+          <div class="pad-card">
+            <h2 class="card-title">Exposure Summary</h2>
+            <div class="stat-tiles">
+              <div class="stat-tile">
+                <span>Current Exposure</span>
+                <strong class="mono">{{ money(totalExposure()) }}</strong>
+              </div>
+              <div class="stat-tile">
+                <span>Facilities</span>
+                <strong>{{ facilities().length }}</strong>
+              </div>
+              <div class="stat-tile">
+                <span>Arrears</span>
+                <strong>{{ arrearsTotal() ? money(arrearsTotal()) : 'None' }}</strong>
+              </div>
+            </div>
+          </div>
+        </ui-card>
+      }
+      @case ('documents') {
+        @if (canDocView()) {
+        <ui-card bodyClass="">
+          <div class="d-flex justify-content-end" style="padding: 12px 12px 0;">
+            @if (canDocAdd()) {
+            <button uiButton variant="primary" size="sm" type="button" (click)="openUpload()">Upload</button>
+            }
+          </div>
+          <div class="table-wrap">
+            <div class="table-scroll">
+              <table class="c360-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Document</th>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Source</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Uploaded By</th>
+                    <th scope="col">Uploaded</th>
+                    <th scope="col" class="actions-col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of allDocuments(); track $index) {
+                    <tr>
+                      <td>{{ d['file_name'] || 'Document' }}</td>
+                      <td><span class="pill">{{ d['stage'] }}</span></td>
+                      <td class="mono">{{ d['source_ref'] || '—' }}</td>
+                      <td>{{ d['document_type_name'] || '—' }}</td>
+                      <td>{{ d['uploaded_by_name'] || '—' }}</td>
+                      <td class="date">{{ formatDate((d['created_at'] || '').toString()) }}</td>
+                      <td class="actions-col doc-actions">
+                        @if (canDocView()) {
+                        <button type="button" class="row-btn" (click)="viewDocument(d['doc_id'], d['kind'])">View</button>
+                        <button type="button" class="row-btn" (click)="downloadDocument(d['doc_id'], d['kind'])">Download</button>
+                        }
+                        @if (canDocDelete()) {
+                          <button type="button" class="row-btn row-btn--danger" (click)="removeDocument(d['doc_id'], d['file_name'], d['kind'])">Delete</button>
+                        }
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="7" class="empty">No documents found.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ui-card>
+        }
+      }
+
+      @case ('audit') {
+        <ui-card title="Audit Trail" bodyClass="">
+          <div class="table-wrap">
+            <div class="table-scroll">
+              <ol class="aud-timeline">
+                @for (a of auditRows(); track a['audit_id']) {
+                  <li class="aud-event">
+                    <span class="aud-event__rail"><span class="aud-event__dot"></span></span>
+                    <div class="aud-event__card">
+                      <div class="aud-event__head">
+                        <span class="aud-action">{{ humanizeAction(a['action']) }}</span>
+                        <span class="aud-when">{{ formatDate(a['audit_date']?.toString() || null) }} {{ a['audit_time'] || '' }}</span>
+                      </div>
+                      @if (summarizeDetails(a['details'])) {
+                        <div class="aud-detail">{{ summarizeDetails(a['details']) }}</div>
+                      }
+                    </div>
+                  </li>
+                } @empty {
+                  <li class="aud-empty">No audit entries found.</li>
+                }
+              </ol>
+            </div>
+          </div>
+        </ui-card>
+      }
+      @default {
+        <ui-card>
+          <h2>{{ activeTabLabel() }}</h2>
+          <p>No database rows recorded for this tab yet.</p>
+        </ui-card>
+      }
+    }
+
+    @if (uploadOpen()) {
+      <app-portfolio-doc-upload
+        title="Upload Customer Document"
+        [docTypes]="documentTypes()"
+        [applications]="applications()"
+        [showAppPicker]="true"
+        [saving]="uploadSaving()"
+        [error]="uploadError()"
+        (submitDoc)="onUploadSubmit($event)"
+        (closed)="uploadOpen.set(false)"
+      />
+    }
+
+    @if (editOpen()) {
+      <ui-modal title="Edit Customer Details" (closed)="editOpen.set(false)">
+        <div class="edit-grid">
+          <label><span>First name</span><input class="form-input" [(ngModel)]="editDraft.first_name" maxlength="100" />
+            @if (editErrors()['first_name']) { <small class="err">{{ editErrors()['first_name'] }}</small> }</label>
+          <label><span>Last name</span><input class="form-input" [(ngModel)]="editDraft.last_name" maxlength="100" /></label>
+          <label class="full"><span>Company name</span><input class="form-input" [(ngModel)]="editDraft.company_name" maxlength="200" /></label>
+          <label><span>Email</span><input class="form-input" type="email" [(ngModel)]="editDraft.email" maxlength="150" />
+            @if (editErrors()['email']) { <small class="err">{{ editErrors()['email'] }}</small> }</label>
+          <label><span>Phone</span><input class="form-input" type="tel" [(ngModel)]="editDraft.phone" maxlength="30" />
+            @if (editErrors()['phone']) { <small class="err">{{ editErrors()['phone'] }}</small> }</label>
+        </div>
+        <div modalFooter class="request-footer">
+          <button uiButton variant="ghost" type="button" (click)="editOpen.set(false)">Cancel</button>
+          <button uiButton type="button" [disabled]="editSaving()" (click)="saveEdit()">{{ editSaving() ? 'Saving…' : 'Save' }}</button>
+        </div>
+      </ui-modal>
+    }
+
+    @if (confirmOpen()) {
+      <ui-modal title="Please confirm" (closed)="confirmOpen.set(false)">
+        <p>{{ confirmMessage() }}</p>
+        <div modalFooter class="request-footer">
+          <button uiButton variant="ghost" type="button" (click)="confirmOpen.set(false)">Cancel</button>
+          <button uiButton variant="danger" type="button" (click)="confirmYes()">Delete</button>
+        </div>
+      </ui-modal>
+    }
+  </div>
+}

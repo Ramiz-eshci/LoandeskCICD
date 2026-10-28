@@ -1,0 +1,16 @@
+    <ui-page-header title="Customers" [subtitle]="subtitle()" />
+
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+      <ui-search-input variant="field" width="440px" placeholder="Search customers…" [(value)]="query" />
+    </div>
+
+    <ui-card bodyClass="">
+      <ui-data-table [columns]="columns" [rows]="rows()" [rowClickable]="true" [paginate]="false" (rowClick)="open360($event)"
+        [emptyText]="loading() ? 'Loading customers…' : 'No customers match this search.'">
+        <ng-template uiCell="actions" let-row>
+          <button uiButton variant="ghost" size="sm" type="button" (click)="$event.stopPropagation(); open360(row)">View 360</button>
+        </ng-template>
+      </ui-data-table>
+    </ui-card>
+
+    <ui-pagination class="d-block mt-3" [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" />

@@ -1,0 +1,95 @@
+<ui-page-header title="Dashboard" [subtitle]="subtitle()" />
+
+@if (loading()) {
+  <div class="dash-state">Loading your dashboard…</div>
+} @else if (failed()) {
+  <div class="dash-state dash-state-error">Could not load the dashboard. Please refresh.</div>
+} @else {
+
+  @if (anyScoped()) {
+    <div class="dash-scope-note">
+      <i class="bi bi-person-check"></i>
+      Some figures below show only records assigned to you, in line with your role's permissions.
+    </div>
+  }
+
+  @if (tiles().length) {
+    <div class="row row-cols-2 row-cols-xl-5 g-3 mb-3">
+      @for (kpi of tiles(); track kpi.key) {
+        <div class="col">
+          <ui-kpi-card
+            [label]="kpi.label"
+            [value]="tileValue(kpi)"
+            [caption]="kpi.caption"
+            [icon]="kpi.icon"
+            [tone]="kpi.tone"
+            [valueSize]="24"
+          />
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="dash-state">Your role has no dashboard figures assigned.</div>
+  }
+
+  @if (hasPipeline() || hasProductMix()) {
+    <div class="row g-3 mb-3">
+      @if (hasPipeline()) {
+        <div class="col-12" [class.col-xl-8]="hasProductMix()">
+          <ui-card title="Enquiry Pipeline by Status" bodyClass="p-3 pt-0">
+            <ui-bar-chart
+              [data]="pipelineData()"
+              [series]="pipelineSeries"
+              [height]="230"
+              ariaLabel="Enquiries by status"
+            />
+          </ui-card>
+        </div>
+      }
+      @if (hasProductMix()) {
+        <div class="col-12" [class.col-xl-4]="hasPipeline()">
+          <ui-card title="Product Mix">
+            <ui-donut-chart [slices]="productMix()" ariaLabel="Applications by product" />
+          </ui-card>
+        </div>
+      }
+    </div>
+  }
+
+  @if (hasUwStatus() || hasMaturity()) {
+    <div class="row g-3 mb-3">
+      @if (hasUwStatus()) {
+        <div class="col-12" [class.col-xl-8]="hasMaturity()">
+          <ui-card title="Underwriting by Status" bodyClass="p-3 pt-0">
+            <ui-bar-chart
+              [data]="uwStatusData()"
+              [series]="uwStatusSeries"
+              [height]="230"
+              ariaLabel="Underwriting cases by status"
+            />
+          </ui-card>
+        </div>
+      }
+      @if (hasMaturity()) {
+        <div class="col-12" [class.col-xl-4]="hasUwStatus()">
+          <ui-card title="Maturities (next 90 days)">
+            <ui-donut-chart [slices]="maturityMix()" ariaLabel="Facilities by maturity window" />
+          </ui-card>
+        </div>
+      }
+    </div>
+  }
+
+  @if (hasRecent()) {
+    <ui-card title="Recent Applications" bodyClass="" [dividedHeader]="true">
+      <ui-data-table [columns]="recentColumns" [rows]="recentApplications()" [rowClickable]="true">
+        <ng-template uiCell="amount_requested" let-row>
+          <span class="font-mono">{{ money(row.amount_requested) }}</span>
+        </ng-template>
+        <ng-template uiCell="status" let-row>
+          <ui-badge [status]="statusTone(row)">{{ row.status_name || '—' }}</ui-badge>
+        </ng-template>
+      </ui-data-table>
+    </ui-card>
+  }
+}

@@ -1,0 +1,10 @@
+    <label class="ui-search" [class.ui-search--field]="variant() === 'field'" [style.width]="width()">
+      <i class="bi bi-search"></i>
+      <input
+        type="search"
+        [placeholder]="placeholder()"
+        [value]="value()"
+        (input)="value.set($any($event.target).value)"
+      />
+    </label>
+  

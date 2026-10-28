@@ -1,0 +1,16 @@
+    <div class="chips">
+      @for (chip of chips(); track chip.key) {
+        <button
+          type="button"
+          class="chip"
+          [class.active]="active() === chip.key"
+          (click)="active.set(chip.key)"
+        >
+          @if (chip.count !== undefined) {
+            <span class="chip-count font-mono">{{ chip.count }}</span>
+          }
+          <span class="chip-label">{{ chip.label }}</span>
+        </button>
+      }
+    </div>
+  

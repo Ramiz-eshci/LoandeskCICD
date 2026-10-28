@@ -1,0 +1,44 @@
+      .icon-btn { display: inline-flex; align-items: center; gap: 8px; }
+      .d-modal-field { display: flex; flex-direction: column; gap: 6px; font-size: 11px; font-weight: 600; color: #8CA8C0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+      .d-modal-field input, .d-modal-field select, .d-modal-field textarea { font-size: 14px; font-weight: 400; color: #0F2244; text-transform: none; letter-spacing: normal; }
+      .address { display: block; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+      .vact { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: #fff; color: #3f5878; cursor: pointer; white-space: nowrap; }
+      .vact:hover { background: #f5f8fc; }
+      .vact--ok { color: #16a34a; border-color: #b7e4c7; }
+      .vact--no { color: #dc2626; border-color: #f3c0bb; }
+      .vact:disabled { opacity: .6; cursor: not-allowed; }
+
+      .vr-prop { background: #f6f8fb; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+      .vr-prop-label { font-size: 11px; color: var(--muted-foreground); }
+      .vr-prop-addr { font-weight: 600; color: #0F2244; margin: 2px 0 10px; }
+      .vr-prop-meta { display: flex; gap: 28px; flex-wrap: wrap; }
+      .vr-prop-meta > div { display: flex; flex-direction: column; gap: 3px; }
+      .vr-prop-meta span { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted-foreground); }
+      .vr-prop-meta b { font-size: 13px; color: #0F2244; }
+
+      .vr-rating { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+      .vr-dot { width: 38px; height: 34px; border: 1px solid var(--border); border-radius: 8px; background: #fff; font-weight: 700; color: #5A7394; cursor: pointer; }
+      .vr-dot.on { background: #E8A23D; border-color: #E8A23D; color: #fff; }
+      .vr-rating-cap { font-size: 12px; color: var(--muted-foreground); margin-left: 4px; }
+
+      .vr-recs { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+      .vr-rec { flex: 1; min-width: 120px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; }
+      .vr-rec.on { border-color: #0F2244; background: #eef2f9; font-weight: 600; }
+
+      .vr-actions { display: flex; gap: 12px; width: 100%; }
+      .vr-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px; border-radius: 8px; font-weight: 700; cursor: pointer; border: 1px solid transparent; }
+      .vr-btn--reject { background: #fdecec; border-color: #f3c0bb; color: #b42318; }
+      .vr-btn--accept { background: #eaf8f0; border-color: #b7e4c7; color: #1a7f47; }
+      .vr-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ---- Completed valuation: read-only report ---- */
+.vr-readonly { display: flex; flex-direction: column; gap: 2px; }
+.vr-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 9px 2px; border-bottom: 1px solid #f1f5f9; font-size: 13px;
+}
+.vr-row span { color: #6b7280; }
+.vr-row b { color: #111827; text-align: right; }
+.vr-row--block { flex-direction: column; align-items: stretch; }
+.vr-row--block p { margin: 6px 0 0; color: #374151; line-height: 1.5; }

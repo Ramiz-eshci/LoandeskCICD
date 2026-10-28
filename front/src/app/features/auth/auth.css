@@ -1,0 +1,290 @@
+/* Shared styling for the sign-in journey (login / MFA / workspace picker). */
+
+/* ===========================================================================
+   Login — split layout
+   =========================================================================== */
+.login-split { display: flex; min-height: 100vh; }
+
+.login-brandpanel {
+  display: none;
+  position: relative;
+  flex-direction: column;
+  width: 55%;
+  padding: 48px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #0a1a38 0%, #0f2244 45%, #163060 100%);
+}
+@media (min-width: 1024px) {
+  .login-brandpanel { display: flex; }
+  .login-brand-sm { display: none; }
+}
+
+.lb-circle { position: absolute; border-radius: 50%; pointer-events: none; }
+.lb-circle--tr { top: -80px; right: -80px; width: 400px; height: 400px; background: #eaab00; opacity: 0.1; }
+.lb-circle--bl { bottom: -60px; left: -60px; width: 300px; height: 300px; background: #eaab00; opacity: 0.08; }
+.lb-circle--centre {
+  top: 50%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #eaab00;
+  opacity: 0.05;
+}
+
+.lb-content { position: relative; z-index: 10; display: flex; flex-direction: column; height: 100%; }
+
+.lb-logo {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 12px 16px;
+  /* background: #fff; */
+  border-radius: 10px;
+}
+.lb-logo img { max-height: 40px; object-fit: contain; }
+.lb-logo-fallback { display: flex; align-items: center; gap: 10px; }
+.lb-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #eaab00 0%, #b98600 100%);
+  color: #0f2244;
+  font-size: 17px;
+  font-weight: 800;
+}
+.lb-logo-text { display: flex; flex-direction: column; line-height: 1.15; }
+.lb-logo-text strong { font-size: 19px; font-weight: 800; color: #0f2244; letter-spacing: -0.01em; }
+.lb-logo-text small { font-size: 8px; font-weight: 600; letter-spacing: 0.04em; color: #5a7394; }
+
+.lb-middle { display: flex; flex: 1 1 auto; flex-direction: column; justify-content: center; }
+
+.lb-badge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #eaab00;
+  background: rgba(234, 171, 0, 0.2);
+  border-radius: 99px;
+}
+.lb-title {
+  margin: 20px 0 0;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.lb-lede {
+  margin: 20px 0 0;
+  max-width: 620px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+}
+.lb-list { display: flex; flex-direction: column; gap: 12px; margin: 32px 0 0; padding: 0; list-style: none; }
+.lb-list li { display: flex; align-items: center; gap: 12px; font-size: 14px; color: rgba(255, 255, 255, 0.75); }
+.lb-dot { flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; background: #eaab00; }
+
+.lb-footer { margin: 0; font-size: 12px; color: rgba(255, 255, 255, 0.35); }
+
+.login-formpanel {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: #fff;
+}
+.login-formpanel .auth-panel { margin: 0; }
+
+/* ===========================================================================
+   Shared auth panel
+   =========================================================================== */
+.auth-panel { width: 100%; max-width: 420px; margin: 0 auto; }
+
+/* MFA + workspace centre themselves on the app background. */
+.auth-centred {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 48px 16px 64px;
+  background: var(--background);
+}
+
+.auth-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+.auth-subtitle { margin: 6px 0 28px; font-size: 16px; color: var(--muted-foreground); }
+
+.auth-input { padding: 12px 14px; font-size: 15px; }
+
+.auth-error {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius);
+}
+
+.auth-link { font-size: 12px; font-weight: 600; color: var(--accent); }
+.auth-link:hover { color: #c79200; }
+
+.auth-password { position: relative; }
+.auth-reveal {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.auth-remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 20px;
+  font-size: 15px;
+  color: var(--foreground);
+  cursor: pointer;
+}
+.auth-remember input { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
+
+.auth-submit { width: 100%; padding: 13px 16px; font-size: 15px; }
+.auth-submit:disabled { background: #8993a5; cursor: not-allowed; }
+
+.auth-rule { margin: 26px 0 20px; border: 0; border-top: 1px solid var(--border); opacity: 1; }
+
+.auth-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.auth-help { margin: 22px 0 0; text-align: center; }
+.auth-help-link { font-size: 14px; color: var(--muted-foreground); }
+.auth-help-link:hover { color: var(--foreground); }
+
+/* ===========================================================================
+   MFA
+   =========================================================================== */
+.mfa-panel { width: 100%; max-width: 540px; margin: 0 auto; }
+.mfa-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: #e4ebf3;
+  color: var(--foreground);
+  font-size: 24px;
+}
+.mfa-card { padding: 28px 26px; }
+.mfa-boxes { display: flex; justify-content: center; gap: 12px; }
+.mfa-box {
+  width: 56px;
+  height: 58px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--foreground);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: 0.15s;
+}
+.mfa-box:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(234, 171, 0, 0.15); }
+.mfa-box.filled { border-color: var(--accent); }
+
+.mfa-expiry { margin: 22px 0 20px; text-align: center; font-size: 15px; color: var(--muted-foreground); }
+.mfa-expiry strong { color: var(--foreground); }
+
+.mfa-links { display: flex; justify-content: space-between; margin-top: 14px; font-size: 14px; }
+.mfa-links a { color: var(--muted-foreground); }
+.mfa-links a:hover { color: var(--foreground); }
+
+.auth-back { margin: 22px 0 0; text-align: center; }
+.auth-back a { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--muted-foreground); }
+.auth-back a:hover { color: var(--foreground); }
+
+/* ===========================================================================
+   Workspace picker
+   =========================================================================== */
+.ws-panel { width: 100%; max-width: 620px; margin: 0 auto; }
+.ws-list { display: flex; flex-direction: column; gap: 14px; }
+.ws-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.ws-item:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(15, 34, 68, 0.06); }
+.ws-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #e4ebf3;
+  color: var(--foreground);
+  font-size: 19px;
+}
+.ws-body { display: flex; flex: 1 1 auto; flex-direction: column; gap: 3px; min-width: 0; }
+.ws-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ws-branch { font-size: 17px; font-weight: 700; color: var(--foreground); }
+.ws-role {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 99px;
+}
+.ws-scope { font-size: 14px; color: var(--muted-foreground); }
+.ws-last { font-size: 13px; color: #94a3b8; }
+.ws-chevron { flex-shrink: 0; color: #94a3b8; font-size: 15px; }
+
+/* MFA — multi-channel delivery + resend states */
+.mfa-and { font-size: 12px; color: #94a3b8; }
+.mfa-links a.disabled { pointer-events: none; opacity: 0.5; cursor: default; }
+
+/* ===========================================================================
+   Forgot / reset password
+   =========================================================================== */
+.fp-panel { max-width: 480px; }
+.fp-note { margin: 0 0 18px; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); text-align: center; }
+.fp-dev { margin: 0 0 16px; font-size: 12px; word-break: break-all; text-align: center; }
+.fp-icon-ok { background: #dcfce7; color: #15803d; }
+.fp-icon-bad { background: #fef2f2; color: #dc2626; }
+a.auth-submit { display: inline-flex; justify-content: center; text-decoration: none; }

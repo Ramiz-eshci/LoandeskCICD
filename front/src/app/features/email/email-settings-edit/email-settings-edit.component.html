@@ -1,0 +1,149 @@
+<ui-page-header [title]="detail()?.name || 'Email Settings'" [subtitle]="detail() ? detail()!.module_name + ' · ' + detail()!.description : ''">
+  <button uiButton variant="ghost" type="button" (click)="back()"><i class="bi bi-arrow-left"></i> Back</button>
+</ui-page-header>
+
+@if (error()) { <ui-card class="mb-3"><p class="ee-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+@if (loading()) { <ui-card><p class="ee-muted">Loading…</p></ui-card> }
+
+@if (detail(); as d) {
+  @if (opts(); as o) {
+  <div class="ee-grid">
+    <div class="ee-main">
+      <!-- 1. Recipients -->
+      <ui-card title="Who gets this e-mail">
+        <div class="ee-to">
+          <div><span class="ee-label">Sent to</span><div>{{ d.to }}</div></div>
+          <div><span class="ee-label">System CC</span><div>{{ d.default_cc }}</div></div>
+        </div>
+
+        @if (!d.cc_from_user && d.default_cc !== 'None') {
+          <label class="ee-check ee-keep">
+            <input type="checkbox" [checked]="keepDefault()" [disabled]="!canEdit()" (change)="setKeep($any($event.target).checked)" />
+            <span>Keep the system CC <span class="ee-muted">({{ d.default_cc }})</span></span>
+          </label>
+        } @else if (d.cc_from_user) {
+          <p class="ee-note"><i class="bi bi-info-circle"></i> The system CC is typed or picked in the send popup, so it is always kept. People below are added on top.</p>
+        }
+
+        <div class="ee-pick">
+          <div class="ee-col">
+            <div class="ee-label">On the case (picked automatically)</div>
+            @for (x of o.dynamic; track x.key) {
+              <label class="ee-check">
+                <input type="checkbox" [checked]="dynKeys().has(x.key)" [disabled]="!canEdit()" (change)="toggleDyn(x.key)" />
+                <span>{{ x.label }}</span>
+              </label>
+            }
+          </div>
+
+          <div class="ee-col">
+            <div class="ee-label">Roles <span class="ee-muted">(everyone active in the role)</span></div>
+            <div class="ee-scroll">
+              @for (r of o.roles; track r.role_id) {
+                <label class="ee-check">
+                  <input type="checkbox" [checked]="roleIds().has(r.role_id)" [disabled]="!canEdit()" (change)="toggleRole(r.role_id)" />
+                  <span>{{ r.role_name }}</span>
+                </label>
+              } @empty { <p class="ee-muted">No roles.</p> }
+            </div>
+          </div>
+
+          <div class="ee-col">
+            <div class="ee-label">Individual users</div>
+            <input class="form-input ee-search" type="search" placeholder="Search name or e-mail…" [ngModel]="userSearch()" (ngModelChange)="userSearch.set($event)" />
+            <div class="ee-scroll">
+              @for (u of filteredUsers(); track u.user_id) {
+                <label class="ee-check">
+                  <input type="checkbox" [checked]="userIds().has(u.user_id)" [disabled]="!canEdit()" (change)="toggleUser(u.user_id)" />
+                  <span>{{ u.full_name || u.email }} <span class="ee-muted">{{ u.email }}</span></span>
+                </label>
+              } @empty { <p class="ee-muted">No users match.</p> }
+            </div>
+          </div>
+        </div>
+        @if (errors()['user_ids'] || errors()['role_ids'] || errors()['dynamic_keys']) {
+          <p class="ee-field-error">{{ errors()['user_ids'] || errors()['role_ids'] || errors()['dynamic_keys'] }}</p>
+        }
+      </ui-card>
+
+      <!-- 2. Wording -->
+      <ui-card title="Wording" class="mt-3">
+        <p class="ee-note"><i class="bi bi-info-circle"></i>
+          This is the text sent today. Change any line you like. Plain placeholders are filled from the case;
+          gold ones are ready-made blocks (tables, lists) - keep them where they should appear.
+          "Reset to default" goes back to the system text.
+        </p>
+
+        <label class="ee-label" for="ee-subject">Subject</label>
+        <input #subjectInput id="ee-subject" class="form-input" [class.is-invalid]="!!errors()['subject_template']" maxlength="500"
+          placeholder="Subject" [disabled]="!canEdit()"
+          [(ngModel)]="subject" (ngModelChange)="dirty.set(true)" (focus)="onSubjectFocus()" />
+        @if (errors()['subject_template']) { <p class="ee-field-error">{{ errors()['subject_template'] }}</p> }
+
+        <div class="ee-label mt-3">Email text</div>
+        <div class="ee-toolbar">
+          <button type="button" class="ee-tb" title="Bold" (mousedown)="$event.preventDefault()" (click)="format('bold')" [disabled]="!canEdit()"><i class="bi bi-type-bold"></i></button>
+          <button type="button" class="ee-tb" title="Italic" (mousedown)="$event.preventDefault()" (click)="format('italic')" [disabled]="!canEdit()"><i class="bi bi-type-italic"></i></button>
+          <button type="button" class="ee-tb" title="Underline" (mousedown)="$event.preventDefault()" (click)="format('underline')" [disabled]="!canEdit()"><i class="bi bi-type-underline"></i></button>
+          <button type="button" class="ee-tb" title="Bulleted list" (mousedown)="$event.preventDefault()" (click)="format('insertUnorderedList')" [disabled]="!canEdit()"><i class="bi bi-list-ul"></i></button>
+          <button type="button" class="ee-tb" title="Numbered list" (mousedown)="$event.preventDefault()" (click)="format('insertOrderedList')" [disabled]="!canEdit()"><i class="bi bi-list-ol"></i></button>
+          <button type="button" class="ee-tb" title="Clear formatting" (mousedown)="$event.preventDefault()" (click)="format('removeFormat')" [disabled]="!canEdit()"><i class="bi bi-eraser"></i></button>
+          <span class="ee-tb-gap"></span>
+          <button uiButton variant="ghost" size="sm" type="button" (click)="resetToDefault()" [disabled]="!canEdit() || !hasCustomText()"><i class="bi bi-arrow-counterclockwise"></i> Reset to default</button>
+        </div>
+        <div #editor class="ee-editor" [class.is-invalid]="!!errors()['body_template']" [attr.contenteditable]="canEdit()"
+          data-placeholder="Email text"
+          (input)="onEditorInput()" (keyup)="rememberSelection()" (mouseup)="rememberSelection()" (blur)="rememberSelection()"></div>
+        @if (errors()['body_template']) { <p class="ee-field-error">{{ errors()['body_template'] }}</p> }
+
+        <div class="ee-label mt-3">Placeholders <span class="ee-muted">(click to insert into the subject or text, wherever the cursor was)</span></div>
+        <div class="ee-chips">
+          @for (p of placeholders(); track p.name) {
+            <button type="button" class="ee-chip" [class.block]="p.block" [title]="p.help" (mousedown)="$event.preventDefault()" (click)="insertPlaceholder(p.name)" [disabled]="!canEdit()">{{ tok(p.name) }}</button>
+          }
+        </div>
+      </ui-card>
+
+      <!-- 3. Extra files -->
+      <ui-card title="Extra attachments" class="mt-3">
+        <p class="ee-note"><i class="bi bi-info-circle"></i> Sent with every e-mail of this type, after the system files. PDF, Word, Excel, CSV, TXT or image · 10 MB per file · 20 MB in total.</p>
+        <ui-file-upload label="Add File" emptyText="No extra files." accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+          [items]="fileItems()" [busy]="uploading()" busyText="Uploading…" [disabled]="!canEdit()" [readonly]="!canEdit()" [removable]="canEdit()"
+          (fileChange)="onFilePicked($event)" (itemView)="viewFile($event)" (itemRemove)="removeFile($event)" />
+      </ui-card>
+    </div>
+
+    <!-- Summary -->
+    <aside class="ee-side">
+      <ui-card title="This e-mail will copy in">
+        @for (c of ccSummary(); track c) { <div class="ee-sum"><i class="bi bi-person-check"></i> {{ c }}</div> }
+        @empty { <p class="ee-muted">No one (To only).</p> }
+        <div class="ee-sum-text">
+          <span class="ee-label">Wording</span>
+          @if (hasCustomText()) { <ui-tag tone="warning">Custom</ui-tag> } @else { <ui-tag tone="neutral">Default</ui-tag> }
+        </div>
+        <p class="ee-muted ee-small">Inactive users are skipped. Nobody is copied twice, and nobody in To is copied in.</p>
+        <div class="ee-actions">
+          <button uiButton variant="ghost" type="button" (click)="showPreview()"><i class="bi bi-eye"></i> Preview</button>
+          @if (canEdit()) {
+            <button uiButton variant="accent" type="button" (click)="save()" [disabled]="saving() || !dirty()">{{ saving() ? 'Saving…' : 'Save' }}</button>
+          }
+        </div>
+      </ui-card>
+    </aside>
+  </div>
+  }
+}
+
+@if (preview(); as p) {
+  <ui-modal title="Preview" subtitle="Sample values are used for the placeholders." size="lg" (closed)="preview.set(null)">
+    @if (p.unknown.length) { <p class="ee-field-error">Unknown placeholder(s): {{ p.unknown.join(', ') }}</p> }
+    <div class="ee-label">Subject</div>
+    <div class="ee-prev-subject">{{ p.subject }}</div>
+    <div class="ee-label mt-3">Email</div>
+    <iframe class="ee-prev-frame" sandbox="" [srcdoc]="previewHtml()" title="Email preview"></iframe>
+    <div modalFooter class="ee-modal-footer">
+      <button uiButton variant="ghost" type="button" (click)="preview.set(null)">Close</button>
+    </div>
+  </ui-modal>
+}

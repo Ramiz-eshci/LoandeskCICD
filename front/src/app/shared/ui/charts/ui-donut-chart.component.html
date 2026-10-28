@@ -1,0 +1,33 @@
+    <div class="ui-donut">
+      <div class="ui-donut-wrap" [style.height.px]="height()">
+        <apx-chart
+          class="ui-donut-chart"
+          [series]="apexSeries()"
+          [chart]="chart()"
+          [labels]="labels()"
+          [colors]="colors()"
+          [plotOptions]="plotOptions()"
+          [dataLabels]="dataLabels"
+          [stroke]="stroke"
+          [legend]="legend"
+          [tooltip]="tooltip()"
+        />
+        @if (centreValue() || centreLabel()) {
+          <div class="ui-donut-centre">
+            <strong>{{ centreValue() }}</strong>
+            @if (centreLabel()) { <span>{{ centreLabel() }}</span> }
+          </div>
+        }
+      </div>
+
+      @if (showLegend()) {
+        <ul class="ui-donut-legend">
+          @for (s of slices(); track s.label) {
+            <li>
+              <span class="dot" [style.background]="s.color"></span>
+              <span class="name">{{ s.label }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>

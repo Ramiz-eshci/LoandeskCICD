@@ -1,0 +1,22 @@
+    <div class="modal-overlay" (click)="onOverlay($event)">
+      <div class="modal-box modal-box--{{ size() }}" (click)="$event.stopPropagation()">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+          <div>
+            <h2 class="ui-modal-title">{{ title() }}</h2>
+            @if (subtitle()) {
+              <div class="page-subtitle">{{ subtitle() }}</div>
+            }
+          </div>
+          <button type="button" class="ui-modal-x" (click)="closed.emit()" aria-label="Close">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <ng-content />
+
+        <div class="ui-modal-footer">
+          <ng-content select="[modalFooter]" />
+        </div>
+      </div>
+    </div>
+  

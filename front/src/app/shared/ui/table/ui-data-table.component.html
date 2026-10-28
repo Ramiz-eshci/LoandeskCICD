@@ -1,0 +1,48 @@
+    <div class="table-responsive">
+      <table class="ui-fit" uiFitTip [style.min-width]="minWidth()">
+        <thead>
+          <tr>
+            @for (col of columns(); track col.key; let ci = $index) {
+              <th [style.width]="colWidth(ci, col)" [style.text-align]="col.align ?? 'left'">{{ col.header }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of viewRows(); track $index) {
+            <tr [class.ui-row-click]="rowClickable()" [ngClass]="rowClassFor(row)" (click)="rowClick.emit(row)">
+              @for (col of columns(); track col.key) {
+                <td
+                  [style.text-align]="col.align ?? 'left'"
+                  [class.font-mono]="col.mono"
+                  [class.tabular-nums]="col.mono"
+                  [class.fw-semibold]="col.bold"
+                >
+                  @if (templateFor(col.key); as tpl) {
+                    <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row, index: $index }" />
+                  } @else {
+                    {{ text(col, row) }}
+                  }
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr>
+              <td [attr.colspan]="columns().length" class="text-center text-muted-fg py-4">
+                {{ emptyText() }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (paginate() && (total() > pageSize() || (alwaysPager() && total() > 0))) {
+      <ui-pagination
+        [summary]="summary()"
+        [hasPrevious]="page() > 1"
+        [hasNext]="page() < totalPages()"
+        (previous)="prev()"
+        (next)="next()"
+      />
+    }
+  

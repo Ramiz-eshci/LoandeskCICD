@@ -1,0 +1,14 @@
+    <ul class="bar-list" [class.bar-list--click]="clickable()">
+      @for (row of rows(); track row.label) {
+        <li [attr.role]="clickable() ? 'button' : null" [attr.tabindex]="clickable() ? 0 : null"
+            (click)="clickable() && itemClick.emit(row.label)" (keyup.enter)="clickable() && itemClick.emit(row.label)">
+          <div class="bar-head">
+            <span class="bar-label" [title]="row.label">{{ row.label }}</span>
+            <span class="bar-value font-mono tabular-nums">{{ row.display }}</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-fill" [style.width.%]="row.pct" [style.background]="row.color"></div>
+          </div>
+        </li>
+      }
+    </ul>

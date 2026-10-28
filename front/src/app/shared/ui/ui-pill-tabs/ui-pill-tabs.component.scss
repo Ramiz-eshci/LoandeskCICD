@@ -1,0 +1,22 @@
+      :host { display: block; }
+      .pills { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted-foreground);
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .pill:hover { color: var(--foreground); border-color: var(--muted-foreground); }
+      .pill.active {
+        background: var(--accent);
+        color: var(--accent-foreground);
+        border-color: var(--accent);
+      }

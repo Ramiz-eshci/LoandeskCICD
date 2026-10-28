@@ -1,0 +1,19 @@
+Claude outputs/*
+docs/*
+_to_delete/*
+api/assets/offer/README.txt
+
+# local backups (permission merge etc.)
+_backups/
+front/_to_delete/*
+/website/package-lock.json
+
+# Pen-test 24-10-2026: never commit secrets or customer documents
+**/.env
+**/.env.live
+**/.env.*.local
+!**/.env.example
+api/uploads/enquiry_offers/
+*.pem
+*.pfx
+*.key

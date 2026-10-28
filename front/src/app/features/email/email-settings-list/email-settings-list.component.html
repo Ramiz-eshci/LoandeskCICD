@@ -1,0 +1,32 @@
+<ui-page-header title="Email Settings" [subtitle]="subtitle()" />
+
+@if (error()) { <ui-card class="mb-3"><p class="es-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+<ui-tab-filters class="mb-3" [tabs]="tabs()" [(active)]="activeTab" />
+
+<ui-card bodyClass="">
+  <ui-data-table [columns]="columns" [rows]="filtered()" [rowClickable]="true" (rowClick)="open($any($event))"
+    [emptyText]="loading() ? 'Loading…' : 'No e-mails found.'">
+    <ng-template uiCell="name" let-row>
+      <div class="es-name">{{ row.name }}</div>
+      <div class="es-desc">{{ row.description }}</div>
+    </ng-template>
+    <ng-template uiCell="cc" let-row>
+      <div class="es-cc">
+        @if (systemCc(row)) { <span class="es-sys">{{ systemCc(row) }}</span> }
+        @for (c of row.extra_cc; track c) { <ui-tag tone="info">{{ c }}</ui-tag> }
+        @if (!systemCc(row) && !row.extra_cc.length) { <span class="es-none">No one</span> }
+      </div>
+    </ng-template>
+    <ng-template uiCell="text" let-row>
+      @if (row.custom_subject || row.custom_body) { <ui-tag tone="warning">Custom</ui-tag> }
+      @else { <ui-tag tone="neutral">Default</ui-tag> }
+    </ng-template>
+    <ng-template uiCell="extra_files" let-row>
+      @if (row.extra_files) { <span class="es-files"><i class="bi bi-paperclip"></i> {{ row.extra_files }}</span> } @else { – }
+    </ng-template>
+    <ng-template uiCell="actions" let-row>
+      <button uiButton variant="ghost" size="sm" type="button" (click)="$event.stopPropagation(); open(row)"><i class="bi bi-pencil"></i> Edit</button>
+    </ng-template>
+  </ui-data-table>
+</ui-card>

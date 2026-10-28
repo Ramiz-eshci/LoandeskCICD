@@ -1,0 +1,15 @@
+    <div class="auth-brand">
+      @if (!failed) {
+        <img src="logo-navy.png" alt="LoanDesk — Loan Management Platform" (error)="failed = true" />
+      }
+      @if (failed) {
+        <span class="auth-brand-fallback">
+          <span class="auth-brand-mark">LD</span>
+          <span class="auth-brand-text">
+            <strong>LoanDesk</strong>
+            <small>Loan Management Platform</small>
+          </span>
+        </span>
+      }
+    </div>
+  

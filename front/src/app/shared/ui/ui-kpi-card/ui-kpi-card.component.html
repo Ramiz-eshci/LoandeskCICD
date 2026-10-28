@@ -1,0 +1,33 @@
+    <div class="kpi-card h-100" [class.kpi-card--compact]="compact()">
+      <div class="kpi-head">
+        <span class="kpi-label" [class.kpi-label--plain]="labelStyle() === 'plain'">
+          @if (icon() && iconPlacement() === 'inline') {
+            <i class="bi kpi-inline-icon" [class]="icon()"></i>
+          }
+          {{ label() }}
+        </span>
+        @if (icon() && iconPlacement() === 'corner') {
+          <span class="kpi-icon" [class.kpi-icon--bare]="bareIcon()"><i class="bi" [class]="icon()"></i></span>
+        }
+      </div>
+
+      <div
+        class="kpi-value"
+        [class.font-mono]="mono()"
+        [class.tabular-nums]="mono()"
+        [class]="'kpi-value--' + tone()"
+        [style.font-size.px]="valueSize()"
+        [title]="value()"
+      >{{ value() }}</div>
+
+      @if (caption()) {
+        <div class="kpi-caption">{{ caption() }}</div>
+      }
+      @if (delta()) {
+        <div class="kpi-delta" [class.kpi-delta--down]="deltaDown()">
+          <i class="bi" [class]="deltaDown() ? 'bi-graph-down-arrow' : 'bi-graph-up-arrow'"></i>
+          <span>{{ delta() }}</span>
+        </div>
+      }
+    </div>
+  

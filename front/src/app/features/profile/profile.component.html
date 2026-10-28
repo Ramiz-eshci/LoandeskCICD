@@ -1,0 +1,84 @@
+    <ui-page-header title="Profile & Preferences" subtitle="Your account details, password and profile picture" />
+
+    @if (error()) { <ui-card class="mb-3"><p class="pf-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+    <ui-card title="Profile Picture" class="mb-3">
+      <div class="pf-avatar-row">
+        <ui-avatar [name]="session.userName()" [src]="session.avatar()" tone="navy" [size]="88" />
+        <div class="pf-avatar-actions">
+          <p class="pf-hint">Shown in the header and sidebar instead of your initials. PNG, JPG or WEBP - it is cropped to a square.</p>
+          <div class="pf-btns">
+            <label uiButton variant="accent" class="pf-upload" [class.disabled]="avatarSaving()">
+              <i class="bi bi-upload"></i> {{ avatarSaving() ? 'Saving…' : (session.avatar() ? 'Change picture' : 'Upload picture') }}
+              <input type="file" accept="image/png,image/jpeg,image/webp" hidden [disabled]="avatarSaving()" (change)="onFile($event)" />
+            </label>
+            @if (session.avatar()) {
+              <button uiButton variant="ghost" type="button" [disabled]="avatarSaving()" (click)="removeAvatar()"><i class="bi bi-trash"></i> Remove</button>
+            }
+          </div>
+        </div>
+      </div>
+    </ui-card>
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <ui-card title="Personal Details" class="mb-3">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Full name *" [error]="err('full_name')">
+              <input class="form-input" formControlName="full_name" placeholder="Full name" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Email" hint="Ask a System Administrator to change your sign-in email">
+              <input class="form-input" [value]="profile()?.email ?? ''" disabled />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Phone" [error]="err('phone')">
+              <input class="form-input" formControlName="phone" placeholder="+44 7123 456789" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Branch">
+              <input class="form-input" [value]="profile()?.branchName || '—'" disabled />
+            </ui-form-field>
+          </div>
+          <div class="col-12">
+            <ui-form-field label="Roles">
+              <div class="pf-roles">
+                @for (r of profile()?.roles ?? []; track r) { <span class="pf-role">{{ r }}</span> } @empty { <span class="pf-hint">—</span> }
+              </div>
+            </ui-form-field>
+          </div>
+        </div>
+        <div class="pf-actions">
+          <button uiButton variant="accent" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save Details' }}</button>
+        </div>
+      </ui-card>
+    </form>
+
+    <form [formGroup]="pwForm" (ngSubmit)="changePassword()" novalidate>
+      <ui-card title="Change Password">
+        <p class="pf-hint">For security, enter your current password first.</p>
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <ui-form-field label="Current password *" [error]="pwErr('currentPassword')">
+              <input class="form-input" type="password" formControlName="currentPassword" autocomplete="current-password" placeholder="Enter your current password" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-4">
+            <ui-form-field label="New password *" [error]="pwErr('password')" [hint]="passwordHint">
+              <input class="form-input" type="password" formControlName="password" autocomplete="new-password" placeholder="e.g. Loan@2026" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-4">
+            <ui-form-field label="Confirm new password *" [error]="pwErr('confirmPassword')">
+              <input class="form-input" type="password" formControlName="confirmPassword" autocomplete="new-password" placeholder="Re-enter the new password" />
+            </ui-form-field>
+          </div>
+        </div>
+        <div class="pf-actions">
+          <button uiButton variant="primary" type="submit" [disabled]="pwSaving()"><i class="bi bi-key"></i> {{ pwSaving() ? 'Changing…' : 'Change Password' }}</button>
+        </div>
+      </ui-card>
+    </form>

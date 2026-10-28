@@ -1,0 +1,9 @@
+    <div class="ui-empty">
+      <i class="bi" [class]="icon()"></i>
+      <div class="ui-empty-title">{{ title() }}</div>
+      @if (message()) {
+        <p class="ui-empty-msg">{{ message() }}</p>
+      }
+      <ng-content />
+    </div>
+  

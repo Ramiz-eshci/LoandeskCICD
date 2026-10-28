@@ -1,0 +1,95 @@
+:host { display: block; }
+
+/* Header: title left; generated / updating / export on the right. */
+.report-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.head-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.generated { font-size: 12px; color: var(--muted-foreground); }
+.updating { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); }
+.updating--error { color: #b42318; }
+.spinner { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #d5deea; border-top-color: #0f2244; animation: rpt-spin 0.8s linear infinite; }
+@keyframes rpt-spin { to { transform: rotate(360deg); } }
+
+.state { padding: 48px 24px; text-align: center; color: var(--muted-foreground); font-size: 14px; }
+.state--error { color: #b42318; }
+.empty { margin: 0; padding: 28px 4px; text-align: center; font-size: 13px; color: var(--muted-foreground); }
+
+/* ---- Filter bar: a single compact row ---- */
+.fbar {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 10px;
+  padding: 10px 12px; margin: 10px 0 12px;
+  border: 1px solid #e7edf5; border-radius: 10px; background: #fff;
+}
+.f { display: flex; flex-direction: column; gap: 3px; margin: 0; }
+.f > span { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); }
+.f .form-input, .f .form-select { height: 34px; padding-top: 4px; padding-bottom: 4px; font-size: 13px; min-width: 0; width: 150px; }
+.f--period .form-select { width: 150px; }
+.f--date .form-input { width: 145px; }
+.f--grow { flex: 1 1 180px; }
+.f--grow .form-input { width: 100%; }
+.f-actions { display: flex; gap: 6px; padding-bottom: 1px; }
+
+/* ---- Headline figures: compact strip ---- */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.stat {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding: 10px 12px; border: 1px solid #e7edf5; border-left: 3px solid #a8bed6; border-radius: 10px; background: #fff;
+}
+.stat-label { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-label .bi { font-size: 12px; }
+.stat-value { font-family: 'DM Mono', ui-monospace, monospace; font-size: 20px; line-height: 1.2; color: #0f2244; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-cap { font-size: 11.5px; color: var(--muted-foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat--positive { border-left-color: #2e8b57; } .stat--positive .stat-value { color: #2e8b57; }
+.stat--warning { border-left-color: #eaab00; }
+.stat--danger { border-left-color: #d64545; } .stat--danger .stat-value { color: #c0392b; }
+
+@media (max-width: 640px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Keep the old report visible while refreshing - no layout jump. */
+.report-body { transition: opacity 0.15s; }
+.report-body--busy { opacity: 0.55; pointer-events: none; }
+
+/* ---- Cards ---- */
+.card-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin: -4px 0 8px; min-height: 0; }
+.card-sub { margin: 0; font-size: 12px; color: var(--muted-foreground); flex: 1 1 200px; }
+.drill-hint { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: #8a9bb2; }
+.card-toggle { margin-left: auto; }
+.card-toggle ::ng-deep .seg { gap: 4px; }
+.card-toggle ::ng-deep .seg-btn { padding: 3px 9px; font-size: 11.5px; }
+.chart-box--fixed { min-height: 250px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 6px 4px 0; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); }
+.legend-axis { font-size: 11px; opacity: .75; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+/* Donut: chart left, ONE legend (with values) right. */
+.donut-row { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: center; gap: 16px; }
+.donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.donut-legend li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 48px; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 6px; border-radius: 6px; }
+.donut-legend li.clickable { cursor: pointer; }
+.donut-legend li.clickable:hover { background: #f4f7fb; }
+.dl-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--foreground); }
+.donut-legend b { font-family: 'DM Mono', ui-monospace, monospace; font-weight: 600; color: #0f2244; }
+.donut-legend small { text-align: right; color: var(--muted-foreground); }
+@media (max-width: 640px) { .donut-row { grid-template-columns: 1fr; justify-items: center; } }
+
+/* Funnel */
+.funnel { display: grid; gap: 8px; padding: 4px 0; }
+.fn-row { display: grid; grid-template-columns: 120px minmax(0, 1fr) 52px; align-items: center; gap: 10px; }
+.fn-row.clickable { cursor: pointer; }
+.fn-row.clickable:hover .fn-bar { filter: brightness(1.08); }
+.fn-label { font-size: 12.5px; font-weight: 600; color: #0f2244; }
+.fn-track { display: flex; justify-content: center; }
+.fn-bar { height: 30px; border-radius: 6px; background: linear-gradient(90deg, #1e3a5f, #3f6ea5); display: flex; align-items: center; justify-content: center; min-width: 46px; transition: width 0.3s; }
+.fn-bar span { color: #fff; font-family: 'DM Mono', ui-monospace, monospace; font-size: 12.5px; font-weight: 600; padding: 0 8px; white-space: nowrap; }
+.fn-pct { text-align: right; font-size: 12px; color: var(--muted-foreground); font-family: 'DM Mono', ui-monospace, monospace; }
+
+/* Drill-down bar above the records */
+.drill-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; background: #fff8e1; border-bottom: 1px solid #f3e2a9; font-size: 13px; color: #0f2244; }
+.drill-bar button { margin-left: auto; }
+#report-records { scroll-margin-top: 80px; }
+
+/* Client 23-10-2026: cards in one row share the same height - no gap under the shorter one. */
+.chart-col { display: flex; }
+.chart-col > ui-card { flex: 1 1 auto; width: 100%; display: flex; flex-direction: column; }
+.chart-col > ui-card ::ng-deep > .card { flex: 1 1 auto; height: 100%; }

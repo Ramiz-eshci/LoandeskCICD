@@ -1,0 +1,70 @@
+    <nav class="sidebar">
+      <div class="sb-brand">
+        <div class="sb-logo">
+          @if (!logoFailed) {
+            <img src="logo.png" alt="LoanDesk — Loan Management Platform" (error)="logoFailed = true" />
+          }
+          @if (logoFailed) {
+            <span class="sb-logo-fallback">
+              <span class="sb-logo-mark">LD</span>
+              <span class="sb-logo-text">
+                <strong>LoanDesk</strong>
+                <small>Loan Management Platform</small>
+              </span>
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="sb-nav">
+        @for (item of visibleNav(); track item.label) {
+          @if (item.dividerBefore) {
+            <hr class="sb-divider" />
+          }
+
+          @if (item.children?.length) {
+            <button class="nav-item nav-group" type="button" (click)="toggle(item.label)">
+              <i class="bi" [class]="item.icon"></i>
+              <span>{{ item.label }}</span>
+              <i class="bi sb-caret" [class.bi-chevron-down]="isOpen(item.label)" [class.bi-chevron-right]="!isOpen(item.label)"></i>
+            </button>
+            @if (isOpen(item.label)) {
+              <div class="sb-subnav">
+                @for (child of item.children; track child.route) {
+                  <a
+                    class="nav-item nav-sub"
+                    [routerLink]="child.route"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: false }"
+                  >
+                    <i class="bi" [class]="child.icon"></i>
+                    <span>{{ child.label }}</span>
+                  </a>
+                }
+              </div>
+            }
+          } @else {
+            <a
+              class="nav-item"
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: false }"
+            >
+              <i class="bi" [class]="item.icon"></i>
+              <span>{{ item.label }}</span>
+            </a>
+          }
+        }
+      </div>
+
+      <div class="sb-user">
+        <div class="sb-user-card">
+          <ui-avatar [name]="session.userName()" [src]="session.avatar()" tone="gold" [size]="34" />
+          <div class="sb-user-meta">
+            <div class="sb-user-name">{{ session.userName() }}</div>
+            <div class="sb-user-role">{{ session.roleName() }}</div>
+          </div>
+        </div>
+      </div>
+    </nav>
+  

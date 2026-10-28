@@ -1,0 +1,49 @@
+    <div class="br-head">
+      <ui-page-header title="Brokers" [subtitle]="subtitle()" />
+      @if (canAdd()) {
+        <button uiButton variant="accent" type="button" (click)="create()"><i class="bi bi-plus-lg"></i> Add Broker</button>
+      }
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-file-earmark-text" label="Enquiries Introduced"
+          [value]="totals()?.enquiries ?? 0" [caption]="(totals()?.brokers ?? 0) + ' brokers'" tone="default" [valueSize]="30" />
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-briefcase" label="Applications"
+          [value]="totals()?.applications ?? 0" caption="Enquiries converted" tone="default" [valueSize]="30" />
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-check2-circle" label="Completions"
+          [value]="totals()?.completions ?? 0" [caption]="'Conversion ' + kpiConversion()" tone="accent" [valueSize]="30" />
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-bar-chart" label="Portfolio Introduced"
+          [value]="kpiPortfolio()" caption="Gross of completed loans" tone="default" [valueSize]="30" />
+      </div>
+    </div>
+
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+      <ui-search-input variant="field" width="380px" placeholder="Search brokers…" [(value)]="query" />
+      <label class="br-sort">Sort by
+        <select class="form-select" [value]="sortKey()" (change)="setSort($any($event.target).value)">
+          @for (o of sortOptions; track o.key) { <option [value]="o.key">{{ o.label }}</option> }
+        </select>
+      </label>
+    </div>
+
+    <ui-card bodyClass="">
+      <ui-data-table [columns]="columns" [rows]="rows()" [rowClickable]="true" (rowClick)="open($event)"
+        [emptyText]="loading() ? 'Loading brokers…' : 'No brokers match this search.'">
+        <ng-template uiCell="name" let-row>
+          <span class="br-name">{{ row.name }}</span>
+          @if (!row.active) { <span class="br-inactive">Inactive</span> }
+        </ng-template>
+        <ng-template uiCell="actions" let-row>
+          @if (canEdit()) {
+            <button uiButton variant="ghost" size="sm" type="button" (click)="$event.stopPropagation(); edit(row)">Edit</button>
+          }
+        </ng-template>
+      </ui-data-table>
+    </ui-card>

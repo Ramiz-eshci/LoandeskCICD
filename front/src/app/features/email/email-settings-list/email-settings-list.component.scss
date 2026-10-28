@@ -1,0 +1,7 @@
+.es-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+.es-name { font-weight: 600; }
+.es-desc { font-size: 12px; color: var(--muted-foreground, #5a7394); margin-top: 2px; max-width: 46ch; }
+.es-cc { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.es-sys { font-size: 13px; }
+.es-none { font-size: 13px; color: var(--muted-foreground, #5a7394); }
+.es-files { display: inline-flex; align-items: center; gap: 4px; }

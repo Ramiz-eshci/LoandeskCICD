@@ -1,0 +1,1252 @@
+    <div class="uw-wrap">
+    @if (loading()) { <p class="uw-muted">Loading case…</p> }
+    @else if (!c()) { <p class="uw-muted">{{ error() || 'Case not found.' }}</p> }
+    @else if (c(); as cas) {
+      <div class="uw-crumb">
+        <a href="javascript:void(0)" (click)="back()"><i class="bi bi-arrow-left"></i> Underwriting</a>
+        &nbsp;&gt;&nbsp; <strong class="font-mono">{{ cas.application_ref }}</strong>
+        <span class="uw-badge" [class]="'uw-badge ' + toneClass(cas.status)">{{ cas.status }}</span>
+        <span class="uw-spacer"></span>
+        <button class="uw-btn ghost" type="button" (click)="toggleNotes()" title="Open deal notes"><i class="bi bi-journal-text"></i> Deal Notes</button>
+        @if (canSendRequirement()) { <button class="uw-btn ghost" type="button" [disabled]="sendingReq()" (click)="sendRequirement()" title="E-mail the requirements pack to the broker or applicant(s)"><i class="bi bi-send"></i> {{ sendingReq() ? 'Sending…' : 'Send Requirement' }}</button> }
+        @if (isOnHold()) { <button class="uw-btn yellow" type="button" [disabled]="acting()" (click)="resumeCase(cas)"><i class="bi bi-play-fill"></i> Resume</button> }
+        @else if (canHold()) { <button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="holdCase(cas)"><i class="bi bi-pause-circle"></i> On Hold</button> }
+@if (canReturnAnyStep()) { <button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="openReturn()"><i class="bi bi-arrow-90deg-left"></i> Return to BDM</button> }
+@if (canReopen()) { <button class="uw-btn yellow" type="button" [disabled]="acting()" (click)="reopenCase(cas)"><i class="bi bi-arrow-counterclockwise"></i> Reopen Case</button> }
+@if (canRequestInfoUw()) { <button class="uw-btn ghost" type="button" (click)="openQuery()"><i class="bi bi-info-circle"></i> Request Info</button> }
+        @if (canViewApp()) {
+        <button class="uw-btn ghost" type="button" (click)="viewApp(cas)">View Application →</button>
+        }
+        @if (canGoPortfolio(cas)) {
+          <button class="uw-btn yellow" type="button" (click)="goPortfolio(cas)"><i class="bi bi-briefcase"></i> Go to Portfolio{{ cas.portfolio_loan_number ? ' (' + cas.portfolio_loan_number + ')' : '' }} →</button>
+        }
+      </div>
+
+      <div class="uw-head">
+        <div>
+          <h1>{{ applicant(cas) }}</h1>
+          <div class="uw-sub font-mono">{{ cas.application_ref }} · {{ cas.product_name || 'Loan' }}</div>
+        </div>
+        <div class="uw-metrics">
+          <!-- Client 15-10-2026: Gross Loan + actual Net; the basis chosen on the enquiry first. -->
+          @for (m of loanAmounts(cas); track m.label) {
+            <div class="m"><span>{{ m.label }}</span><b>{{ money(m.value) }}</b></div>
+          }
+          <!-- Client 19-10-2026: header shows Total LTV (LTV stays in the Case Summary). -->
+          <div class="m"><span>TOTAL LTV</span><b>{{ cas.summary_total_ltv_pct != null ? cas.summary_total_ltv_pct + '%' : '—' }}</b></div>
+          <div class="m"><span>TERM</span><b>{{ cas.term_months ? cas.term_months + 'm' : '—' }}</b></div>
+          <div class="m"><span>BDM</span><b>{{ cas.bdm_name || '—' }}</b></div>
+          <div class="m"><span>UNDERWRITER</span><b>{{ cas.underwriter_name || '—' }}</b></div>
+          @if (canEditLoan(cas)) {
+            <button class="uw-btn ghost uw-loan-edit" type="button" (click)="openLoanEdit()" title="Change the loan terms and send a revised offer"><i class="bi bi-pencil"></i> Edit loan</button>
+          }
+        </div>
+      </div>
+      <!-- Client 16-10-2026: Edit loan e-mailed a revised offer; work carries on while it is signed. -->
+      @if (revisedPending()) {
+        <div class="uw-revised-bar">
+          <i class="bi bi-hourglass-split"></i>
+          <div class="t">
+            <b>Awaiting the signed revised offer</b>
+            <span>The new terms were e-mailed{{ cas.revised_offer_sent_at ? ' on ' + noteWhen(cas.revised_offer_sent_at || '') : '' }} to be signed. Underwriting can carry on — upload the signed offer letter when it comes back; it is saved to the application documents as the next version.</span>
+          </div>
+          @if (canEditLoan(cas)) {
+            <label class="uw-upload">
+              <input type="file" multiple accept=".pdf,image/*" (change)="onRevisedSignedPick($event)" [disabled]="uploadingRevised()" hidden />
+              <span class="uw-btn dark"><i class="bi bi-upload"></i> {{ uploadingRevised() ? 'Uploading…' : 'Upload Signed Offer' }}</span>
+            </label>
+          }
+        </div>
+      }
+
+      @if (cas.status === 'New Review') {
+        <div class="uw-review-banner">
+          <div>
+            <div class="t">New Application — Underwriter Review Required <span class="uw-chip">Awaiting Review</span></div>
+            <div class="s">Review the application in full before accepting. You can accept, return to BDM for more information, or reject.</div>
+          </div>
+          <div class="uw-review-actions">
+            @if (canReturnBdm()) { <button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="openReturn()"><i class="bi bi-arrow-90deg-left"></i> Return to BDM</button> }
+            @if (canReject()) { <button class="uw-btn danger" type="button" [disabled]="acting()" (click)="openReviewReject()"><i class="bi bi-x-lg"></i> Reject</button> }
+            @if (canAccept()) { <button class="uw-btn yellow" type="button" [disabled]="acting()" (click)="accept(cas)"><i class="bi bi-check-lg"></i> Accept Case</button> }
+          </div>
+        </div>
+        <!-- Signed offer + application form: under the review actions, open by default. -->
+        <ng-container *ngTemplateOutlet="signedDoc; context: { $implicit: cas }" />
+        <div class="uw-appreview">
+          <div class="uw-appreview-title">APPLICATION DETAILS</div>
+          <app-application-detail [applicationId]="cas.application_id" [embedded]="true" />
+        </div>
+      } @else if (inPortfolio()) {
+        <!-- Completed: the underwriting stages are history now. Showing ten
+             finished steps above a live portfolio case just buries the one
+             status that still matters. -->
+        <div class="uw-portfolio-card">
+          <div class="uw-portfolio-badge"><i class="bi bi-check-circle-fill"></i> {{ cas.status }}</div>
+          <div class="uw-portfolio-title">Underwriting complete — case moved to Portfolio</div>
+          <div class="uw-portfolio-meta">
+            <div><span>Application</span><b>{{ cas.application_ref || ('APP-' + cas.application_id) }}</b></div>
+            <div><span>Underwriter</span><b>{{ cas.underwriter_name || '—' }}</b></div>
+            <div><span>Decision</span><b>{{ cas.decision || 'Funded' }}</b></div>
+          </div>
+          <div class="uw-portfolio-actions">
+            <button class="uw-btn ghost" type="button" (click)="showStagesAnyway.set(!showStagesAnyway())">
+              {{ showStagesAnyway() ? 'Hide' : 'Show' }} underwriting history
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (cas.status !== 'New Review') {
+        <ng-container *ngTemplateOutlet="signedDoc; context: { $implicit: cas }" />
+      }
+      @if (cas.status !== 'New Review' && (!inPortfolio() || showStagesAnyway())) {
+        <div class="uw-stages-card">
+          <div class="stages-title">UNDERWRITING STAGES</div>
+          <div class="uw-stages-row">
+            @for (s of visibleSteps(); track s.no) {
+              <button type="button" [class]="'stage ' + stageClass(s.no)"
+                [disabled]="!navigable(s.no)" [class.no-access]="!canViewStep(s.no)" (click)="select(s.no)">
+                <span class="st-no">STEP {{ displayNo(s.no) }}</span>
+                <span class="st-name">{{ stepName(s) }}</span>
+                <span class="st-badge" [class]="'st-badge ' + stageBadgeClass(s.no)">{{ stageBadge(s.no) }}</span>
+              </button>
+              <div class="stage-line" [class.done]="isDone(s.no)"></div>
+            }
+          </div>
+        </div>
+
+        <div class="uw-panel">
+            @if (def(); as d) {
+              <div class="p-head"><span class="p-chip">STEP {{ displayNo(d.no) }}: {{ stepName(d) | uppercase }}</span><span class="p-hint">{{ stepHint(d) }}</span></div>
+              @if (!canViewStep(d.no)) {
+                <div class="p-readonly"><i class="bi bi-lock"></i> You do not have permission to view this stage.</div>
+              } @else {
+
+              @if (d.no === 1) {
+                @if (fieldErrorList().length) {
+                <div class="srv-errors" role="alert">
+                  <div class="srv-errors-head"><i class="bi bi-exclamation-triangle-fill"></i>
+                    {{ fieldErrorList().length }} field{{ fieldErrorList().length === 1 ? '' : 's' }} need attention</div>
+                  <ul class="srv-errors-list">
+                    @for (e of fieldErrorList(); track e.field) {
+                      <li><b>{{ e.label }}</b><span class="srv-msg">{{ e.message }}</span></li>
+                    }
+                  </ul>
+                </div>
+              }
+              <div class="p-cols">
+                  <div class="p-card">
+                    <div class="card-title">INITIAL REVIEW CHECKLIST</div>
+                    @for (item of d.checklist || []; track item) {
+                      <label class="p-check"><input type="checkbox" [checked]="checked(item)" (change)="toggle(item)" [disabled]="!canEditForm()" /><span>{{ item }}</span></label>
+                    }
+                  </div>
+                  <div class="p-card">
+                    <div class="card-title">CASE SUMMARY</div>
+                    <ng-container *ngTemplateOutlet="sumRows; context: { $implicit: infoRows(1, cas) }" />
+                    @if (editable()) {
+                      <div class="card-cta"><button class="uw-btn gold" type="button" [disabled]="acting()" (click)="complete()">{{ d.cta }} &rarr;</button></div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (d.no === 2) {
+                <div class="p-cols">
+                  <div class="p-card">
+                    <div class="card-title">VALUATION INSTRUCTION</div>
+                    <div class="p-fields">
+                      @if (securityOptions().length && !inPortfolio()) {
+                        <label class="p-field p-field-full"><span>Security Being Valued</span>
+                          <select class="uw-input" [ngModel]="ev('security')" (ngModelChange)="setEv('security', $event)" [disabled]="!canEditForm()">
+                            <option value="">— All / not specified —</option>
+                            @for (s of securityOptions(); track s.id) { <option [value]="s.label">{{ s.label }}</option> }
+                          </select>
+                        </label>
+                      }
+                      @for (f of d.fields || []; track f.key) {
+                        <label class="p-field" [class.p-field-full]="f.type === 'textarea' || f.key === 'valuation_type' || f.key === 'valuer_firm'">@if (f.key === 'valuer_firm' && canEditForm()) {
+                          <span class="uw-field-head"><span>{{ f.label }}</span>
+                            <span class="uw-field-actions">
+                              @if (valuerSelected() && !valuerAddOpen()) {
+                                <button type="button" class="uw-addlink" title="Edit selected valuer firm" (click)="valuerEditOpen() ? cancelValuerEdit() : openValuerEdit()"><i class="bi bi-pencil-square"></i> {{ valuerEditOpen() ? 'Cancel' : 'Edit' }}</button>
+                              }
+                              <button type="button" class="uw-addlink" (click)="toggleValuerAdd()">{{ valuerAddOpen() ? 'Cancel' : '+ Add new valuer firm' }}</button>
+                            </span>
+                          </span>
+                        } @else { <span>{{ f.label }}</span> }
+                          @switch (f.type) {
+                            @case ('select') {
+                              <select class="uw-input" [ngModel]="ev(f.key)" (ngModelChange)="setEv(f.key, $event)" [disabled]="!canEditForm()">
+                                <option value="">—</option>
+                                @for (o of selectOpts(f); track o) { <option [value]="o">{{ o }}</option> }
+                              </select>
+                              @if (f.key === 'valuer_firm' && canEditForm()) {
+                                @if (valuerAddOpen()) {
+                                  <div class="uw-addpanel">
+                                    @if (valuerError()) { <div class="uw-addpanel-err">{{ valuerError() }}</div> }
+                                    <input class="uw-input" [ngModel]="valuerDraft.name" (ngModelChange)="valuerDraft.name = $event" [ngModelOptions]="{ standalone: true }" placeholder="Valuer firm name *" />
+                                    <input class="uw-input" [ngModel]="valuerDraft.firm" (ngModelChange)="valuerDraft.firm = $event" [ngModelOptions]="{ standalone: true }" placeholder="Firm / trading name" />
+                                    <input class="uw-input" type="email" [ngModel]="valuerDraft.email" (ngModelChange)="valuerDraft.email = $event" [ngModelOptions]="{ standalone: true }" placeholder="Email" />
+                                    <input class="uw-input" [ngModel]="valuerDraft.phone" (ngModelChange)="valuerDraft.phone = $event" [ngModelOptions]="{ standalone: true }" placeholder="Phone" />
+                                    <div class="uw-addpanel-actions">
+                                      <button type="button" class="uw-btn dark" [disabled]="valuerSaving()" (click)="saveValuerFirm()">{{ valuerSaving() ? 'Saving…' : 'Save valuer firm' }}</button>
+                                    </div>
+                                  </div>
+                                }
+                                @if (valuerEditOpen()) {
+                                  <div class="uw-addpanel">
+                                    @if (valuerEditError()) { <div class="uw-addpanel-err">{{ valuerEditError() }}</div> }
+                                    <input class="uw-input" [ngModel]="valuerEditDraft.name" (ngModelChange)="valuerEditDraft.name = $event" [ngModelOptions]="{ standalone: true }" placeholder="Valuer firm name *" />
+                                    <input class="uw-input" [ngModel]="valuerEditDraft.firm" (ngModelChange)="valuerEditDraft.firm = $event" [ngModelOptions]="{ standalone: true }" placeholder="Firm / trading name" />
+                                    <input class="uw-input" type="email" [ngModel]="valuerEditDraft.email" (ngModelChange)="valuerEditDraft.email = $event" [ngModelOptions]="{ standalone: true }" placeholder="Email" />
+                                    <input class="uw-input" [ngModel]="valuerEditDraft.phone" (ngModelChange)="valuerEditDraft.phone = $event" [ngModelOptions]="{ standalone: true }" placeholder="Phone" />
+                                    <div class="uw-addpanel-actions">
+                                      <button type="button" class="uw-btn dark" [disabled]="valuerEditSaving()" (click)="saveValuerFirmEdit()">{{ valuerEditSaving() ? 'Saving…' : 'Update valuer firm' }}</button>
+                                      <button type="button" class="uw-btn ghost" [disabled]="valuerEditSaving()" (click)="cancelValuerEdit()">Cancel</button>
+                                    </div>
+                                  </div>
+                                }
+                              }
+                            }
+                            @case ('textarea') { <textarea class="uw-input" rows="3" [ngModel]="ev(f.key)" (ngModelChange)="setEv(f.key, $event)" [disabled]="!canEditForm()"></textarea> }
+                            @case ('date') { <input class="uw-input" type="date" [attr.min]="f.key === 'report_due_date' ? todayStr : null" [ngModel]="ev(f.key)" (ngModelChange)="setEv(f.key, $event)" [disabled]="!canEditForm()" /> }
+                            @case ('number') { <input class="uw-input" type="number" numInput [ngModel]="ev(f.key)" (ngModelChange)="setEv(f.key, $event)" [disabled]="!canEditForm()" /> }
+                            @default { <input class="uw-input" [ngModel]="ev(f.key)" (ngModelChange)="setEv(f.key, $event)" [disabled]="!canEditForm()" /> }
+                          }
+                        </label>
+                      }
+                    </div>
+                    @if (canEditForm()) {
+                      <div class="en-actions">
+                        @if (editingEntry() !== null) { <button class="uw-btn ghost" type="button" (click)="cancelEntry()">Cancel</button> }
+                        <button class="uw-btn dark" type="button" (click)="addEntry()"><i class="bi" [class.bi-plus-lg]="editingEntry() === null" [class.bi-check-lg]="editingEntry() !== null"></i> {{ editingEntry() === null ? 'Add ' + entryNoun(d.no) : 'Update ' + entryNoun(d.no) }}</button>
+                      </div>
+                    }
+                  </div>
+                  <ng-container *ngTemplateOutlet="entryList; context: { $implicit: d.no }" />
+                  <div class="p-card">
+                    <div class="card-title">PROPERTY / SECURITY</div>
+                    <ng-container *ngTemplateOutlet="sumRows; context: { $implicit: infoRows(2, cas) }" />
+                    @if (entries().length) {
+                      <div class="p-subsection">REPORT DETAILS (WHEN RECEIVED)</div>
+                      <div class="p-fields">
+                        <label class="p-field p-field-full"><span>Market Value (£) <b class="req">*</b></span>
+                          <input class="uw-input" type="number" numInput placeholder="e.g. 350000" [ngModel]="fieldVal('market_value')" (ngModelChange)="setField('market_value', $event)" [disabled]="!canEditReport()" />
+                        </label>
+                        <!-- Client 15-10-2026: printed on the credit paper "Market Value: £x with 4.1 confidence level". -->
+                        <label class="p-field p-field-full"><span>Confidence Level <small class="uw-opt">(AVM, e.g. 4.1)</small></span>
+                          <input class="uw-input" type="number" step="0.1" min="0" placeholder="e.g. 4.1" [ngModel]="fieldVal('confidence_level')" (ngModelChange)="setField('confidence_level', $event)" [disabled]="!canEditReport()" />
+                        </label>
+                        <label class="p-field p-field-full"><span>GDV / Development Value (£) <small class="uw-opt">(if relevant)</small></span>
+                          <input class="uw-input" type="number" numInput placeholder="If development — e.g. 520000" [ngModel]="fieldVal('gdv_value')" (ngModelChange)="setField('gdv_value', $event)" [disabled]="!canEditReport()" />
+                        </label>
+                        <label class="p-field p-field-full"><span>Special Assumptions</span>
+                          <textarea class="uw-input" rows="2" placeholder="Any special assumptions noted in report…" [ngModel]="fieldVal('special_assumptions')" (ngModelChange)="setField('special_assumptions', $event)" [disabled]="!canEditReport()"></textarea>
+                        </label>
+                        <label class="p-field p-field-full"><span>Condition Rating (1–5)</span>
+                          <select class="uw-input" [ngModel]="fieldVal('condition_rating')" (ngModelChange)="setField('condition_rating', $event)" [disabled]="!canEditReport()">
+                            <option value="">—</option>
+                            @for (n of [1,2,3,4,5]; track n) { <option [value]="n">{{ n }}</option> }
+                          </select>
+                        </label>
+                      </div>
+                    }
+                    @if (entries().length && canEditReport()) {
+                      <div class="val-actions"><button class="uw-btn dark" type="button" [disabled]="acting()" (click)="save()"><i class="bi bi-save"></i> Save Report Details</button></div>
+                    }
+                    <div class="p-subsection">VALUATION REPORT DOCUMENTS</div>
+                    @if (canEditForm()) {
+                      <label class="uw-upload">
+                        <input type="file" multiple [attr.accept]="uploadAccept" (change)="onValDocPick($event)" [disabled]="uploadingValDoc()" hidden />
+                        <span class="uw-btn ghost"><i class="bi bi-upload"></i> {{ uploadingValDoc() ? 'Uploading…' : 'Upload Report(s)' }}</span>
+                      </label>
+                    }
+                    @if (valDocs().length) {
+                      <div class="uw-photo-grid">
+                        @for (ph of valDocs(); track ph.id) {
+                          <div class="uw-photo">
+                            <a class="uw-file-tile" href="javascript:void(0)" (click)="openFile(ph)" [title]="'View ' + ph.file_name"><i class="bi" [class.bi-file-earmark-text]="!isFileLoading(ph.id)" [class.bi-hourglass-split]="isFileLoading(ph.id)"></i><span class="uw-file-name">{{ ph.file_name }}</span><span class="uw-file-view">{{ isFileLoading(ph.id) ? 'Opening…' : 'View' }}</span></a>
+                            @if (canEditForm()) { <button class="uw-photo-x" type="button" (click)="removeValDoc(ph.id)" title="Remove"><i class="bi bi-x"></i></button> }
+                          </div>
+                        }
+                      </div>
+                    } @else { <div class="uw-muted">No valuation report uploaded yet.</div> }
+                    <ng-container *ngTemplateOutlet="entryDecide; context: { $implicit: d.no }" />
+                    @if (editable()) {
+                      <div class="card-cta"><button class="uw-btn gold" type="button" [disabled]="acting()" (click)="complete()">Proceed to Solicitor Quote &rarr;</button></div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (d.no === 3) {
+                <div class="p-cols">
+                  @if (!isCompanyCase()) {
+                  <!-- Individual applicant: only INDIVIDUAL KYC CHECKS shown; company checks hidden
+                       and this card widened so note + upload sit on one line (client 09-10-2026). -->
+                  <div class="p-card kyc-wide">
+                    <div class="card-title">INDIVIDUAL KYC CHECKS</div>
+                    @if (kycChecksIndividual().length) {
+                      <ng-container *ngTemplateOutlet="kycChecklist; context: { $implicit: kycChecksIndividual() }" />
+                    } @else {
+                      <div class="uw-muted">No individual checks set up — add them in Masters &rsaquo; KYC Checks.</div>
+                    }
+                  </div>
+                  } @else {
+                  <!-- Company applicant: only COMPANY KYC CHECKS shown; individual checks hidden. -->
+                  <div class="p-card kyc-wide">
+                    <div class="card-title">COMPANY KYC CHECKS</div>
+                    @if (kycChecksCompany().length) {
+                      <ng-container *ngTemplateOutlet="kycChecklist; context: { $implicit: kycChecksCompany() }" />
+                    } @else {
+                      <div class="uw-muted">No company checks set up — add them in Masters &rsaquo; KYC Checks.</div>
+                    }
+                  </div>
+                  }
+                  <div class="p-card">
+                    <div class="card-title">KYC STATUS</div>
+                    <ng-container *ngTemplateOutlet="sumRows; context: { $implicit: infoRows(3, cas) }" />
+                    @if (kycResult() === 'passed') {
+                      <div class="val-flag ok"><i class="bi bi-check-lg"></i> KYC marked passed</div>
+                      @if (editable()) { <div class="val-actions"><button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="clearKyc()"><i class="bi bi-arrow-counterclockwise"></i> Reopen KYC</button></div> }
+                    } @else if (editable()) {
+                      <div class="val-actions"><button class="uw-btn ok" type="button" [disabled]="acting()" (click)="markKycPassed()"><i class="bi bi-check-lg"></i> Mark KYC Passed</button></div>
+                    }
+                    @if (editable()) {
+                      <div class="card-cta"><button class="uw-btn gold" type="button" [disabled]="acting()" (click)="complete()">Proceed to Underwrite &amp; Findings &rarr;</button></div>
+                    }
+                  </div>
+                </div>
+              }
+              @if (d.no === 4) {
+                <div class="p-cols">
+                  <div class="p-card">
+                    <div class="card-title">OUR SOLICITOR QUOTE</div>
+                    <label class="p-field p-field-full"><span>Representation</span>
+                      <div class="seg">
+                        <button type="button" class="seg-btn" [class.on]="!isDualRep()" [disabled]="!canEditForm()" (click)="setRepType('single')">Single rep</button>
+                        <button type="button" class="seg-btn" [class.on]="isDualRep()" [disabled]="!canEditForm()" (click)="setRepType('dual')">Dual rep</button>
+                      </div>
+                    </label>
+                    <small class="uw-muted">Dual rep: our solicitor acts for both sides — no separate borrower-solicitor checks.</small>
+                    <label class="p-field p-field-full">@if (canEditForm()) {
+                        <span class="uw-field-head"><span>Our Solicitor / Firm</span>
+                          <span class="uw-field-actions">
+                            @if (solicitorSelected() && !solAddOpen()) {
+                              <button type="button" class="uw-addlink" title="Edit selected solicitor" (click)="solEditOpen() ? cancelSolEdit() : openSolEdit()"><i class="bi bi-pencil-square"></i> {{ solEditOpen() ? 'Cancel' : 'Edit' }}</button>
+                            }
+                            <button type="button" class="uw-addlink" (click)="toggleSolAdd()">{{ solAddOpen() ? 'Cancel' : '+ Add new solicitor' }}</button>
+                          </span>
+                        </span>
+                      } @else { <span>Our Solicitor / Firm</span> }
+                      <select class="uw-input" [ngModel]="ourSol('firm_name')" (ngModelChange)="setOurSol('firm_name', $event)" (change)="saveSol()" [disabled]="!canEditForm()"><option value="">—</option>@for (o of options('solicitors'); track o.id) { <option [value]="o.name">{{ o.name }}</option> }</select>
+                      @if (canEditForm()) {
+                        @if (solAddOpen()) {
+                          <div class="uw-addpanel">
+                            @if (solError()) { <div class="uw-addpanel-err">{{ solError() }}</div> }
+                            <input class="uw-input" [ngModel]="solDraft.name" (ngModelChange)="solDraft.name = $event" [ngModelOptions]="{ standalone: true }" placeholder="Solicitor name *" />
+                            <input class="uw-input" [ngModel]="solDraft.firm" (ngModelChange)="solDraft.firm = $event" [ngModelOptions]="{ standalone: true }" placeholder="Firm / trading name" />
+                            <input class="uw-input" type="email" [ngModel]="solDraft.email" (ngModelChange)="solDraft.email = $event" [ngModelOptions]="{ standalone: true }" placeholder="Email" />
+                            <input class="uw-input" [ngModel]="solDraft.phone" (ngModelChange)="solDraft.phone = $event" [ngModelOptions]="{ standalone: true }" placeholder="Phone" />
+                            <div class="uw-addpanel-actions">
+                              <button type="button" class="uw-btn dark" [disabled]="solSaving()" (click)="saveSolicitor()">{{ solSaving() ? 'Saving…' : 'Save solicitor' }}</button>
+                            </div>
+                          </div>
+                        }
+                        @if (solEditOpen()) {
+                          <div class="uw-addpanel">
+                            @if (solEditError()) { <div class="uw-addpanel-err">{{ solEditError() }}</div> }
+                            <input class="uw-input" [ngModel]="solEditDraft.name" (ngModelChange)="solEditDraft.name = $event" [ngModelOptions]="{ standalone: true }" placeholder="Solicitor name *" />
+                            <input class="uw-input" [ngModel]="solEditDraft.firm" (ngModelChange)="solEditDraft.firm = $event" [ngModelOptions]="{ standalone: true }" placeholder="Firm / trading name" />
+                            <input class="uw-input" type="email" [ngModel]="solEditDraft.email" (ngModelChange)="solEditDraft.email = $event" [ngModelOptions]="{ standalone: true }" placeholder="Email" />
+                            <input class="uw-input" [ngModel]="solEditDraft.phone" (ngModelChange)="solEditDraft.phone = $event" [ngModelOptions]="{ standalone: true }" placeholder="Phone" />
+                            <div class="uw-addpanel-actions">
+                              <button type="button" class="uw-btn dark" [disabled]="solEditSaving()" (click)="saveSolicitorEdit()">{{ solEditSaving() ? 'Saving…' : 'Update solicitor' }}</button>
+                              <button type="button" class="uw-btn ghost" [disabled]="solEditSaving()" (click)="cancelSolEdit()">Cancel</button>
+                            </div>
+                          </div>
+                        }
+                      }
+                    </label>
+                    <div class="p-fields">
+                      <label class="p-field"><span>Contact Name</span><input class="uw-input" [ngModel]="ourSol('contact_name')" (ngModelChange)="setOurSol('contact_name', $event)" (change)="saveSol()" [disabled]="!canEditForm()" /></label>
+                      <label class="p-field"><span>SRA / Regulator No.</span><input class="uw-input" [ngModel]="ourSol('sra_no')" (ngModelChange)="setOurSol('sra_no', $event)" (change)="saveSol()" [disabled]="!canEditForm()" /></label>
+                      <label class="p-field"><span>Quote Amount (£)</span><input class="uw-input" type="number" numInput min="0" placeholder="e.g. 2250" [ngModel]="ourSol('quote_amount')" (ngModelChange)="setOurSol('quote_amount', $event)" (change)="saveSol()" [disabled]="!canEditForm()" /></label>
+                      <label class="p-field"><span>Quote Date</span><input class="uw-input" type="date" [ngModel]="ourSol('quote_date')" (ngModelChange)="setOurSol('quote_date', $event)" (change)="saveSol()" [disabled]="!canEditForm()" /></label>
+                    </div>
+                    <div class="p-subsection">ADDITIONAL COSTS</div>
+                    <!-- Client 16-10-2026: cost names come from Masters > Solicitor Cost Types (dropdown with
+                         add / edit) so the extra costs can be reported by type. -->
+                    <!-- Client 21-10-2026: Add / Edit sit on the field's header line, panel under the
+                         dropdown - same layout as the Surveyor / Valuer Firm dropdown. -->
+                    @for (c of additionalCosts(); track $index; let i = $index) {
+                      <div class="cost-item">
+                        @if (canEditForm()) {
+                          <span class="uw-field-head"><span>Cost Type</span>
+                            <span class="uw-field-actions">
+                              @if (costTypeVal(c) && costTypeVal(c) !== 'legacy' && !(isCtRow(i) && ctOpen() === 'add')) {
+                                <button type="button" class="uw-addlink" title="Edit selected cost type" (click)="isCtRow(i) && ctOpen() === 'edit' ? cancelCt() : openCtEdit(i)"><i class="bi bi-pencil-square"></i> {{ isCtRow(i) && ctOpen() === 'edit' ? 'Cancel' : 'Edit' }}</button>
+                              }
+                              <button type="button" class="uw-addlink" (click)="isCtRow(i) && ctOpen() === 'add' ? cancelCt() : openCtAdd(i)">{{ isCtRow(i) && ctOpen() === 'add' ? 'Cancel' : '+ Add new cost type' }}</button>
+                            </span>
+                          </span>
+                        } @else { <span class="cost-label">Cost Type</span> }
+                        <div class="cost-row">
+                          <select class="uw-input" [ngModel]="costTypeVal(c)" (ngModelChange)="setCostType(i, $event)" [disabled]="!canEditForm()">
+                            <option value="">Select cost type…</option>
+                            @if (costLegacy(c); as lg) { <option value="legacy">{{ lg }} (typed)</option> }
+                            @for (t of costTypes(); track t.id) { <option [value]="'' + t.id">{{ t.name }}</option> }
+                          </select>
+                          <input class="uw-input cost-amt" type="number" numInput min="0" placeholder="£" [ngModel]="c.amount" (ngModelChange)="setCostAmount(i, $event)" (change)="saveSol()" [disabled]="!canEditForm()" />
+                          @if (canEditForm()) { <button class="kyc-doc-x" type="button" (click)="removeCost(i)" title="Remove"><i class="bi bi-trash"></i></button> }
+                        </div>
+                        @if (canEditForm() && isCtRow(i)) {
+                          <div class="uw-addpanel">
+                            @if (ctError()) { <div class="uw-addpanel-err">{{ ctError() }}</div> }
+                            <input class="uw-input" [(ngModel)]="ctDraft" [ngModelOptions]="{ standalone: true }" placeholder="Cost type name *" (keyup.enter)="saveCt()" />
+                            <div class="uw-addpanel-actions">
+                              <button type="button" class="uw-btn dark" [disabled]="ctSaving()" (click)="saveCt()">{{ ctSaving() ? 'Saving…' : (ctOpen() === 'edit' ? 'Update cost type' : 'Save cost type') }}</button>
+                              @if (ctOpen() === 'edit') { <button type="button" class="uw-btn ghost" [disabled]="ctSaving()" (click)="cancelCt()">Cancel</button> }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                    @if (canEditForm()) { <button type="button" class="uw-addlink" (click)="addCost()">+ Add cost</button> }
+                    <div class="sum-row cost-total"><span>Quote total</span><b>{{ money(quoteTotal()) }}</b></div>
+                    @if (canEditForm()) {
+                      <button type="button" class="en-paid" [class.on]="solFeePaid()" [disabled]="acting()" (click)="toggleSolFeePaid()" [title]="solFeePaid() ? 'Borrower has paid the solicitor fee' : 'Mark fee paid by the borrower'">
+                        <i class="bi" [class.bi-check-circle-fill]="solFeePaid()" [class.bi-circle]="!solFeePaid()"></i>
+                        {{ solFeePaid() ? 'Solicitor Fee Paid' : 'Mark Solicitor Fee Paid' }}
+                      </button>
+                    }
+                  </div>
+                  <div class="p-card">
+                    <div class="card-title">BORROWER'S SOLICITOR &amp; CHECKS</div>
+                    @if (isDualRep()) {
+                      <div class="val-flag"><i class="bi bi-info-circle"></i> Dual representation — our solicitor acts for both sides. No separate borrower-solicitor checks required.</div>
+                    } @else {
+                      <div class="p-fields">
+                        <!-- Client 16-10-2026: pick from the Borrower's Solicitor master (add / edit like the
+                             enquiry popup). A solicitor used before brings its checks + evidence with it. -->
+                        <label class="p-field p-field-full">@if (canEditForm()) {
+                            <span class="uw-field-head"><span>Borrower's Solicitor / Firm</span>
+                              <span class="uw-field-actions">
+                                @if (bsSelected() && !bsAddOpen()) {
+                                  <button type="button" class="uw-addlink" title="Edit selected solicitor" (click)="toggleBsEdit()"><i class="bi bi-pencil-square"></i> {{ bsEditOpen() ? 'Cancel' : 'Edit' }}</button>
+                                }
+                                <button type="button" class="uw-addlink" (click)="toggleBsAdd()">{{ bsAddOpen() ? 'Cancel' : '+ Add new solicitor' }}</button>
+                              </span>
+                            </span>
+                          } @else { <span>Borrower's Solicitor / Firm</span> }
+                          <select class="uw-input" [ngModel]="bsId() ? '' + bsId() : (bsLegacyName() ? 'legacy' : '')" (ngModelChange)="selectBorrowerSol($event === 'legacy' ? '-1' : $event)" [disabled]="!canEditForm()">
+                            <option value="">Select solicitor…</option>
+                            @if (bsLegacyName(); as lg) { <option value="legacy" disabled>{{ lg }} (typed — pick from the list)</option> }
+                            @for (o of borrowerSolOpts(); track o.id) { <option [value]="'' + o.id">{{ o.name }}{{ o.contact_name ? ' (' + o.contact_name + ')' : '' }}</option> }
+                          </select>
+                          @if (canEditForm() && (bsAddOpen() || bsEditOpen())) {
+                            <div class="uw-addpanel">
+                              @if (bsError()) { <div class="uw-addpanel-err">{{ bsError() }}</div> }
+                              <input class="uw-input" [(ngModel)]="bsDraft.firm" [ngModelOptions]="{ standalone: true }" placeholder="Borrower's solicitor / firm name *" />
+                              <input class="uw-input" [(ngModel)]="bsDraft.contact_name" [ngModelOptions]="{ standalone: true }" placeholder="Contact name" />
+                              <input class="uw-input" [(ngModel)]="bsDraft.sra_no" [ngModelOptions]="{ standalone: true }" placeholder="SRA / regulator no." />
+                              <input class="uw-input" type="tel" [(ngModel)]="bsDraft.telephone" [ngModelOptions]="{ standalone: true }" placeholder="Telephone" />
+                              <input class="uw-input" type="email" [(ngModel)]="bsDraft.email" [ngModelOptions]="{ standalone: true }" placeholder="Email" />
+                              <input class="uw-input" [(ngModel)]="bsDraft.address" [ngModelOptions]="{ standalone: true }" placeholder="Address" />
+                              <div class="uw-addpanel-actions gap">
+                                <button type="button" class="uw-btn ghost" [disabled]="bsSaving()" (click)="cancelBs()">Cancel</button>
+                                <button type="button" class="uw-btn dark" [disabled]="bsSaving()" (click)="saveBs()">{{ bsSaving() ? 'Saving…' : (bsEditOpen() ? 'Update solicitor' : 'Save solicitor') }}</button>
+                              </div>
+                            </div>
+                          }
+                        </label>
+                      </div>
+                      <!-- Client 16-10-2026: same as the New Enquiry popup - only the dropdown; the
+                           solicitor's details are changed with Edit. A firm typed on an older case
+                           (not in the list) is shown as one line until one is picked. -->
+                      @if (bsLegacyName()) {
+                        <div class="bs-info">
+                          <div class="full"><span>Typed on the case (not in the list)</span><b>{{ bsLegacyText() }}</b></div>
+                        </div>
+                      }
+                      <div class="p-subsection">SOLICITOR CHECKS <b class="req">*</b></div>
+                      <!-- Client 16-10-2026: all checks are required - the step is Done only when every one is ticked. -->
+                      @if (solChecksAll().length && solChecksMissing().length) {
+                        <div class="sol-missing"><i class="bi bi-exclamation-triangle"></i> {{ solChecksMissing().length }} of {{ solChecksAll().length }} check{{ solChecksAll().length === 1 ? '' : 's' }} still to complete — this step is not done until every check is ticked, and the paper cannot go to the Credit Committee.</div>
+                      }
+                      @if (bsId()) { <div class="uw-muted sol-saved-note"><i class="bi bi-info-circle"></i> Checks and evidence are saved against this solicitor and re-used on their other cases. Older than {{ 90 }} days is flagged for a refresh.</div> }
+                      @if (solChecksAll().length) {
+                        <ng-container *ngTemplateOutlet="solChecklist; context: { $implicit: solChecksAll() }" />
+                      } @else { <div class="uw-muted">No solicitor checks set up — add them in Masters &rsaquo; Solicitor Checks.</div> }
+                    }
+                    @if (editable()) { <div class="card-cta"><button class="uw-btn gold" type="button" [disabled]="acting()" (click)="complete()">Proceed to KYC &rarr;</button></div> }
+                  </div>
+                </div>
+              }
+              @if (d.no === 6) {
+                <div class="p-cols">
+                  <div class="p-card">
+                    <div class="card-title">FINDINGS &amp; RECOMMENDATION</div>
+                    <label class="p-field p-field-full"><span>Risk Finding / Recommendation <b class="req">*</b></span>
+                      <textarea class="uw-input" rows="8" placeholder="Document findings and your recommendation…" [ngModel]="mergedFindings()" (ngModelChange)="setMergedFindings($event)" [disabled]="!editable()"></textarea>
+                    </label>
+                    @if (editable()) {
+                      <div class="val-actions">
+                        <button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="saveFindings()"><i class="bi bi-save"></i> Save</button>
+                        <button class="uw-btn danger" type="button" [disabled]="acting()" (click)="openReject('cannot_proceed')">Cannot Proceed</button>
+                        <button class="uw-btn" type="button" [disabled]="acting()" (click)="openCreditDisc()">Refer to Credit</button>
+                      </div>
+                    }
+                  </div>
+                  <div class="p-card">
+                    <div class="card-title">CREDIT PAPER</div>
+                    <p class="uw-muted">Download the credit paper with the numbers pre-filled, complete the narrative sections offline, then upload it. You can upload several versions — the latest goes to the Credit Committee.</p>
+                    <div class="uw-cds-actions">
+                      <button class="uw-btn dark" type="button" [disabled]="genCreditPaper()" (click)="downloadGeneratedCreditPaper()"><i class="bi bi-download"></i> {{ genCreditPaper() ? 'Preparing…' : 'Download Credit Paper' }}</button>
+                      @if (editable()) {
+                        <label class="uw-upload">
+                          <input type="file" multiple [attr.accept]="uploadAccept" (change)="onCreditPick($event)" [disabled]="uploadingCredit()" hidden />
+                          <span class="uw-btn ghost"><i class="bi bi-upload"></i> {{ uploadingCredit() ? 'Uploading…' : 'Upload Completed Paper' }}</span>
+                        </label>
+                      }
+                    </div>
+                    @if (creditPhotos().length) {
+                      <div class="uw-photo-grid">
+                        @for (ph of creditPhotos(); track ph.id) {
+                          <div class="uw-photo">
+                            <a class="uw-file-tile" href="javascript:void(0)" (click)="openFile(ph)" [title]="'View ' + ph.file_name"><i class="bi" [class.bi-file-earmark-text]="!isFileLoading(ph.id)" [class.bi-hourglass-split]="isFileLoading(ph.id)"></i><span class="uw-file-name">{{ ph.file_name }}</span><span class="uw-file-view">{{ isFileLoading(ph.id) ? 'Opening…' : 'View' }}</span></a>
+                            @if (editable()) { <button class="uw-photo-x" type="button" (click)="removeCreditPhoto(ph.id)" title="Remove"><i class="bi bi-x"></i></button> }
+                          </div>
+                        }
+                      </div>
+                    } @else { <div class="uw-muted">No credit paper uploaded yet.</div> }
+                    @if (editable()) { <div class="card-cta"><button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="saveCreditPaper()"><i class="bi bi-save"></i> Save</button></div> }
+                  </div>
+                </div>
+                @if (editable()) {
+                  <div class="p-actions p-actions-end">
+                    <button class="uw-btn gold" type="button" [disabled]="acting()" (click)="proceedMerged()">Happy to Proceed &rarr;</button>
+                  </div>
+                }
+              }
+              @if (d.no === 7) {
+                <div class="p-cols">
+                  <div class="p-card">
+                    <div class="card-title">CREDIT DISCUSSION</div>
+                    <div class="warn-box">Discuss derogatory information or a low valuation with Credit before proceeding or declining.</div>
+                    <label class="p-field p-field-full"><span>Discussion Topic</span>
+                      <select class="uw-input" [ngModel]="fieldVal('topic')" (ngModelChange)="setField('topic', $event)" [disabled]="!canEditForm()"><option value="">—</option>@for (o of topicOpts(); track o) { <option [value]="o">{{ o }}</option> }</select>
+                    </label>
+                    <label class="p-field p-field-full"><span>Discussion Notes</span><textarea class="uw-input" rows="3" placeholder="Record the discussion and Credit's guidance…" [ngModel]="fieldVal('notes')" (ngModelChange)="setField('notes', $event)" [disabled]="!canEditForm()"></textarea></label>
+                    <label class="p-field p-field-full"><span>Credit Contact</span><input class="uw-input" placeholder="Emma Clarke (Credit Manager)" [ngModel]="fieldVal('credit_contact')" (ngModelChange)="setField('credit_contact', $event)" [disabled]="!canEditForm()" /></label>
+                    <label class="p-field p-field-full"><span>Discussion Date</span><input class="uw-input" type="date" [ngModel]="fieldVal('discussion_date')" (ngModelChange)="setField('discussion_date', $event)" [disabled]="!canEditForm()" /></label>
+                  </div>
+                  <div class="p-card">
+                    <div class="card-title">OUTCOME</div>
+                    <button class="outcome-box ok" type="button" [disabled]="!editable() || !isCurrent() || acting()" (click)="complete()">
+                      <div class="ob-title"><i class="bi bi-check-lg"></i> Happy to Proceed</div>
+                      <div class="ob-sub">No material issues, or concerns resolved after Credit discussion &rarr; Ready to Proceed</div>
+                    </button>
+                    <button class="outcome-box bad" type="button" [disabled]="!editable() || !isCurrent() || acting()" (click)="openReject('cannot_proceed')">
+                      <div class="ob-title"><i class="bi bi-x-lg"></i> Cannot Proceed — Close File</div>
+                      <div class="ob-sub">Credit discussion confirms the deal is not supportable &rarr; Declined / Closed</div>
+                    </button>
+                  </div>
+                </div>
+              }
+              @if (editable() && bespoke(d.no)) {
+                @if (editOverride()) {
+                  <div class="p-actions"><button class="uw-btn ghost" type="button" (click)="cancelUpdate()">Cancel</button><button class="uw-btn dark" type="button" [disabled]="acting()" (click)="saveUpdate()">Save Changes</button></div>
+                } @else if (!canEditForm() && !(d.no === 3 && kycResult() === 'passed')) {
+                  <div class="p-actions"><button class="uw-btn ghost" type="button" (click)="enableUpdate()"><i class="bi bi-pencil"></i> Update</button></div>
+                }
+              }
+              @if (!bespoke(d.no)) {
+              @if (d.no === 10 && solChecksMissing().length) {
+                <div class="sol-missing"><i class="bi bi-exclamation-triangle"></i> Solicitor checks outstanding on Step 2 (Solicitor Quote): {{ solChecksMissing().join(', ') }}. Complete them before sending the credit paper to the committee.</div>
+              }
+              @if (pendingBeforeFinal(d.no).length) {
+                <div class="sol-missing"><i class="bi bi-exclamation-triangle"></i> Complete all previous steps before moving to Portfolio: {{ pendingBeforeFinal(d.no).join(', ') }}.</div>
+              }
+              @if (d.no === 11) {
+                <ng-container *ngTemplateOutlet="fundsStep; context: { $implicit: cas, d: d }" />
+              } @else {
+              <div class="p-cols">
+                @if (d.checklist?.length) {
+                  <div class="p-card">
+                    <div class="p-section">CHECKLIST</div>
+                    @for (item of d.checklist; track item) {
+                      <label class="p-check">
+                        <input type="checkbox" [checked]="checked(item)" (change)="toggle(item)" [disabled]="!canEditForm()" />
+                        <span>{{ item }}</span>
+                      </label>
+                    }
+                  </div>
+                }
+                @if (d.fields?.length || d.recommendations?.length) {
+                  <div class="p-card">
+                    @if (d.fields?.length) {
+                      <div class="p-section">{{ (d.formLabel || 'Details') | uppercase }}</div>
+                      <div class="p-fields">
+                        @for (f of d.fields; track f.key) {
+                          <label class="p-field" [class.p-field-full]="f.type === 'textarea'"><span>{{ f.label }}</span>
+                            @switch (f.type) {
+                              @case ('select') {
+                                <select class="uw-input" [ngModel]="fieldVal(f.key)" (ngModelChange)="setField(f.key, $event)" [disabled]="!canEditForm()">
+                                  <option value="">—</option>
+                                  @for (o of selectOpts(f); track o) { <option [value]="o">{{ o }}</option> }
+                                </select>
+                              }
+                              @case ('textarea') { <textarea class="uw-input" rows="3" [ngModel]="fieldVal(f.key)" (ngModelChange)="setField(f.key, $event)" [disabled]="!canEditForm()"></textarea> }
+                              @case ('date') { <input class="uw-input" type="date" [ngModel]="fieldVal(f.key)" (ngModelChange)="setField(f.key, $event)" [disabled]="!canEditForm()" /> }
+                              @case ('number') { <input class="uw-input" type="number" numInput [ngModel]="fieldVal(f.key)" (ngModelChange)="setField(f.key, $event)" [disabled]="!canEditForm()" /> }
+                              @default { <input class="uw-input" [ngModel]="fieldVal(f.key)" (ngModelChange)="setField(f.key, $event)" [disabled]="!canEditForm()" /> }
+                            }
+                          </label>
+                        }
+                      </div>
+                    }
+                    @if (d.recommendations?.length) {
+                      <div class="p-section">{{ (d.recLabel || 'Recommendation') | uppercase }}</div>
+                      <select class="uw-input" [ngModel]="draftRec()" (ngModelChange)="setRec($event)" [disabled]="!canEditForm()">
+                        <option value="">—</option>
+                        @for (r of d.recommendations; track r) { <option [value]="r">{{ r }}</option> }
+                      </select>
+                    }
+                  </div>
+                }
+                @if (d.photos) {
+                  <div class="p-card">
+                    <div class="p-section">{{ (d.filesLabel || 'Site Visit Files') | uppercase }}@if (d.creditPaper) { <b class="req">*</b> }</div>
+                    @if (canEditForm()) {
+                      <label class="uw-upload">
+                        <input type="file" multiple [attr.accept]="uploadAccept" (change)="onPhotoPick($event)" [disabled]="uploadingPhoto()" hidden />
+                        <span class="uw-btn ghost"><i class="bi bi-upload"></i> {{ uploadingPhoto() ? 'Uploading…' : 'Upload Files' }}</span>
+                      </label>
+                    }
+                    @if (photos().length) {
+                      <div class="uw-photo-grid">
+                        @for (ph of photos(); track ph.id; let i = $index) {
+                          <div class="uw-photo">
+                            @if (ph.url && isImage(ph)) {
+                              <img [src]="ph.url" [alt]="ph.file_name" (click)="openPhotoAt(i)" />
+                            } @else {
+                              <a class="uw-file-tile" href="javascript:void(0)" (click)="openFile(ph)" [title]="'View ' + ph.file_name">
+                                <i class="bi" [class.bi-file-earmark-image]="isImage(ph) && !isFileLoading(ph.id)" [class.bi-file-earmark-play]="isVideo(ph) && !isFileLoading(ph.id)"
+                                   [class.bi-file-earmark-text]="!isImage(ph) && !isVideo(ph) && !isFileLoading(ph.id)" [class.bi-hourglass-split]="isFileLoading(ph.id)"></i>
+                                <span class="uw-file-name">{{ ph.file_name }}</span>
+                                <span class="uw-file-view">{{ isFileLoading(ph.id) ? 'Opening…' : 'View' }}</span>
+                              </a>
+                            }
+                            @if (canEditForm()) { <button class="uw-photo-x" type="button" (click)="removePhoto(ph.id)" title="Remove"><i class="bi bi-x"></i></button> }
+                          </div>
+                        }
+                      </div>
+                    } @else {
+                      <div class="uw-muted">No files uploaded yet.</div>
+                    }
+                  </div>
+                }
+                @if (infoTitle(d.no); as it) {
+                  <div class="p-card">
+                    <div class="p-section">{{ it }}</div>
+                    <ng-container *ngTemplateOutlet="sumRows; context: { $implicit: infoRows(d.no, cas) }" />
+                  </div>
+                }
+              </div>
+              }
+
+              @if (editable()) {
+                <div class="p-actions">
+                  <button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="save()">Save</button>
+                  @if (canQuery()) { <button class="uw-btn ghost" type="button" (click)="openQuery()">Raise Query</button> }
+                  @if (d.no === 10) { <button class="uw-btn dark" type="button" [disabled]="acting() || sendingCreditPaper()" (click)="openCommitteeSend()"><i class="bi bi-send"></i> Send Credit Paper to Committee</button> }
+                  @if (canStepReject(d.no) && d.decisions?.includes('reject')) { <button class="uw-btn danger" type="button" (click)="openReject()">Reject</button> }
+                  @if (canStepReject(d.no) && d.decisions?.includes('cannot_proceed')) { <button class="uw-btn danger" type="button" (click)="openReject('cannot_proceed')">Cannot Proceed — Close</button> }
+                  @if (canStepCta(d.no)) { <button [class]="'uw-btn cta ' + ctaClass(d.no)" type="button" [disabled]="acting() || pendingBeforeFinal(d.no).length > 0" [title]="pendingBeforeFinal(d.no).length ? 'Complete all previous steps first' : ''" (click)="complete()">{{ d.cta }}</button> }
+                </div>
+              } @else {
+                <div class="p-readonly">This step is {{ stepBadge($safeNavigationMigration(stepOf(d.no)?.status)) || 'locked' }} — read only.</div>
+              }
+              }
+              }
+            }
+
+            @if (cas.queries.length) {
+              <div class="p-section">QUERIES</div>
+              @for (q of cas.queries; track q.underwriting_query_id) {
+                <div class="p-query">
+                  <div class="q-head"><b>{{ q.status }}</b> <span class="uw-muted">step {{ q.step_no || '—' }} · {{ q.target_role || 'someone' }}</span></div>
+                  <div>{{ q.description }}</div>
+                  @if (q.response) { <div class="q-resp">↳ {{ q.response }}</div> }
+                  @else if (canRespond()) {
+                    <div class="q-respond">
+                      <input class="uw-input" [(ngModel)]="respDraft" placeholder="Provide the requested information…" />
+                      <button class="uw-btn dark" type="button" (click)="respond(q.underwriting_query_id)">Respond</button>
+                    </div>
+                  }
+                </div>
+              }
+            }
+
+            <!-- The full trail is long on a mature case (30+ entries), so it
+                 lives in a dialog instead of pushing the step form off screen. -->
+            <div class="aud-bar">
+              <div class="aud-bar__label">
+                <span class="p-section">CASE HISTORY</span>
+                <span class="aud-bar__count">{{ cas.audit.length }} {{ cas.audit.length === 1 ? 'entry' : 'entries' }} — enquiry to underwriting</span>
+              </div>
+              <button class="uw-btn ghost" type="button" [disabled]="!cas.audit.length" (click)="auditOpen.set(true)">
+                <i class="bi bi-clock-history"></i> View Audit History
+              </button>
+            </div>
+          </div>
+      }
+
+      <!-- Backdrop is inert on purpose: a stray click outside must never
+           discard what the user is looking at. Close is explicit. -->
+      @if (creditDiscOpen()) {
+        <div class="uw-modal-back">
+          <div class="uw-modal">
+            <div class="uw-modal-head">
+              <h3>Credit Discussion</h3>
+              <button class="uw-modal-x" type="button" (click)="creditDiscOpen.set(false)" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="warn-box">Discuss derogatory information or a low valuation with Credit. Saving sends the application to Credit Review.</div>
+            <label class="p-field p-field-full"><span>Discussion Topic</span>
+              <select class="uw-input" [(ngModel)]="creditDisc.topic"><option value="">—</option>@for (o of creditTopicOpts(); track o) { <option [value]="o">{{ o }}</option> }</select>
+            </label>
+            <label class="p-field p-field-full"><span>Discussion Notes</span><textarea class="uw-input" rows="3" placeholder="Record the discussion and Credit's guidance…" [(ngModel)]="creditDisc.notes"></textarea></label>
+            <label class="p-field p-field-full"><span>Credit Contact</span><input class="uw-input" placeholder="Emma Clarke (Credit Manager)" [(ngModel)]="creditDisc.credit_contact" /></label>
+            <label class="p-field p-field-full"><span>Discussion Date</span><input class="uw-input" type="date" [(ngModel)]="creditDisc.discussion_date" /></label>
+            <div class="p-actions p-actions-end">
+              <button class="uw-btn ghost" type="button" (click)="creditDiscOpen.set(false)">Cancel</button>
+              <button class="uw-btn gold" type="button" [disabled]="acting()" (click)="submitReferToCredit()">Refer to Credit</button>
+            </div>
+          </div>
+        </div>
+      }
+      @if (auditOpen()) {
+        <div class="uw-modal-back">
+          <div class="uw-modal uw-modal--wide">
+            <div class="uw-modal-head">
+              <h3>Case History — Enquiry to Underwriting</h3>
+              <button class="uw-modal-x" type="button" (click)="auditOpen.set(false)" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            @if (c(); as cas) {
+              @if (cas.audit.length) {
+                <div class="aud-scroll">
+                  <ol class="aud-timeline">
+                    @for (a of cas.audit; track (a.module || '') + ':' + (a.underwriting_audit_id ?? a.audit_id ?? $index)) {
+                      <li class="aud-event" [attr.data-mod]="a.module">
+                        <span class="aud-event__rail"><span class="aud-event__dot"></span></span>
+                        <div class="aud-event__card">
+                          <div class="aud-event__head">
+                            <span class="aud-action">{{ auditAction(a.action) }}</span>
+                            <span class="aud-mod" [attr.data-mod]="a.module">{{ a.module || '—' }}</span>
+                            <span class="aud-when">{{ auditWhen(a.created_at) }}</span>
+                          </div>
+                          <div class="aud-event__who">{{ a.user_name || 'System' }}@if (a.role_name) {<span class="aud-role">{{ a.role_name }}</span>}</div>
+                          @if (auditSummary(a)) {
+                            <div class="aud-detail">{{ auditSummary(a) }}</div>
+                          }
+                        </div>
+                      </li>
+                    }
+                  </ol>
+                </div>
+              } @else { <div class="uw-muted">No history yet.</div> }
+            }
+            <div class="p-actions">
+              <button class="uw-btn ghost" type="button" (click)="auditOpen.set(false)">Close</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (rejectOpen()) {
+        <div class="uw-modal-back">
+          <div class="uw-modal" (click)="$event.stopPropagation()">
+            <h3>{{ rejectMode() === 'cannot_proceed' ? 'Cannot Proceed — Close File' : 'Reject Step' }}</h3>
+            <textarea class="uw-input" rows="3" [(ngModel)]="rejectReason" placeholder="Reason (required)…"></textarea>
+            <div class="p-actions">
+              <button class="uw-btn ghost" type="button" (click)="rejectOpen.set(false)">Cancel</button>
+              <button class="uw-btn danger" type="button" [disabled]="acting()" (click)="confirmReject()">Confirm</button>
+            </div>
+          </div>
+        </div>
+      }
+      @if (committeeSendOpen()) {
+        <div class="uw-modal-back">
+          <!-- Client 19-10-2026: redesigned - fixed header / scrolling body / fixed footer,
+               one card per section (Recipients, Attachments, Notes). -->
+          <div class="uw-modal uw-modal--committee" (click)="$event.stopPropagation()">
+            <div class="cm-head">
+              <div>
+                <h3>Send Credit Paper to Committee</h3>
+                <p>The latest credit paper is e-mailed to the people ticked below.</p>
+              </div>
+              <button type="button" class="uw-modal-x" (click)="committeeSendOpen.set(false)" title="Close"><i class="bi bi-x-lg"></i></button>
+            </div>
+
+            <div class="cm-body">
+              @if (committeeError()) { <div class="uw-addpanel-err">{{ committeeError() }}</div> }
+
+              <section class="cm-card">
+                <div class="cm-card-h"><i class="bi bi-people"></i> Recipients</div>
+                <p class="cm-hint">Head of Underwriting users are listed; add any extra e-mail for this send.</p>
+                <div class="cm-list">
+                  @for (h of committeeHeads(); track h.email) {
+                    <label class="cm-row">
+                      <input type="checkbox" [checked]="isCommitteeChecked(h.email)" (change)="toggleCommittee(h.email)" />
+                      <span class="cm-row-main"><b>{{ h.name || h.email }}</b><small>{{ h.email }}</small></span>
+                    </label>
+                  }
+                  @for (e of committeeExtra(); track e) {
+                    <label class="cm-row">
+                      <input type="checkbox" [checked]="isCommitteeChecked(e)" (change)="toggleCommittee(e)" />
+                      <span class="cm-row-main"><b>{{ e }}</b><small>Added for this send</small></span>
+                      <button type="button" class="cm-x" (click)="removeCommitteeExtra(e)" title="Remove"><i class="bi bi-x-lg"></i></button>
+                    </label>
+                  }
+                  @if (!committeeHeads().length && !committeeExtra().length) {
+                    <div class="cm-empty"><i class="bi bi-info-circle"></i> No Head of Underwriting users found — add an e-mail below.</div>
+                  }
+                </div>
+                <div class="cm-add">
+                  <input class="uw-input" type="email" [(ngModel)]="committeeExtraDraft" [ngModelOptions]="{ standalone: true }" placeholder="Add another e-mail…" (keyup.enter)="addCommitteeEmail()" />
+                  <button type="button" class="uw-btn ghost" (click)="addCommitteeEmail()"><i class="bi bi-plus-lg"></i> Add</button>
+                </div>
+              </section>
+
+              <!-- Client 16-10-2026: other documents to send with the credit paper, extra uploads, and notes. -->
+              <section class="cm-card">
+                <div class="cm-card-h"><i class="bi bi-paperclip"></i> Attachments</div>
+                <p class="cm-hint">The latest credit paper is always attached. Tick any other documents to include.</p>
+                <div class="cm-list">
+                  @if (committeeDocsLoading()) { <div class="cm-empty">Loading documents…</div> }
+                  @else {
+                    @for (doc of committeeDocs(); track docKey(doc)) {
+                      <label class="cm-row">
+                        <input type="checkbox" [checked]="committeeDocSel().has(docKey(doc))" [disabled]="docKey(doc) === committeePaperKey()" (change)="toggleCommitteeDoc(doc)" />
+                        <span class="cm-row-main"><b class="cm-ellip" [title]="doc.file_name">{{ doc.file_name }}</b></span>
+                        <span class="cm-doc-tag">{{ docKey(doc) === committeePaperKey() ? 'Credit paper · always attached' : doc.label }}</span>
+                      </label>
+                    } @empty { <div class="cm-empty">No other documents on this case yet.</div> }
+                  }
+                  @for (u of committeeUploads(); track $index; let i = $index) {
+                    <div class="cm-row cm-row--up">
+                      <i class="bi bi-file-earmark-arrow-up"></i>
+                      <span class="cm-row-main"><b class="cm-ellip" [title]="u.file_name">{{ u.file_name }}</b><small>New upload</small></span>
+                      <button type="button" class="cm-x" (click)="removeCommitteeUpload(i)" title="Remove"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                  }
+                </div>
+                <div class="cm-up">
+                  <label class="uw-upload">
+                    <input type="file" multiple [attr.accept]="uploadAccept" (change)="onCommitteeFilesPick($event)" hidden />
+                    <span class="uw-btn ghost"><i class="bi bi-upload"></i> Upload other documents</span>
+                  </label>
+                  <small>Saved to the application's documents and attached.</small>
+                </div>
+              </section>
+
+              <section class="cm-card">
+                <label class="cm-card-h" for="cmNotes"><i class="bi bi-chat-left-text"></i> Notes for the e-mail <small>(optional)</small></label>
+                <textarea id="cmNotes" class="uw-input" rows="3" [(ngModel)]="committeeNotes" [ngModelOptions]="{ standalone: true }" placeholder="Anything the committee should know — added to the e-mail text…"></textarea>
+              </section>
+            </div>
+
+            <div class="cm-foot">
+              <button class="uw-btn ghost" type="button" (click)="committeeSendOpen.set(false)">Cancel</button>
+              <button class="uw-btn dark" type="button" [disabled]="sendingCreditPaper()" (click)="submitCommitteeSend()"><i class="bi bi-send"></i> {{ sendingCreditPaper() ? 'Sending…' : 'Send to Committee' }}</button>
+            </div>
+          </div>
+        </div>
+      }
+      @if (reviewRejectOpen()) {
+        <div class="uw-modal-back">
+          <div class="uw-modal" (click)="$event.stopPropagation()">
+            <h3>Reject Application</h3>
+            <textarea class="uw-input" rows="3" [(ngModel)]="reviewReason" placeholder="Reason for rejection (required)…"></textarea>
+            <div class="p-actions">
+              <button class="uw-btn ghost" type="button" (click)="reviewRejectOpen.set(false)">Cancel</button>
+              <button class="uw-btn danger" type="button" [disabled]="acting()" (click)="confirmReviewReject()">Confirm Reject</button>
+            </div>
+          </div>
+        </div>
+      }
+      @if (returnOpen()) {
+        <div class="uw-modal-back">
+          <div class="uw-modal" (click)="$event.stopPropagation()">
+            <h3>Return to BDM</h3>
+            <p class="uw-modal-note">This closes the application and reopens the originating enquiry at the Send-Offer stage, so the BDM can revise and re-send the offer before converting again.</p>
+            <textarea class="uw-input" rows="3" [(ngModel)]="returnNote" placeholder="What information is needed from the BDM…"></textarea>
+            <div class="p-actions">
+              <button class="uw-btn ghost" type="button" (click)="returnOpen.set(false)">Cancel</button>
+              <button class="uw-btn dark" type="button" [disabled]="acting()" (click)="confirmReturn()">Return to BDM</button>
+            </div>
+          </div>
+        </div>
+      }
+      @if (queryOpen()) {
+        <div class="uw-modal-back">
+          <div class="uw-modal" (click)="$event.stopPropagation()">
+            <h3>Request Information</h3>
+            <label class="p-field"><span>Send to</span>
+              <select class="uw-input" [(ngModel)]="reqSendTo">
+                <option value="Broker">Broker</option>
+                <option value="Applicant">Applicant</option>
+              </select>
+              <small class="uw-muted">The assigned BDM is automatically copied in (cc) on this request.</small>
+            </label>
+            <div class="p-field"><span>Outstanding items</span>
+              <div class="uw-reqitems">
+                <label><input type="checkbox" [(ngModel)]="reqItems.bank" /> Bank Statements</label>
+                <label><input type="checkbox" [(ngModel)]="reqItems.address" /> Proof Of Address</label>
+                <label><input type="checkbox" [(ngModel)]="reqItems.income" /> Evidence Of Income</label>
+                <label><input type="checkbox" [(ngModel)]="reqItems.accounts" /> Company Accounts</label>
+                <label><input type="checkbox" [(ngModel)]="reqItems.assets" /> Asset &amp; Liability Statement</label>
+                <label><input type="checkbox" [(ngModel)]="reqItems.creditFile" /> Credit File</label>
+              </div>
+            </div>
+            <label class="p-field"><span>Comments</span>
+              <textarea class="uw-input" rows="3" [(ngModel)]="reqComments" placeholder="Additional instructions…"></textarea>
+            </label>
+            <label class="p-field"><span>Due date</span>
+              <input class="uw-input" type="date" [min]="todayStr" [(ngModel)]="reqDueDate" />
+            </label>
+            <div class="p-actions">
+              <button class="uw-btn ghost" type="button" (click)="queryOpen.set(false)">Cancel</button>
+              <button class="uw-btn dark" type="button" [disabled]="acting()" (click)="confirmQuery()"><i class="bi bi-send"></i> Send Request</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Edit loan (client 12-10-2026): opens the full indicative editor pre-filled from the
+           accepted indicative. Client 16-10-2026: saving updates the application + portfolio and
+           e-mails ONLY a revised offer letter to the broker for signing (cc underwriter + BDM);
+           underwriting carries on and an "Upload Signed Offer" button waits for the signed copy.
+           A deal with no source enquiry falls back to the simple Gross / Net editor. -->
+      @if (loanEditOpen()) {
+        @if (c()?.enquiry_id) {
+          <uw-indicative-editor [enquiryId]="$any($safeNavigationMigration(c()?.enquiry_id))" [caseId]="$any($safeNavigationMigration(c()?.underwriting_case_id))" [ccDefaults]="loanCcDefaults()" (saved)="onIndicativeSaved()" (closed)="loanEditOpen.set(false)" />
+        } @else {
+          <div class="uw-modal-back" (click)="cancelLoanEdit()">
+            <div class="uw-modal" (click)="$event.stopPropagation()">
+              <h3>Change Loan Figures</h3>
+              <label class="p-field"><span>Gross Loan (£)</span>
+                <input class="uw-input" type="number" numInput min="0" step="0.01" [(ngModel)]="loanDraft.gross" [ngModelOptions]="{ standalone: true }" />
+              </label>
+              <label class="p-field"><span>Net Advance (£)</span>
+                <input class="uw-input" type="number" numInput min="0" step="0.01" [(ngModel)]="loanDraft.net" [ngModelOptions]="{ standalone: true }" />
+              </label>
+              <small class="uw-muted">LTV is recalculated automatically from the gross loan and the security value.</small>
+              <div class="p-actions">
+                <button class="uw-btn ghost" type="button" [disabled]="loanSaving()" (click)="cancelLoanEdit()">Cancel</button>
+                <button class="uw-btn dark" type="button" [disabled]="loanSaving()" (click)="saveLoan()"><i class="bi bi-save"></i> {{ loanSaving() ? 'Saving…' : 'Save' }}</button>
+              </div>
+            </div>
+          </div>
+        }
+      }
+
+      <!-- Deal notes scratchpad (client 07-10-2026): a side panel OUTSIDE the steps. -->
+      @if (notesOpen()) {
+        <div class="uw-notes-drawer">
+          <div class="uw-notes-head">
+            <div class="uw-notes-title"><i class="bi bi-journal-text"></i> Deal Notes</div>
+            <button class="uw-modal-x" type="button" (click)="notesOpen.set(false)" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <p class="uw-notes-hint">Private working notes for this deal — kept outside the underwriting steps. Add as many as you like.</p>
+          <div class="uw-notes-add">
+            <textarea class="uw-input" rows="3" [(ngModel)]="newNote" placeholder="Write a note…"></textarea>
+            <button class="uw-btn dark" type="button" [disabled]="notesSaving()" (click)="addNote()"><i class="bi bi-plus-lg"></i> {{ notesSaving() ? 'Saving…' : 'Add Note' }}</button>
+          </div>
+          <div class="uw-notes-list">
+            @if (notesList().length) {
+              @for (n of notesList(); track n.id) {
+                <div class="uw-note">
+                  <div class="uw-note-text">{{ n.text }}</div>
+                  <div class="uw-note-foot">
+                    @if (noteWhen(n.ts)) { <span class="uw-note-ts">{{ noteWhen(n.ts) }}</span> }
+                    <button class="uw-note-x" type="button" [disabled]="notesSaving()" (click)="removeNote(n.id)" title="Remove note"><i class="bi bi-trash"></i></button>
+                  </div>
+                </div>
+              }
+            } @else { <div class="uw-muted">No notes yet.</div> }
+          </div>
+          <div class="uw-notes-actions">
+            <button class="uw-btn ghost" type="button" (click)="notesOpen.set(false)">Close</button>
+          </div>
+        </div>
+      }
+    }
+    </div>
+
+@if (photoCur(); as pv) {
+  <div class="uw-lightbox" (click)="closePhoto()">
+    @if (photos().length > 1) { <button class="uw-lightbox-nav prev" type="button" (click)="prevPhoto(); $event.stopPropagation()"><i class="bi bi-chevron-left"></i></button> }
+    <img [src]="pv.url" [alt]="pv.file_name" (click)="$event.stopPropagation()" />
+    @if (photos().length > 1) { <button class="uw-lightbox-nav next" type="button" (click)="nextPhoto(); $event.stopPropagation()"><i class="bi bi-chevron-right"></i></button> }
+    <div class="uw-lightbox-count">{{ (photoIdx() ?? 0) + 1 }} / {{ photos().length }}</div>
+    <button class="uw-lightbox-x" type="button" (click)="closePhoto()"><i class="bi bi-x-lg"></i></button>
+  </div>
+}
+
+<!-- Signed offer letter + application form uploaded at convert (28-09-2026). -->
+<ng-template #signedDoc let-cas>
+  @if (signedDocs().length) {
+    <div class="uw-signed">
+      <div class="uw-signed-head">
+        <div class="uw-signed-titles">
+          <div class="uw-signed-title">SIGNED OFFER &amp; APPLICATION FORM <span class="en-count">{{ signedDocs().length }}</span></div>
+          <div class="uw-signed-name"><i class="bi bi-file-earmark-pdf"></i> {{ signedSelName() || cas.signed_offer_file_name }}</div>
+        </div>
+        <div class="uw-signed-actions">
+          <button class="uw-btn ghost" type="button" [disabled]="!signedUrl()" (click)="downloadSigned(cas)"><i class="bi bi-download"></i> Download</button>
+          <button class="uw-btn ghost" type="button" [disabled]="!signedUrl()" (click)="openSignedInTab()"><i class="bi bi-box-arrow-up-right"></i> Open in new tab</button>
+          <button class="uw-btn ghost" type="button" (click)="signedOpen.set(!signedOpen())"><i class="bi" [class.bi-chevron-up]="signedOpen()" [class.bi-chevron-down]="!signedOpen()"></i> {{ signedOpen() ? 'Hide' : 'View Document' }}</button>
+        </div>
+      </div>
+      @if (signedOpen()) {
+        @if (signedDocs().length > 1) {
+          <div class="uw-signed-tabs">
+            @for (d of signedDocs(); track d.id; let i = $index) {
+              <button type="button" class="uw-signed-tab" [class.active]="signedSel() === d.id" (click)="showSigned(d.id)" [title]="d.file_name">
+                <i class="bi bi-file-earmark-text"></i> {{ i + 1 }}. {{ d.file_name }}
+              </button>
+            }
+          </div>
+        }
+        <div class="uw-signed-body">
+          @if (signedLoading()) { <p class="uw-muted uw-signed-msg">Loading document…</p> }
+          @else if (signedUrl(); as u) {
+            @if (signedInline()) { <iframe class="uw-signed-frame" [src]="u" title="Signed offer and application form"></iframe> }
+            @else { <p class="uw-muted uw-signed-msg">This file type can't be previewed here — use Download.</p> }
+          } @else { <p class="uw-muted uw-signed-msg">The file could not be loaded.</p> }
+        </div>
+      }
+    </div>
+  }
+</ng-template>
+
+<!-- Entries added in Valuation / KYC / Solicitor Quote (client 28-09-2026): right-hand list. -->
+<ng-template #entryList let-no>
+  <div class="p-card">
+    <div class="card-title">{{ (entryNoun(no) === 'KYC' ? 'KYC ENTRIES' : entryNoun(no) === 'Valuation' ? 'VALUATIONS' : 'SOLICITOR QUOTES') }} ADDED <span class="en-count">{{ entries().length }}</span></div>
+    @if (entries().length) {
+      <ol class="en-list">
+        @for (e of entries(); track $index; let i = $index) {
+          <li class="en-row" [class.en-row--editing]="editingEntry() === i" [class.en-row--ok]="entryStatus(e) === 'accepted'" [class.en-row--bad]="entryStatus(e) === 'rejected'">
+            <div class="en-main">
+              <div class="en-title">{{ i + 1 }}. {{ entryTitle(no, e) }}
+                @if (entryStatus(e) === 'accepted') { <span class="en-badge ok"><i class="bi bi-check-lg"></i> Approved</span> }
+                @if (entryStatus(e) === 'rejected') { <span class="en-badge bad"><i class="bi bi-x-lg"></i> Rejected</span> }
+              </div>
+              @for (line of entryDetail(no, e); track line) { <div class="en-sub">{{ line }}</div> }
+              @if (no === 2) {
+                <button type="button" class="en-paid" [class.on]="entryPaid(e)" [disabled]="!canEditForm() || acting()" (click)="togglePaid(i)" [title]="entryPaid(e) ? 'Borrower has paid the valuer' : 'Mark as paid by the borrower'">
+                  <i class="bi" [class.bi-check-circle-fill]="entryPaid(e)" [class.bi-circle]="!entryPaid(e)"></i>
+                  {{ entryPaid(e) ? 'Valuation Paid' : 'Mark Valuation Paid' }}
+                </button>
+              }
+              <!-- Approve / Reject moved to the dropdown in the right-hand card (client 29-09-2026). -->
+            </div>
+            @if (canEditForm()) {
+              <div class="en-btns">
+                <button class="en-ico" type="button" title="Edit" (click)="editEntry(i)"><i class="bi bi-pencil"></i></button>
+                <button class="en-ico en-ico--del" type="button" title="Remove" (click)="removeEntry(i)"><i class="bi bi-trash"></i></button>
+              </div>
+            }
+          </li>
+        }
+      </ol>
+    } @else {
+      <div class="uw-muted">Nothing added yet — fill in the form and press Add.</div>
+    }
+  </div>
+</ng-template>
+
+<!-- Steps 1-3 (client 29-09-2026): pick an added entry in the dropdown, then Approve or Reject it. -->
+<ng-template #entryDecide let-no>
+  @if (editable() && entries().length) {
+    <!-- Client 12-10-2026: one OVERALL approve/reject for all valuations. Once a decision is
+         made the buttons are hidden (and the old "only this one goes to the broker" line is gone);
+         use Update to change it. -->
+    @if (valuationDecided()) {
+      <div class="val-flag" [class.ok]="!valuationAllRejected()" [class.bad]="valuationAllRejected()">
+        <i class="bi" [class.bi-check-lg]="!valuationAllRejected()" [class.bi-x-lg]="valuationAllRejected()"></i>
+        {{ entryNoun(no) }} {{ valuationAllRejected() ? 'rejected' : 'approved' }}
+      </div>
+      <!-- Client 16-10-2026: undo the decision so the valuation can be changed (same as Reopen KYC). -->
+      <div class="val-actions"><button class="uw-btn ghost" type="button" [disabled]="acting()" (click)="reopenValuation()"><i class="bi bi-arrow-counterclockwise"></i> Reopen Valuation</button></div>
+    } @else {
+      <div class="p-subsection">APPROVE / REJECT {{ no === 3 ? 'KYC' : entryNoun(no).toUpperCase() }}</div>
+      <div class="en-decide-btns">
+        <button class="uw-btn danger" type="button" [disabled]="acting()" (click)="markAllEntries('rejected')"><i class="bi bi-x-lg"></i> Reject</button>
+        <button class="uw-btn ok" type="button" [disabled]="acting()" (click)="markAllEntries('accepted')"><i class="bi bi-check-lg"></i> Approve</button>
+      </div>
+    }
+  }
+</ng-template>
+
+<!-- Steps 1-3 (client 29-09-2026): which entry is chosen; Proceed needs one Approved. -->
+<ng-template #selectFlag let-no>
+  @if (acceptedCount()) {
+    <div class="val-flag ok"><i class="bi bi-check-lg"></i> {{ acceptedCount() }} {{ entryNoun(no) }}{{ no === 3 ? (acceptedCount() === 1 ? ' entry' : ' entries') : (acceptedCount() === 1 ? '' : 's') }} approved — only {{ acceptedCount() === 1 ? 'this one goes' : 'these go' }} to the broker</div>
+  }
+</ng-template>
+
+<!-- KYC / AML checklist (client 07-10-2026): masters-driven checks, each with doc upload + notes. -->
+<ng-template #kycChecklist let-items>
+  <div class="kyc-list">
+    @for (it of items; track it.id) {
+      <div class="kyc-row" [class.done]="kycDone(it.id)">
+        <label class="kyc-head">
+          <input type="checkbox" [checked]="kycDone(it.id)" (change)="toggleKycDone(it.id)" [disabled]="!canEditForm()" />
+          <span class="kyc-name">{{ it.name }}</span>
+        </label>
+        @if (kycDone(it.id)) {
+        <textarea class="uw-input kyc-note" rows="1" placeholder="Notes…" [ngModel]="kycNoteVal(it.id)" (ngModelChange)="setKycNote(it.id, $event)" (change)="saveKyc()" [disabled]="!canEditForm()"></textarea>
+        <div class="kyc-docs">
+          @if (canEditForm()) {
+            <label class="uw-upload">
+              <input type="file" multiple [attr.accept]="uploadAccept" (change)="onKycDocPick(it.id, $event)" hidden />
+              <span class="uw-btn ghost kyc-up"><i class="bi bi-upload"></i> Upload</span>
+            </label>
+          }
+          @for (ph of kycDocsFor(it.id); track ph.id) {
+            <span class="kyc-doc">
+              <a href="javascript:void(0)" (click)="openFile(ph)" [title]="ph.file_name"><i class="bi" [class.bi-file-earmark-text]="!isFileLoading(ph.id)" [class.bi-hourglass-split]="isFileLoading(ph.id)"></i> {{ ph.file_name }}</a>
+              @if (canEditForm()) { <button class="kyc-doc-x" type="button" (click)="removeKycDoc(ph.id)" title="Remove"><i class="bi bi-x"></i></button> }
+            </span>
+          }
+        </div>
+        }
+      </div>
+    }
+    @if (canEditForm()) {
+      <div class="val-actions"><button class="uw-btn dark" type="button" [disabled]="acting()" (click)="saveKyc(true)"><i class="bi bi-save"></i> Save KYC notes</button></div>
+    }
+  </div>
+</ng-template>
+
+<!-- Solicitor checks (client 07-10-2026): masters-driven checks on the borrower's solicitor. -->
+<ng-template #solChecklist let-items>
+  <div class="kyc-list">
+    @for (it of items; track it.id) {
+      <div class="kyc-row" [class.done]="solDone(it.id)">
+        <label class="kyc-head">
+          <input type="checkbox" [checked]="solDone(it.id)" (change)="toggleSolDone(it.id)" [disabled]="!canEditForm()" />
+          <span class="kyc-name">{{ it.name }}</span>
+          @if (checkUpdatedText(it.id); as upd) {
+            <span class="sol-upd" [class.stale]="checkStale(it.id)" [title]="checkStale(it.id) ? 'Last updated over 90 days ago — consider redoing this check' : 'Last updated for this solicitor'">
+              <i class="bi" [class.bi-clock-history]="!checkStale(it.id)" [class.bi-exclamation-circle]="checkStale(it.id)"></i> Updated {{ upd }}
+            </span>
+          }
+        </label>
+        @if (solDone(it.id)) {
+        <textarea class="uw-input kyc-note" rows="1" placeholder="Notes…" [ngModel]="solNoteVal(it.id)" (ngModelChange)="setSolNote(it.id, $event)" (change)="saveSolCheckNote(it.id)" [disabled]="!canEditForm()"></textarea>
+        <div class="kyc-docs">
+          @if (canEditForm()) {
+            <label class="uw-upload">
+              <input type="file" multiple [attr.accept]="uploadAccept" (change)="onSolDocPick(it.id, $event)" hidden />
+              <span class="uw-btn ghost kyc-up"><i class="bi bi-upload"></i> Upload</span>
+            </label>
+          }
+          @for (bd of bsDocsFor(it.id); track bd.id) {
+            <span class="kyc-doc">
+              <a href="javascript:void(0)" (click)="openBsDoc(bd.id, bd.file_name)" [title]="bd.file_name + ' — uploaded ' + bsDocDate(bd)"><i class="bi bi-file-earmark-text"></i> {{ bd.file_name }}</a>
+              <span class="kyc-doc-date">{{ bsDocDate(bd) }}</span>
+              @if (canEditForm()) { <button class="kyc-doc-x" type="button" (click)="removeBsDoc(bd.id)" title="Remove"><i class="bi bi-x"></i></button> }
+            </span>
+          }
+          @for (ph of solDocsFor(it.id); track ph.id) {
+            <span class="kyc-doc">
+              <a href="javascript:void(0)" (click)="openFile(ph)" [title]="ph.file_name"><i class="bi" [class.bi-file-earmark-text]="!isFileLoading(ph.id)" [class.bi-hourglass-split]="isFileLoading(ph.id)"></i> {{ ph.file_name }}</a>
+              @if (canEditForm()) { <button class="kyc-doc-x" type="button" (click)="removeSolDoc(ph.id)" title="Remove"><i class="bi bi-x"></i></button> }
+            </span>
+          }
+        </div>
+        }
+      </div>
+    }
+    @if (canEditForm()) {
+      <div class="val-actions"><button class="uw-btn dark" type="button" [disabled]="acting()" (click)="saveSol(true)"><i class="bi bi-save"></i> Save SOLICITOR notes</button></div>
+    }
+  </div>
+</ng-template>
+
+<!-- Summary rows (client 16-10-2026): several securities render as a tidy list - address on one
+     line, charge · value under it - instead of one long right-aligned run-on. -->
+<ng-template #sumRows let-rows>
+  @for (r of rows; track r.label) {
+    @if (r.lines?.length) {
+      <div class="sum-row sum-stack sum-list">
+        <span>{{ r.label }}</span>
+        <ol class="sec-list">
+          @for (l of r.lines; track $index) {
+            <li><b>{{ l.main }}</b>@if (l.sub) { <small>{{ l.sub }}</small> }</li>
+          }
+        </ol>
+      </div>
+    } @else {
+      <div class="sum-row" [class.sum-stack]="isMultiLine(r.value)"><span>{{ r.label }}</span><b>{{ r.value }}</b></div>
+    }
+  }
+</ng-template>
+
+<!-- Step 6 Funds to Solicitor (client 16-10-2026): NET to the solicitor, the broker payout
+     (broker fee + their share of the arrangement fee) and, for deals with drawdowns, Funds
+     Drawn Down (gross). The completion card shows Gross + Net and the broker breakdown. -->
+<ng-template #fundsStep let-cas let-d="d">
+  <div class="p-cols p-cols-funds">
+    <div class="p-card">
+      <div class="p-section">CHECKLIST</div>
+      <label class="p-check"><input type="checkbox" [checked]="checked('Funds sent to solicitor for completion')" (change)="toggle('Funds sent to solicitor for completion')" [disabled]="!canEditForm()" /><span>Funds sent to solicitor for completion</span></label>
+      <label class="p-check"><input type="checkbox" [checked]="checked('Funds sent to broker')" (change)="toggle('Funds sent to broker')" [disabled]="!canEditForm()" /><span>Funds sent to broker</span></label>
+      @if (hasDrawdowns()) {
+        <label class="p-check"><input type="checkbox" [checked]="checked('Funds drawn down')" (change)="toggle('Funds drawn down')" [disabled]="!canEditForm()" /><span>Funds drawn down</span></label>
+      }
+    </div>
+    <div class="p-card">
+      <div class="p-section">FUNDS TO SOLICITOR</div>
+      <div class="p-fields">
+        <label class="p-field"><span>Net Amount (£)</span><input class="uw-input" type="number" numInput [ngModel]="fieldVal('funds_amount')" (ngModelChange)="setField('funds_amount', $event)" [disabled]="!canEditForm()" /></label>
+        <label class="p-field"><span>Date Sent to Solicitor</span><input class="uw-input" type="date" [ngModel]="fieldVal('funds_date')" (ngModelChange)="setField('funds_date', $event)" [disabled]="!canEditForm()" /></label>
+      </div>
+      <div class="p-subsection">FUNDS TO BROKER</div>
+      <div class="p-fields">
+        <label class="p-field"><span>Amount (£)</span><input class="uw-input" type="number" numInput [ngModel]="fieldVal('broker_funds_amount')" (ngModelChange)="setField('broker_funds_amount', $event)" [disabled]="!canEditForm()" /></label>
+        <label class="p-field"><span>Date Sent to Broker</span><input class="uw-input" type="date" [ngModel]="fieldVal('broker_funds_date')" (ngModelChange)="setField('broker_funds_date', $event)" [disabled]="!canEditForm()" /></label>
+      </div>
+      <div class="fund-break">
+        <div class="sum-row"><span>Broker fee</span><b>{{ money(brokerFee()) }}</b></div>
+        <div class="sum-row"><span>Arrangement fee share</span><b>{{ money(brokerShare()) }}</b></div>
+        <div class="sum-row fund-total"><span>Total to {{ brokerPayee() }}</span><b>{{ money(brokerTotal()) }}</b></div>
+      </div>
+      @if (hasDrawdowns()) {
+        <div class="p-subsection">FUNDS DRAWN DOWN</div>
+        <!-- Client 21-10-2026: Net Amount / Drawn Down Date inputs removed - each drawdown listed with its net and month. -->
+        <div class="fund-break fund-ddlist">
+          @for (r of drawdownRows(); track r.no) {
+            <div class="sum-row"><span>Drawdown {{ r.no }} · {{ r.month }}</span><b>{{ money(r.net) }}</b></div>
+          }
+          <div class="sum-row fund-total"><span>Drawdown Net Loan</span><b>{{ money(drawdownNetTotal()) }}</b></div>
+        </div>
+      }
+    </div>
+    <div class="p-card">
+      <div class="p-section">COMPLETION</div>
+      <ng-container *ngTemplateOutlet="sumRows; context: { $implicit: infoRows(11, cas) }" />
+      <div class="p-subsection">PAID TO BROKER ON COMPLETION</div>
+      <div class="sum-row"><span>Broker fee</span><b>{{ money(brokerFee()) }}</b></div>
+      <div class="sum-row"><span>Arrangement fee share</span><b>{{ money(brokerShare()) }}</b></div>
+      <div class="sum-row fund-total"><span>Total</span><b>{{ money(brokerTotal()) }}</b></div>
+    </div>
+  </div>
+</ng-template>

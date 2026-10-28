@@ -1,0 +1,6 @@
+      .ml-new { display: inline-flex; align-items: center; gap: 8px; }
+      .ml-filterbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      .ml-actions { display: flex; gap: 8px; }
+      .ml-delete { color: var(--danger, #b42318); }
+      .ml-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .ml-modal-footer { display: flex; gap: 10px; justify-content: flex-end; }

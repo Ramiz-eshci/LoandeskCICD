@@ -1,0 +1,12 @@
+    <div class="card">
+      @if (title() || hasHeader()) {
+        <div class="ui-card-head" [class.ui-card-head--divided]="dividedHeader()">
+          <h3 class="ui-card-title">{{ title() }}</h3>
+          <ng-content select="[cardAction]" />
+        </div>
+      }
+      <div [class]="bodyClass()">
+        <ng-content />
+      </div>
+    </div>
+  

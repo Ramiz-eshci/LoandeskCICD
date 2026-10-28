@@ -1,0 +1,10 @@
+      :host { display: block; }
+      .bar-list { display: flex; flex-direction: column; gap: 16px; margin: 0; padding: 0; list-style: none; }
+      .bar-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+      .bar-label { font-size: 13px; font-weight: 500; color: var(--foreground); }
+      .bar-value { font-size: 13px; font-weight: 700; color: var(--foreground); }
+      .bar-list { gap: 12px; }
+      .bar-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 10px; }
+      .bar-value { flex: none; }
+      .bar-list--click li { cursor: pointer; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
+      .bar-list--click li:hover { background: #f4f7fb; }

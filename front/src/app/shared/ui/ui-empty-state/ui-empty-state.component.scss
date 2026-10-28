@@ -1,0 +1,13 @@
+      :host { display: block; }
+      .ui-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 56px 24px;
+        text-align: center;
+      }
+      .ui-empty i { font-size: 28px; color: var(--muted-foreground); }
+      .ui-empty-title { font-size: 15px; font-weight: 600; color: var(--foreground); }
+      .ui-empty-msg { margin: 0; font-size: 13px; color: var(--muted-foreground); max-width: 420px; }

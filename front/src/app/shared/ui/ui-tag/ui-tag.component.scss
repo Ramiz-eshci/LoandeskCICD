@@ -1,0 +1,16 @@
+      :host { display: inline-flex; }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 600;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+      .tag--success { background: #dcfce7; color: #15803d; border-color: #86efac; }
+      .tag--warning { background: #fef9c3; color: #ca8a04; border-color: #fde047; }
+      .tag--danger  { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+      .tag--info    { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+      .tag--neutral { background: #fff; color: var(--muted-foreground); border-color: var(--border); }

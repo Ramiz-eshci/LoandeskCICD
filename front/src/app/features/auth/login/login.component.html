@@ -1,0 +1,111 @@
+    <div class="login-split">
+      <!-- Brand panel -->
+      <section class="login-brandpanel">
+        <span class="lb-circle lb-circle--tr"></span>
+        <span class="lb-circle lb-circle--bl"></span>
+        <span class="lb-circle lb-circle--centre"></span>
+
+        <div class="lb-content">
+          <div class="lb-logo">
+            @if (!logoFailed) {
+              <img src="logo.png" alt="LoanDesk — Loan Management Platform" (error)="logoFailed = true" />
+            }
+            @if (logoFailed) {
+              <span class="lb-logo-fallback">
+                <span class="lb-logo-mark">LD</span>
+                <span class="lb-logo-text">
+                  <strong>LoanDesk</strong>
+                  <small>Loan Management Platform</small>
+                </span>
+              </span>
+            }
+          </div>
+
+          <div class="lb-middle">
+            <span class="lb-badge">LoanDesk Lending Platform</span>
+            <h2 class="lb-title">Manage the full<br />lending lifecycle</h2>
+            <p class="lb-lede">
+              From first enquiry to final redemption — one platform for origination, underwriting,
+              credit, servicing, and collections.
+            </p>
+            <ul class="lb-list">
+              @for (item of highlights; track item) {
+                <li><span class="lb-dot"></span><span>{{ item }}</span></li>
+              }
+            </ul>
+          </div>
+
+          <p class="lb-footer">© 2026 LoanDesk · FCA Authorised · All rights reserved</p>
+        </div>
+      </section>
+
+      <!-- Form panel -->
+      <section class="login-formpanel">
+        <div class="auth-panel">
+          <app-auth-brand class="login-brand-sm" />
+
+          <h1 class="auth-title">Welcome back</h1>
+          <p class="auth-subtitle">Sign in to LoanDesk Lending Platform</p>
+
+          <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+            <ui-form-field label="Email address" for="ld-email" [error]="emailError()">
+              <input
+                id="ld-email"
+                type="email"
+                class="form-input auth-input"
+                [class.is-invalid]="showError('email')"
+                autocomplete="username"
+                placeholder="Enter Email"
+                formControlName="email"
+              />
+            </ui-form-field>
+
+            <ui-form-field label="Password" for="ld-password" [error]="passwordError()">
+              <a fieldAction class="auth-link" routerLink="/forgot-password">Forgot password?</a>
+              <div class="auth-password">
+                <input
+                  id="ld-password"
+                  [type]="reveal() ? 'text' : 'password'"
+                  class="form-input auth-input"
+                  [class.is-invalid]="showError('password')"
+                  autocomplete="current-password"
+                  placeholder="Enter Password"
+                  formControlName="password"
+                />
+                <button
+                  type="button"
+                  class="auth-reveal"
+                  [attr.aria-label]="reveal() ? 'Hide password' : 'Show password'"
+                  (click)="reveal.set(!reveal())"
+                >
+                  <i class="bi" [class]="reveal() ? 'bi-eye-slash' : 'bi-eye'"></i>
+                </button>
+              </div>
+            </ui-form-field>
+
+            <label class="auth-remember">
+              <input type="checkbox" formControlName="remember" />
+              <span>Remember me on this device</span>
+            </label>
+
+            @if (errorMsg()) {
+              <p class="auth-error">{{ errorMsg() }}</p>
+            }
+            <button uiButton variant="primary" type="submit" class="auth-submit" [disabled]="loading()">
+              {{ loading() ? 'Signing in…' : 'Sign In' }}
+            </button>
+          </form>
+
+          <hr class="auth-rule" />
+
+          <p class="auth-secure">
+            <i class="bi bi-shield-check"></i>
+            Secured with 256-bit TLS encryption · MFA required
+          </p>
+          <p class="auth-help">
+            <a class="auth-help-link" href="javascript:void(0)">Need help? Contact IT Support</a>
+          </p>
+        </div>
+      </section>
+    </div>
+  

@@ -1,0 +1,32 @@
+    <div class="co-title">
+      <i class="bi bi-exclamation-triangle"></i>
+      <ui-page-header title="Collections" [subtitle]="subtitle()" />
+    </div>
+
+    <div class="row g-3 mb-3">
+      @for (kpi of kpis(); track kpi.label) {
+        <div class="col-12 col-sm-6 col-xl-3">
+          <ui-kpi-card labelStyle="plain" iconPlacement="inline" [icon]="kpi.icon" [label]="kpi.label"
+            [value]="kpi.value" [caption]="kpi.caption" [tone]="kpi.tone" [valueSize]="30" />
+        </div>
+      }
+    </div>
+
+    <ui-tab-filters class="mb-3" [tabs]="tabs()" [(active)]="activeTab" />
+
+    <ui-card>
+      <ui-data-table [columns]="columns" [rows]="filtered()" emptyText="No cases in this view.">
+        <ng-template uiCell="status" let-row>
+          <ui-tag [tone]="statusTone(row.statusKey)">{{ row.status }}</ui-tag>
+        </ng-template>
+        <ng-template uiCell="actions" let-row>
+          <div class="actions">
+            <button uiButton variant="ghost" size="sm" type="button">Open</button>
+            @if (row.statusKey !== 'resolved') {
+              <button uiButton variant="primary" size="sm" type="button">Log Action</button>
+            }
+          </div>
+        </ng-template>
+      </ui-data-table>
+    </ui-card>
+  

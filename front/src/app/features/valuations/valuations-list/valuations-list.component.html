@@ -1,0 +1,105 @@
+    <ui-page-header title="Valuations" subtitle="Manage property valuation instructions, reports, and outcomes">
+      <!-- "+ Instruct Valuation" hidden for now (point 6). The drawer below is
+           left wired so it can be restored by un-hiding this one button. -->
+    </ui-page-header>
+
+    <div class="row g-3 mb-4">
+      @for (kpi of kpis(); track kpi.label) {
+        <div class="col-12 col-sm-6 col-xl-3">
+          <ui-kpi-card labelStyle="plain" [label]="kpi.label" [value]="kpi.value" [caption]="kpi.caption" [valueSize]="30" />
+        </div>
+      }
+    </div>
+
+    <ui-tab-filters class="mb-3" [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+    <ui-card bodyClass="">
+      <ui-data-table [columns]="columns" [rows]="filtered()" [paginate]="false" emptyText="No valuations in this view.">
+        <ng-template uiCell="address" let-row>
+          <span class="address" [title]="row.address">{{ row.address }}</span>
+        </ng-template>
+
+        <ng-template uiCell="status" let-row>
+          <ui-badge [status]="row.statusTone">{{ row.status }}</ui-badge>
+        </ng-template>
+
+        <ng-template uiCell="actions" let-row>
+          <div class="actions">
+            @if (row.completed || !canEdit()) {
+              <!-- Completed: the report is a record, not a form. View only. -->
+              <button type="button" class="vact" (click)="openReport(row)"><i class="bi bi-eye"></i> View Report</button>
+            } @else {
+              <!-- One way in, whatever the stage: no separate "Mark Report
+                   Received" step - entering the details IS receiving them. -->
+              <button type="button" class="vact" (click)="openReport(row)"><i class="bi bi-pencil-square"></i> Enter Valuation Details</button>
+            }
+          </div>
+        </ng-template>
+      </ui-data-table>
+      <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" />
+    </ui-card>
+
+    @if (instructing()) {
+      <app-instruct-valuation-drawer (closed)="instructing.set(false)" />
+    }
+
+    @if (report(); as r) {
+      <ui-modal [title]="r.completed ? 'Valuation Report' : 'Enter Valuation Details'" (closed)="report.set(null)">
+        <div class="vr-prop">
+          <div class="vr-prop-label">Property</div>
+          <div class="vr-prop-addr">{{ r.address }}</div>
+          <div class="vr-prop-meta">
+            <div><span>Valuer</span><b>{{ r.valuer }}</b></div>
+            <div><span>Type</span><b>{{ r.type }}</b></div>
+            <div><span>Status</span><ui-badge [status]="r.statusTone">{{ r.status }}</ui-badge></div>
+          </div>
+        </div>
+
+        @if (r.completed || !canEdit()) {
+          <!-- Completed: a finished report is a record. Read-only values, no
+               inputs and no decision buttons - the decision is already made. -->
+          <div class="vr-readonly">
+            <div class="vr-row"><span>Market Value</span><b>{{ fmtMoney(r.market_value) || '—' }}</b></div>
+            <div class="vr-row"><span>GDV (Gross Development Value)</span><b>{{ fmtMoney(r.gdv_value) || '—' }}</b></div>
+            <div class="vr-row"><span>Condition Rating</span><b>{{ r.condition_rating ? r.condition_rating + ' / 5' : '—' }}</b></div>
+            <div class="vr-row"><span>Report Date</span><b>{{ r.reportDate || '—' }}</b></div>
+            <div class="vr-row"><span>Outcome</span><b>{{ r.valuation_result || r.status || '—' }}</b></div>
+            @if (r.special_assumptions) {
+              <div class="vr-row vr-row--block"><span>Special Assumptions</span><p>{{ r.special_assumptions }}</p></div>
+            }
+          </div>
+
+        } @else {
+          <label class="d-modal-field">MARKET VALUE
+            <input class="form-input" type="text" inputmode="numeric" placeholder="e.g. £350,000" [(ngModel)]="repMarket" />
+          </label>
+          <label class="d-modal-field">GDV (GROSS DEVELOPMENT VALUE)
+            <input class="form-input" type="text" inputmode="numeric" placeholder="If development — e.g. £520,000" [(ngModel)]="repGdv" />
+          </label>
+          <div class="d-modal-field">CONDITION RATING (1–5)
+            <div class="vr-rating">
+              @for (n of [1,2,3,4,5]; track n) {
+                <button type="button" class="vr-dot" [class.on]="repCondition != null && n <= repCondition" (click)="repCondition = n">{{ n }}</button>
+              }
+              <span class="vr-rating-cap">Average</span>
+            </div>
+          </div>
+          <label class="d-modal-field">SPECIAL ASSUMPTIONS
+            <textarea class="form-input" rows="3" placeholder="Any special assumptions or caveats noted by the valuer..." [(ngModel)]="repAssumptions"></textarea>
+          </label>
+        }
+
+        <!-- ONE projected footer. Splitting it across the @if branches above
+             stopped it reaching the modal's [modalFooter] slot: Angular only
+             projects a control-flow block when it has a single root node. -->
+        <div modalFooter class="vr-actions">
+          @if (r.completed || !canEdit()) {
+            <button class="vr-btn" type="button" (click)="report.set(null)">Close</button>
+          } @else {
+            <button class="vr-btn vr-btn--reject" type="button" [disabled]="acting()" (click)="decide(r, 'rejected')"><i class="bi bi-x-circle"></i> Reject</button>
+            <button class="vr-btn vr-btn--accept" type="button" [disabled]="acting()" (click)="decide(r, 'accepted')"><i class="bi bi-check-circle"></i> Accept</button>
+          }
+        </div>
+      </ui-modal>
+    }
+  

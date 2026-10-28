@@ -1,0 +1,57 @@
+      .sb-brand { padding: 12px 12px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+      .sb-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 60px;
+        padding: 10px 12px;
+        // background: #fff;
+        border-radius: 8px;
+      }
+      .sb-logo img { max-width: 100%; max-height: 40px; object-fit: contain; }
+      .sb-logo-fallback { display: flex; align-items: center; gap: 8px; }
+      .sb-logo-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #eaab00 0%, #b98600 100%);
+        color: #0f2244;
+        font-size: 15px;
+        font-weight: 800;
+      }
+      .sb-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+      .sb-logo-text strong { font-size: 16px; font-weight: 800; color: #0f2244; letter-spacing: -0.01em; }
+      .sb-logo-text small { font-size: 7px; font-weight: 600; letter-spacing: 0.04em; color: #5a7394; }
+
+      .sb-nav { flex: 1 1 auto; padding: 12px 11px; overflow-y: auto; }
+      .sb-nav .nav-item { margin-bottom: 2px; }
+      .sb-divider { margin: 12px 4px; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.12); opacity: 1; }
+
+      .nav-group { width: 100%; background: transparent; border: 0; cursor: pointer; text-align: left; }
+      .nav-group .sb-caret { margin-left: auto; font-size: 11px; opacity: 0.7; }
+      .sb-subnav { margin: 2px 0 4px; padding-left: 10px; }
+      .nav-sub { font-size: 13px; opacity: 0.92; }
+      .nav-sub i { font-size: 14px; }
+
+      .sb-user { padding: 12px 11px 16px; }
+      .sb-user-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 8px;
+      }
+      .sb-user-meta { min-width: 0; }
+      .sb-user-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .sb-user-role { font-size: 11px; color: rgba(255, 255, 255, 0.55); }

@@ -1,0 +1,38 @@
+      :host { display: block; }
+      .rail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #8ca8c0;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+      .chip:disabled { cursor: default; }
+      .chip.done { background: #e4ebf3; color: var(--primary); font-weight: 600; }
+      .chip.current { background: var(--primary); color: #fff; font-weight: 600; }
+
+      .chip-marker {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 50%;
+        background: #e4ebf3;
+        color: #8ca8c0;
+      }
+      .chip.done .chip-marker { background: var(--primary); color: #fff; }
+      .chip.current .chip-marker { background: var(--accent); color: var(--accent-foreground); }
+
+      .chip-sep { font-size: 10px; color: #c8d8e8; }

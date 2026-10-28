@@ -1,0 +1,94 @@
+      .wizard-rail { padding: 16px 24px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+      .wizard-rail .step-indicator { min-width: max-content; }
+      .wizard-rail .step-line { width: 20px; }
+      .wizard-rail .step { white-space: nowrap; }
+      .form-section { margin: 0 0 16px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--foreground); }
+      .wizard-footer { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end; width: 100%; flex: 1 1 100%; }
+      .wizard-footer button { flex: 0 0 auto; white-space: nowrap; }
+      .wizard-footer button:first-child { margin-right: auto; }
+      .wizard-footer .wizard-submit { min-width: 150px; color: #ffffff; font-size: 13px; font-weight: 600; }
+      textarea.form-input { resize: vertical; }
+      .form-subsection { margin: 20px 0 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted-foreground, #6b7280); }
+      .applicant-card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; background: var(--card, #fafafa); }
+      .applicant-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+      .applicant-card-title { font-size: 12px; font-weight: 700; color: var(--foreground); }
+      .applicant-remove { border: none; background: none; color: #b91c1c; font-size: 12px; font-weight: 600; cursor: pointer; padding: 2px 4px; }
+      .applicant-remove:hover { text-decoration: underline; }
+      .applicant-add { margin-top: 4px; border: 1px dashed var(--border); background: none; border-radius: 8px; padding: 10px 14px; width: 100%; font-size: 13px; font-weight: 600; color: var(--foreground); cursor: pointer; }
+      .applicant-add:hover { background: var(--card, #f3f4f6); }
+
+/* ---- Server validation summary: which fields failed, and where they live ---- */
+.srv-errors {
+  margin: 0 0 16px; padding: 12px 14px;
+  background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+}
+.srv-errors-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-size: 13px; font-weight: 700; color: #b91c1c;
+}
+.srv-errors-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.srv-errors-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-size: 12.5px; }
+.srv-jump {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font: inherit; font-weight: 700; color: #b91c1c; text-decoration: underline;
+}
+.srv-jump:hover { color: #7f1d1d; }
+.srv-msg { color: #7f1d1d; }
+.srv-step {
+  padding: 1px 7px; border-radius: 10px; background: #fee2e2; color: #991b1b;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+
+// Broker add-new (inline)
+.ff-addbtn { background: none; border: 0; color: #0F2244; font-size: 12px; font-weight: 600; cursor: pointer; padding: 0; }
+.ff-addbtn:hover { text-decoration: underline; color: #EAAB00; }
+.ff-actions { display: inline-flex; align-items: center; gap: 12px; }
+.ff-actions .ff-addbtn i { font-size: 12px; margin-right: 2px; }
+.broker-add { margin-top: 10px; padding: 12px; border: 1px solid #E4EBF3; border-radius: 8px; background: #F8FAFC; }
+.broker-add-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.broker-sub { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #5A7394; }
+.broker-add-actions { margin-top: 10px; display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 640px) { .broker-add-grid { grid-template-columns: 1fr; } }
+
+// Step 5 — Other Securities (repeatable cards)
+.sec-card { margin-bottom: 14px; padding: 16px; border: 1px solid #E4EBF3; border-radius: 10px; background: #F8FAFC; }
+.sec-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #E9EEF5; }
+.sec-card-title { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #0F2244; }
+.sec-remove { display: inline-flex; align-items: center; gap: 6px; }
+.sec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.sec-fld { display: flex; flex-direction: column; }
+.sec-fld--full { grid-column: 1 / -1; }
+.sec-fld .form-input { margin-top: 2px; }
+.sec-err { margin-top: 4px; font-size: 12px; font-weight: 500; color: #dc2626; }
+.sec-empty { padding: 20px; text-align: center; color: #7A8CA3; font-size: 13px; border: 1px dashed #D4DEEA; border-radius: 10px; background: #FBFCFE; margin-bottom: 14px; }
+.sec-add { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; }
+@media (max-width: 640px) { .sec-grid { grid-template-columns: 1fr; } }
+
+/* Step 3 — drawdown rows */
+.dd-list { display: grid; gap: 8px; margin: 4px 0 14px; }
+.dd-row { display: grid; grid-template-columns: 96px 1fr 1fr auto; gap: 10px; align-items: end; }
+.dd-label { font-size: 12px; font-weight: 600; padding-bottom: 10px; }
+.dd-fld { display: grid; gap: 4px; }
+.dd-remove { margin-bottom: 4px; }
+@media (max-width: 575px) { .dd-row { grid-template-columns: 1fr 1fr auto; } .dd-label { grid-column: 1 / -1; padding-bottom: 0; } }
+
+/* Step 4 — Google Maps preview */
+.map-frame { border: 1px solid var(--border, #e3e6eb); border-radius: 8px; overflow: hidden; margin: 0 0 14px; height: 240px; }
+.map-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* Solicitor representation toggle (client 15-10-2026) - same look as underwriting Solicitor Quote. */
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg-btn { background: #fff; border: 0; padding: 7px 16px; font: inherit; font-size: 13px; cursor: pointer; color: var(--muted-foreground); }
+.seg-btn + .seg-btn { border-left: 1px solid var(--border); }
+.seg-btn.on { background: #0F2244; color: #fff; font-weight: 700; }
+.opt-tag { margin-left: 6px; font-size: 10px; font-weight: 600; letter-spacing: .03em; text-transform: none; color: var(--muted-foreground, #6b7280); }
+
+// Selected borrower's solicitor, read-only summary under the dropdown (client 15-10-2026).
+.sol-card {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 16px;
+  margin-top: 4px; padding: 10px 12px; border: 1px solid #E4EBF3; border-radius: 8px; background: #F8FAFC;
+  font-size: 13px; color: #0F2244;
+  span { display: block; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #7d97b5; }
+  .sol-full { grid-column: 1 / -1; white-space: pre-line; }
+}
+@media (max-width: 640px) { .sol-card { grid-template-columns: 1fr; } }

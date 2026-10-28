@@ -1,0 +1,36 @@
+    <ui-page-header title="My Tasks" [subtitle]="subtitle()">
+      <button uiButton variant="accent" type="button">+ New Task</button>
+    </ui-page-header>
+
+    <div class="row g-3">
+      @for (column of columns(); track column.key) {
+        <div class="col-12 col-lg-4">
+          <div class="col-head">
+            <span class="col-title" [class]="'col-title--' + column.key">{{ column.label }}</span>
+            <span class="col-count font-mono" [class]="'col-count--' + column.key">{{ column.tasks.length }}</span>
+          </div>
+
+          <div class="col-body">
+            @for (task of column.tasks; track task.reference) {
+              <article class="card task">
+                <div class="task-top">
+                  <span class="task-type">{{ task.type }}</span>
+                  <span class="task-priority" [class]="'task-priority--' + task.priority.toLowerCase()">
+                    {{ task.priority }}
+                  </span>
+                </div>
+                <div class="task-subject">{{ task.subject }}</div>
+                <div class="task-ref font-mono">{{ task.reference }}</div>
+                <div class="task-foot">
+                  <span class="task-due" [class]="'task-due--' + column.key">Due: {{ task.due }}</span>
+                  <button uiButton variant="ghost" size="sm" type="button">Open</button>
+                </div>
+              </article>
+            } @empty {
+              <p class="col-empty">Nothing here.</p>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  

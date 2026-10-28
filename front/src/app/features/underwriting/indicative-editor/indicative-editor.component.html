@@ -1,0 +1,249 @@
+<ui-modal title="Edit Loan Terms (Underwriter)" size="lg" (closed)="close()">
+  @if (loading()) {
+    <p class="d-note"><i class="bi bi-hourglass-split"></i> Loading the accepted indicative…</p>
+  } @else {
+  <!-- Client 16-10-2026: enter the new terms exactly as on the enquiry; saving e-mails ONLY the
+       revised OFFER LETTER (no indicative) asking for the new terms to be signed. Underwriting
+       carries on while the signed copy is awaited. -->
+  <p class="d-note"><i class="bi bi-info-circle"></i> Saving updates the application &amp; portfolio figures and immediately e-mails the <b>revised offer letter</b> to {{ recipient().label }}, saying there have been a few changes and asking for the new terms to be signed. The rest of underwriting carries on while you wait for the signed copy.</p>
+  <p class="cc-line"><i class="bi bi-envelope"></i> To: {{ recipient().email || '—' }}@if (ccList.length) { &nbsp;·&nbsp; CC: @for (c of ccList; track c.email; let last = $last) { {{ c.label }} &lt;{{ c.email }}&gt;@if (!last) {, } } }</p>
+  <label class="d-modal-field ind-calc-type">INTEREST TYPE
+    <select class="form-select" name="calctype" [ngModel]="indCalcType()" (ngModelChange)="setCalcType($event)">
+      <option value="dds">Retained with drawdowns</option>
+      <option value="bridge">Retained with 1st charge</option>
+      <option value="second_charge">Retained with 2nd charge</option>
+      <option value="serviced">Serviced Monthly</option>
+    </select>
+  </label>
+
+  @if (indCalcType() === 'dds') {
+  <div class="ind-sec-title">Feeder Info</div>
+  <div class="ind-grid">
+    <label class="d-modal-field">PROPERTY VALUE (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="pv" [ngModel]="indInputs['property_value']" readonly tabindex="-1" />
+    </label>
+    <label class="d-modal-field">LTV (%)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="ltv" [(ngModel)]="indInputs['ltv_pct']" (ngModelChange)="onIndLtvChange($event)" />
+    </label>
+    @if (indCalcType() === 'second_charge') {
+      <label class="d-modal-field">1ST CHARGE (£)
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="fc2" [(ngModel)]="indInputs['first_charge']" (ngModelChange)="recalcIndicative()" />
+      </label>
+    }
+    <label class="d-modal-field">GROSS LOAN AMOUNT (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="grossamt" [ngModel]="grossField" (focus)="indFocusLoan('gross')" (blur)="indBlurLoan()" (ngModelChange)="grossField=$event; onIndGrossChange($event)" />
+    </label>
+    <label class="d-modal-field">RATE (% per month)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="rate" [(ngModel)]="indInputs['monthly_rate_pct']" (ngModelChange)="recalcIndicative()" />
+    </label>
+    <label class="d-modal-field">TERM (months)
+      <input class="form-input" type="number" min="1" step="1" numInput integer name="term" [(ngModel)]="indInputs['term_months']" (ngModelChange)="recalcIndicative()" />
+    </label>
+    <label class="d-modal-field">ARRANGEMENT FEE
+      <div class="fee-row">
+        <select class="form-select fee-mode" [(ngModel)]="indInputs['arrangement_fee_is_pct']" (ngModelChange)="recalcIndicative()">
+          <option [ngValue]="true">%</option>
+          <option [ngValue]="false">£</option>
+        </select>
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="arr" [(ngModel)]="indInputs['arrangement_fee_pct']" (ngModelChange)="recalcIndicative()" />
+      </div>
+    </label>
+    <label class="d-modal-field">BROKER FEE
+      <div class="fee-row">
+        <select class="form-select fee-mode" [(ngModel)]="indInputs['broker_fee_is_pct']" (ngModelChange)="recalcIndicative()">
+          <option [ngValue]="true">%</option>
+          <option [ngValue]="false">£</option>
+        </select>
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="bf" [(ngModel)]="indInputs['broker_fee']" (ngModelChange)="recalcIndicative()" />
+      </div>
+    </label>
+    <label class="d-modal-field">DOCUMENT FEE (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="doc" [(ngModel)]="indInputs['document_fee']" (ngModelChange)="recalcIndicative()" />
+    </label>
+    <label class="d-modal-field">GDV (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="gdv" [(ngModel)]="indInputs['gdv']" (ngModelChange)="recalcIndicative()" />
+    </label>
+    <!-- Client 20-10-2026: Day 1 Net sits after GDV; typing it back-solves the Gross Loan Amount (Day 1 gross = GROSS LOAN AMOUNT box, so no separate Day 1 Gross box). -->
+    <label class="d-modal-field">DAY 1 NET (£)
+      <input name="day1net" class="form-input" type="number" step="0.01" numInput allowNegative [ngModel]="day1NetField" (focus)="indFocusLoan('day1net')" (blur)="indBlurLoan()" (ngModelChange)="day1NetField=$event; onIndDay1NetChange($event)" title="Day 1 Net (after fees and retained interest)" />
+      <small class="form-hint">Retained interest Day 1: {{ indCalc()?.retained_interest_day1 != null ? '£' + ($safeNavigationMigration(indCalc()?.retained_interest_day1) | number:'1.2-2') : '—' }} ({{ indInputs['term_months'] || '—' }} months)</small>
+    </label>
+  </div>
+
+  <div class="ind-dd">
+    <div class="dd-head"><span>DRAWDOWNS</span><button type="button" class="ind-fill" (click)="addDrawdown()">+ Add drawdown</button></div>
+    <table class="dd-table">
+      <thead>
+        <tr><th></th><th>Gross (£)</th><th>Month</th><th class="dd-num">Months of Interest</th><th class="dd-num">Interest on Drawdown</th><th class="dd-num">Drawdown Net</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (dd of indDrawdowns; track $index) {
+          <tr>
+            <td class="dd-lbl">Drawdown {{ $index + 1 }}</td>
+            <td><input class="form-input" type="number" step="0.01" numInput allowNegative [ngModel]="ddGross(dd)" (ngModelChange)="setDdGross(dd, $event)" [ngModelOptions]="{standalone: true}" /></td>
+            <td><input class="form-input dd-month" type="number" min="1" step="1" numInput integer [(ngModel)]="dd.month" (ngModelChange)="recalcIndicative()" [ngModelOptions]="{standalone: true}" /></td>
+            <td class="dd-num">{{ ddMonthsLeft(dd) ?? '—' }}</td>
+            <td class="dd-num">{{ ddInterest(dd) != null ? '£' + (ddInterest(dd) | number:'1.2-2') : '—' }}</td>
+            <td><input class="form-input dd-net" type="number" step="0.01" numInput allowNegative [ngModel]="ddNet(dd)" (ngModelChange)="setDdNet(dd, $event)" [ngModelOptions]="{standalone: true}" /></td>
+            <td><button type="button" class="ind-fill" (click)="removeDrawdown($index)">Remove</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <!-- Client 20-10-2026: NET AMOUNT after the drawdowns = Total Net incl. Drawdowns; typing it back-solves gross, LTV and the rest. -->
+  <div class="ind-grid">
+    <label class="d-modal-field">NET AMOUNT incl. DRAWDOWNS (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="netamt" [ngModel]="netField" (focus)="indFocusLoan('net')" (blur)="indBlurLoan()" (ngModelChange)="netField=$event; onIndNetChange($event)" />
+    </label>
+  </div>
+
+  @if (indCalc(); as c) {
+    @if (!c.ready) {
+      <div class="ind-error">
+        <i class="bi bi-exclamation-triangle"></i>
+        @if (indWarnings().length) {
+          <ul>@for (w of indWarnings(); track w) { <li>{{ w }}</li> }</ul>
+        } @else {
+          <span>Enter the <b>Property Value</b> and <b>LTV %</b> to produce the indicative terms.</span>
+        }
+      </div>
+    } @else {
+    <div class="ind-sec-title">Indicative Terms</div>
+    <table class="ind-table">
+      <tr><td>Property Value</td><td></td><td>£{{ (c.value_model === 'net' ? (c.net_property_value ?? c.property_value) : (c.total_security_value ?? c.property_value)) | number:'1.2-2' }}</td></tr>
+      <tr class="strong"><td>LTV</td><td></td><td>{{ c.ltv_pct | number:'1.2-2' }}%</td></tr>
+      @if (c.gdv != null) { <tr><td>GDV</td><td></td><td>£{{ c.gdv | number:'1.2-2' }}</td></tr> }
+      @if (c.ltgdv_pct != null) { <tr><td>LTGDV</td><td></td><td>{{ c.ltgdv_pct | number:'1.2-2' }}%</td></tr> }
+      <tr class="gap"><td>Max LTV</td><td class="ind-rate">{{ c.ltv_pct | number:'1.0-2' }}%</td><td>£{{ c.max_ltv | number:'1.2-2' }}</td></tr>
+      @if (c.value_model !== 'net' && c.first_charge) { <tr><td>{{ c.additional_securities_charges ? 'Existing Charges (all securities)' : 'Existing 1st Charge' }}</td><td></td><td>£{{ c.first_charge | number:'1.2-2' }}</td></tr> }
+      <tr class="strong gap"><td>Total Gross Loan incl DDs</td><td></td><td>£{{ c.total_gross_loan_incl_dds | number:'1.2-2' }}</td></tr>
+      <tr class="gap"><td>Arrangement Fee</td><td class="ind-rate">{{ c.arrangement_fee_is_pct !== false && c.arrangement_fee_pct != null ? (c.arrangement_fee_pct + '%') : '' }}</td><td>£{{ c.arrangement_fee | number:'1.2-2' }}</td></tr>
+      <tr><td>Broker Fee</td><td class="ind-rate">{{ c.broker_fee_is_pct !== false && c.broker_fee_pct != null ? (c.broker_fee_pct + '%') : '' }}</td><td>£{{ c.broker_fee | number:'1.2-2' }}</td></tr>
+      <tr><td>Document Fee</td><td></td><td>£{{ c.document_fee | number:'1.2-2' }}</td></tr>
+      @if (c.interest_type === 'Retained') {
+        <tr class="gap"><td>Retained Interest Day 1</td><td class="ind-rate">{{ c.retained_interest_day1_rate_pct }}%</td><td>£{{ c.retained_interest_day1 | number:'1.2-2' }}</td></tr>
+        <tr><td>Retained Interest Total</td><td></td><td>£{{ c.retained_interest_total | number:'1.2-2' }}</td></tr>
+      }
+      <tr class="strong gap"><td>Day 1 Total Deductions</td><td></td><td>£{{ c.day1_total_deductions | number:'1.2-2' }}</td></tr>
+      <tr class="net"><td>Day 1 Net</td><td></td><td>£{{ c.day1_net | number:'1.2-2' }}</td></tr>
+      @for (d of c.drawdowns || []; track $index) {
+        <tr [class.gap]="$first"><td>Drawdown {{ $index + 1 }} - assumed month {{ d.month ?? '—' }}</td><td></td><td>£{{ d.net | number:'1.0-0' }}</td></tr>
+      }
+      @if (indCalcType() === 'dds' || c.drawdowns?.length) {
+        <tr class="net"><td>Total Net incl. Drawdowns</td><td></td><td>£{{ c.total_net_incl_drawdowns | number:'1.2-2' }}</td></tr>
+      }
+      @if (c.interest_type === 'Serviced') {
+        <tr class="gap"><td>Monthly Payment</td><td class="ind-rate">{{ c.retained_interest_day1_rate_pct }}%</td><td>£{{ c.monthly_payment | number:'1.2-2' }}</td></tr>
+      }
+    </table>
+    }
+  }
+  } @else {
+  <div class="ind-sec-title">Feeder Info</div>
+  <div class="ind-grid">
+    <label class="d-modal-field">PROPERTY VALUE (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="pv2" [ngModel]="indInputs['property_value']" readonly tabindex="-1" />
+    </label>
+    <label class="d-modal-field">LTV (%)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="ltv2" [(ngModel)]="indInputs['ltv_pct']" (ngModelChange)="onIndLtvChange($event)" />
+    </label>
+    @if (indCalcType() === 'second_charge') {
+      <label class="d-modal-field">1ST CHARGE (£)
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="fc2" [(ngModel)]="indInputs['first_charge']" (ngModelChange)="recalcIndicative()" />
+      </label>
+    }
+    <label class="d-modal-field">GROSS LOAN AMOUNT (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="grossamt2" [ngModel]="grossField" (focus)="indFocusLoan('gross')" (blur)="indBlurLoan()" (ngModelChange)="grossField=$event; onIndGrossChange($event)" />
+    </label>
+    <label class="d-modal-field">MONTHLY RATE (%)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="rate2" [(ngModel)]="indInputs['monthly_rate_pct']" (ngModelChange)="onRate2Change()" />
+    </label>
+    @if (indCalcType() === 'serviced') {
+      <label class="d-modal-field">INTEREST CALC — ANNUAL RATE (%)
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="annual2" [(ngModel)]="indInputs['annual_rate_pct']" (ngModelChange)="recalcIndicative()" />
+      </label>
+    }
+    <label class="d-modal-field">ARRANGEMENT FEE
+      <div class="fee-row">
+        <select class="form-select fee-mode" [(ngModel)]="indInputs['arrangement_fee_is_pct']" (ngModelChange)="recalcIndicative()">
+          <option [ngValue]="true">%</option>
+          <option [ngValue]="false">£</option>
+        </select>
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="arr2" [(ngModel)]="indInputs['arrangement_fee_pct']" (ngModelChange)="recalcIndicative()" />
+      </div>
+    </label>
+    <label class="d-modal-field">BROKER FEE
+      <div class="fee-row">
+        <select class="form-select fee-mode" [(ngModel)]="indInputs['broker_fee_is_pct']" (ngModelChange)="recalcIndicative()">
+          <option [ngValue]="true">%</option>
+          <option [ngValue]="false">£</option>
+        </select>
+        <input class="form-input" type="number" step="0.01" numInput allowNegative name="bf2" [(ngModel)]="indInputs['broker_fee']" (ngModelChange)="recalcIndicative()" />
+      </div>
+    </label>
+    <label class="d-modal-field">DOCUMENT FEE (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="doc2" [(ngModel)]="indInputs['document_fee']" (ngModelChange)="recalcIndicative()" />
+    </label>
+    <label class="d-modal-field">{{ indCalcType() === 'serviced' ? 'TERM IN MONTHS' : 'RETAINED INTEREST MONTHS' }}
+      <input class="form-input" type="number" min="1" step="1" numInput integer name="term2" [(ngModel)]="indInputs['term_months']" (ngModelChange)="recalcIndicative()" />
+    </label>
+    <label class="d-modal-field">NET AMOUNT (£)
+      <input class="form-input" type="number" step="0.01" numInput allowNegative name="netamt2" [ngModel]="netField" (focus)="indFocusLoan('net')" (blur)="indBlurLoan()" (ngModelChange)="netField=$event; onIndNetChange($event)" />
+    </label>
+  </div>
+
+  @if (indCalc(); as c) {
+    @if (!c.ready) {
+      <div class="ind-error">
+        <i class="bi bi-exclamation-triangle"></i>
+        @if (indWarnings().length) {
+          <ul>@for (w of indWarnings(); track w) { <li>{{ w }}</li> }</ul>
+        } @else {
+          <span>Enter the <b>Property Value</b> and <b>LTV %</b> to produce the indicative terms.</span>
+        }
+      </div>
+    } @else {
+    <div class="ind-sec-title">Indicative Terms</div>
+    <table class="ind-table">
+      <tr><td>Property Value</td><td></td><td>£{{ (c.value_model === 'net' ? (c.net_property_value ?? c.property_value) : (c.total_security_value ?? c.property_value)) | number:'1.2-2' }}</td></tr>
+      <tr class="gap"><td>Max LTV</td><td class="ind-rate">{{ c.ltv_pct | number:'1.0-2' }}%</td><td>£{{ c.max_ltv | number:'1.2-2' }}</td></tr>
+      @if (c.value_model !== 'net' && indCalcType() !== 'second_charge' && c.first_charge) {
+        <tr><td>Existing Charges (all securities)</td><td></td><td>£{{ c.first_charge | number:'1.2-2' }}</td></tr>
+      }
+      @if (indCalcType() === 'second_charge') {
+        @if (c.value_model !== 'net') { <tr><td>{{ c.additional_securities_charges ? 'Existing Charges (all securities)' : '1st Charge' }}</td><td></td><td>£{{ c.first_charge | number:'1.2-2' }}</td></tr> }
+        <tr class="strong gap"><td>Gross Loan</td><td></td><td>£{{ c.base_gross | number:'1.2-2' }}</td></tr>
+      } @else {
+        <tr class="strong gap"><td>Total Gross Loan</td><td></td><td>£{{ c.base_gross | number:'1.2-2' }}</td></tr>
+      }
+      @if (indCalcType() !== 'serviced') {
+        <tr class="gap"><td>Monthly Rate</td><td class="ind-rate">{{ c.retained_interest_day1_rate_pct }}%</td><td>£{{ c.monthly_interest | number:'1.2-2' }}</td></tr>
+      }
+      <tr class="gap"><td>Arrangement Fee</td><td class="ind-rate">{{ c.arrangement_fee_is_pct !== false && c.arrangement_fee_pct != null ? (c.arrangement_fee_pct + '%') : '' }}</td><td>£{{ c.arrangement_fee | number:'1.2-2' }}</td></tr>
+      <tr><td>Broker Fee</td><td class="ind-rate">{{ c.broker_fee_is_pct !== false && c.broker_fee_pct != null ? (c.broker_fee_pct + '%') : '' }}</td><td>£{{ c.broker_fee | number:'1.2-2' }}</td></tr>
+      <tr><td>Document Fee</td><td></td><td>£{{ c.document_fee | number:'1.2-2' }}</td></tr>
+      @if (indCalcType() === 'serviced') {
+        <tr class="gap"><td>Term in months</td><td class="ind-rate">{{ c.term_months }}</td><td></td></tr>
+      } @else {
+        <tr class="gap"><td>{{ indCalcType() === 'second_charge' ? 'Retained Interest Months' : 'Retained Interest' }}</td><td class="ind-rate">{{ c.term_months }}</td><td>£{{ c.retained_interest_day1 | number:'1.2-2' }}</td></tr>
+      }
+      <tr class="strong gap"><td>Total Deductions</td><td></td><td>£{{ c.day1_total_deductions | number:'1.2-2' }}</td></tr>
+      <tr class="net"><td>Total Net</td><td></td><td>£{{ c.day1_net | number:'1.2-2' }}</td></tr>
+      @if (indCalcType() === 'serviced') {
+        <tr class="gap"><td>Monthly Interest ({{ c.retained_interest_day1_rate_pct }}% Compounded)</td><td class="ind-rate">{{ c.annual_rate_pct != null ? c.annual_rate_pct + '% pa' : '' }}</td><td>£{{ c.monthly_payment | number:'1.2-2' }}</td></tr>
+      }
+    </table>
+    }
+  }
+  }
+
+  @if (!recipient().email) {
+    <p class="d-warn"><i class="bi bi-exclamation-triangle"></i> No e-mail to send the revised offer to: add the applicant's e-mail or pick a broker that has one. The figures will still update, but no e-mail will go out.</p>
+  }
+  }
+  <div modalFooter class="d-modal-footer">
+    <button class="f-btn-outline" type="button" (click)="close()">Cancel</button>
+    <button class="f-btn-dark" type="button" [disabled]="saving() || loading() || !indCalc()?.ready" (click)="save()"><i class="bi bi-envelope"></i> {{ saving() ? 'Sending…' : 'Save &amp; Send Revised Offer' }}</button>
+  </div>
+</ui-modal>

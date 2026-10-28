@@ -1,0 +1,254 @@
+    <nav class="crumbs">
+      <a routerLink="/applications"><i class="bi bi-arrow-left"></i> Applications</a>
+      <i class="bi bi-chevron-right"></i>
+      <span>New Application</span>
+    </nav>
+
+    <h1 class="page-title mb-3">New Application</h1>
+
+    <ui-card class="mb-3">
+      <ui-wizard-steps [steps]="steps" [current]="step()" (stepSelected)="goTo($event)" />
+    </ui-card>
+
+    <ui-card bodyClass="p-4">
+      <h2 class="step-title">Step {{ step() + 1 }}: {{ steps[step()].label }}</h2>
+
+      <!-- 1 — applicant & parties -->
+      @if (step() === 0) {
+        <section [formGroup]="applicant">
+          <ui-form-field label="Applicant type">
+            <ui-segmented [options]="applicantTypes" [(value)]="applicantType" />
+          </ui-form-field>
+
+          <ui-form-field label="Full name *" [error]="errorFor(applicant, 'fullName')">
+            <input class="form-input" formControlName="fullName" />
+          </ui-form-field>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Email" [error]="errorFor(applicant, 'email')"><input class="form-input" type="email" formControlName="email" /></ui-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Phone" [error]="errorFor(applicant, 'phone')"><input class="form-input" formControlName="phone" /></ui-form-field>
+            </div>
+          </div>
+
+          <ui-form-field label="Date of birth">
+            <input class="form-input" type="date" [max]="today" formControlName="dateOfBirth" />
+          </ui-form-field>
+
+          <label class="guarantor-toggle">
+            <input type="checkbox" [checked]="hasGuarantor()" (change)="hasGuarantor.set($any($event.target).checked)" />
+            Add Personal Guarantor
+          </label>
+          @if (hasGuarantor()) {
+            <ui-form-field label="Guarantor full name">
+              <input class="form-input" formControlName="guarantorName" />
+            </ui-form-field>
+          }
+        </section>
+      }
+
+      <!-- 2 — product & fees -->
+      @if (step() === 1) {
+        <section [formGroup]="product">
+          <ui-form-field label="Product *">
+            <ui-segmented [options]="products" [(value)]="productType" />
+          </ui-form-field>
+
+          <div class="row g-3">
+            @for (f of feeFields; track f.control) {
+              <div class="col-12 col-md-6 col-xl-4">
+                <ui-form-field [label]="f.label">
+                  <input class="form-input font-mono" [formControlName]="f.control" />
+                </ui-form-field>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <!-- 3 — loan request -->
+      @if (step() === 2) {
+        <section [formGroup]="request">
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Gross loan amount (£) *" [error]="errorFor(request, 'amount')">
+                <input class="form-input font-mono" formControlName="amount" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Term (months) *" [error]="errorFor(request, 'term')">
+                <input class="form-input font-mono" formControlName="term" />
+              </ui-form-field>
+            </div>
+          </div>
+
+          <ui-form-field label="Loan purpose">
+            <ui-segmented [options]="purposes" [(value)]="purpose" />
+          </ui-form-field>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Requested completion">
+                <input class="form-input" type="date" formControlName="completion" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Exit strategy">
+                <select class="form-select" formControlName="exitStrategy">
+                  @for (o of exitStrategies; track o) { <option [value]="o">{{ o }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- 4 — financial information -->
+      @if (step() === 3) {
+        <section [formGroup]="financial">
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4">
+              <ui-form-field label="Annual income (£)"><input class="form-input font-mono" formControlName="income" /></ui-form-field>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+              <ui-form-field label="Net worth (£)"><input class="form-input font-mono" formControlName="netWorth" /></ui-form-field>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+              <ui-form-field label="Existing debt / liabilities (£)">
+                <input class="form-input font-mono" formControlName="liabilities" />
+              </ui-form-field>
+            </div>
+          </div>
+
+          <ui-form-field label="Credit score">
+            <ui-segmented [options]="creditScores" [(value)]="creditScore" />
+          </ui-form-field>
+
+          <ui-form-field label="History of bankruptcy / IVA">
+            <ui-segmented [options]="bankruptcyOptions" [(value)]="bankruptcy" />
+          </ui-form-field>
+        </section>
+      }
+
+      <!-- 5 — security -->
+      @if (step() === 4) {
+        <section [formGroup]="security">
+          <ui-form-field label="Security / property address *" [error]="errorFor(security, 'address')">
+            <input class="form-input" formControlName="address" />
+          </ui-form-field>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Estimated property value (£) *" [error]="errorFor(security, 'value')">
+                <input class="form-input font-mono" formControlName="value" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Estimated LTV" hint="Calculated from amount ÷ value">
+                <input class="form-input font-mono" [value]="ltv()" readonly />
+              </ui-form-field>
+            </div>
+          </div>
+
+          <ui-form-field label="Tenure"><ui-segmented [options]="tenures" [(value)]="tenure" /></ui-form-field>
+          <ui-form-field label="Title"><ui-segmented [options]="titles" [(value)]="title" /></ui-form-field>
+          <ui-form-field label="First legal charge">
+            <ui-segmented [options]="chargeOptions" [(value)]="charge" />
+          </ui-form-field>
+        </section>
+      }
+
+      <!-- 6 — documents -->
+      @if (step() === 5) {
+        <section>
+          <p class="step-hint">
+            Tick documents received from the applicant/broker. Unticked items will appear as outstanding.
+          </p>
+
+          <ul class="doc-list">
+            @for (doc of requiredDocuments; track doc) {
+              <li>
+                <label class="doc-item" [class.checked]="received().has(doc)">
+                  <input type="checkbox" [checked]="received().has(doc)" (change)="toggleDocument(doc)" />
+                  <span>{{ doc }}</span>
+                </label>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+
+      <!-- 7 — KYC / AML -->
+      @if (step() === 6) {
+        <section [formGroup]="kyc">
+          <ui-form-field label="Sanctions screening">
+            <ui-segmented [options]="screeningOptions" [(value)]="sanctions" />
+          </ui-form-field>
+          <ui-form-field label="PEP check">
+            <ui-segmented [options]="screeningOptions" [(value)]="pep" />
+          </ui-form-field>
+          <ui-form-field label="AML verification">
+            <ui-segmented [options]="screeningOptions" [(value)]="aml" />
+          </ui-form-field>
+          <ui-form-field label="Source of funds">
+            <textarea class="form-input" rows="3" formControlName="sourceOfFunds"></textarea>
+          </ui-form-field>
+        </section>
+      }
+
+      <!-- 8 — loan structure -->
+      @if (step() === 7) {
+        <section [formGroup]="structure">
+          <div class="metric-grid">
+            @for (m of structureMetrics(); track m.label) {
+              <div class="metric">
+                <span class="metric-label">{{ m.label }}</span>
+                <span class="metric-value font-mono tabular-nums">{{ m.value }}</span>
+              </div>
+            }
+          </div>
+
+          <ui-form-field label="Additional notes for underwriter">
+            <textarea class="form-input" rows="3" formControlName="notes"></textarea>
+          </ui-form-field>
+        </section>
+      }
+
+      <!-- 9 — review & submit -->
+      @if (step() === 8) {
+        <section>
+          <dl class="review">
+            @for (row of reviewRows(); track row.label) {
+              <div class="review-row">
+                <dt>{{ row.label }}</dt>
+                <dd>
+                  <span class="review-value">{{ row.value }}</span>
+                  @if (row.hint) { <span class="review-hint">{{ row.hint }}</span> }
+                </dd>
+              </div>
+            }
+          </dl>
+
+          <p class="step-hint mt-3">
+            By submitting, this application enters the underwriting queue. The assigned underwriter will be
+            notified and the status will update to “Submitted to Underwriting”.
+          </p>
+        </section>
+      }
+    </ui-card>
+
+    <div class="wizard-bar">
+      @if (step() > 0) {
+        <button uiButton variant="ghost" type="button" (click)="back()">Back</button>
+      }
+      <button uiButton variant="ghost" type="button" (click)="cancel()">Cancel</button>
+      <span class="wizard-count">Step {{ step() + 1 }} of {{ steps.length }}</span>
+      @if (step() < steps.length - 1) {
+        <button uiButton variant="primary" type="button" (click)="next()">Continue</button>
+      } @else {
+        <button uiButton variant="accent" type="button" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Creating…' : 'Create Application' }}</button>
+      }
+    </div>
+  

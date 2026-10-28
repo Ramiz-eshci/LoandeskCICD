@@ -1,0 +1,13 @@
+    @for (item of items(); track $index) {
+      <div class="timeline-item">
+        <span class="timeline-dot"></span>
+        <div class="ui-tl-title">{{ item.title }}</div>
+        @if (item.meta) {
+          <div class="ui-tl-meta">{{ item.meta }}</div>
+        }
+        @if (item.detail) {
+          <div class="ui-tl-detail">{{ item.detail }}</div>
+        }
+      </div>
+    }
+  

@@ -1,0 +1,65 @@
+    :host { display: block; }
+    .uw-stagebar { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 12px 0; }
+    .sb-title { font-size: 11px; font-weight: 700; letter-spacing: .05em; color: var(--muted-foreground); margin-bottom: 10px; }
+    .sb-row { display: flex; gap: 8px; overflow-x: auto; }
+    .sb-cell { flex: 1 1 0; min-width: 104px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px; border: 1px solid var(--border); border-radius: 8px; background: #f7f9fc; cursor: pointer; }
+    .sb-cell.on { border-color: #1f2937; background: #eef2f7; }
+    .sb-no { font-size: 9px; font-weight: 700; color: var(--muted-foreground); }
+    .sb-name { font-size: 11px; font-weight: 600; text-align: center; }
+    .sb-count { font-size: 16px; font-weight: 800; }
+    .uw-filters { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .uw-search { flex: 0 1 300px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+    .uw-tab { padding: 7px 14px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; font: inherit; font-size: 13px; }
+    .uw-tab.on { background: #1f2937; color: #fff; border-color: #1f2937; }
+    .uw-tab b { margin-left: 6px; }
+    .uw-ready { padding: 6px 12px; border-radius: 100px; background: #dcf5e6; color: #1a7f47; font-size: 12px; font-weight: 600; }
+    .uw-legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 12px; color: var(--muted-foreground); }
+    .lg-label { font-weight: 700; }
+    .lg { display: inline-flex; align-items: center; gap: 5px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: #cbd5e1; }
+    .dot.passed { background: #1a7f47; } .dot.inprog { background: #e08600; } .dot.assigned { background: #2563eb; }
+    .dot.notstarted { background: #cbd5e1; } .dot.query { background: #8b5cf6; } .dot.failed { background: #dc2626; }
+    .uw-tablewrap { background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+    .uw-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .uw-table th { text-align: left; font-size: 10px; letter-spacing: .04em; color: var(--muted-foreground); padding: 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .uw-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .uw-table tbody tr { cursor: pointer; } .uw-table tbody tr:hover { background: #f7f9fc; }
+    .mono { font-family: ui-monospace, monospace; } .bold { font-weight: 700; }
+    .ap { font-weight: 600; } .sub { font-size: 11px; color: var(--muted-foreground); }
+    .dots { display: inline-flex; gap: 5px; }
+    .sla { padding: 3px 8px; border-radius: 100px; background: #EEF1F5; font-size: 11px; font-weight: 600; }
+    .sla.breach { background: #fde4e4; color: #b42318; }
+    .uw-open { padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; font: inherit; font-size: 12px; }
+    .empty { text-align: center; color: var(--muted-foreground); padding: 24px; }
+    .uw-count { padding: 10px 12px; font-size: 12px; color: var(--muted-foreground); }
+    .uw-err { color: var(--danger, #b42318); }
+
+    .uw-filters { justify-content: space-between; }
+    .uw-filters .uw-legend { margin-bottom: 0; }
+    .uw-status { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #EEF1F5; color: #334155; }
+    .uw-status.st-done { background: #dcf5e6; color: #1a7f47; }
+    .uw-status.st-rej { background: #fde4e4; color: #b42318; }
+    .uw-status.st-query { background: #efe7ff; color: #6d28d9; }
+    .uw-status.st-new { background: #fff4d6; color: #92600a; }
+    .uw-status.st-prog { background: #e6efff; color: #1d4ed8; }
+
+/* ---- Dashboard changes (client 07-10-2026) ---- */
+.uw-filters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.uw-own { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-left: auto; }
+.uw-own-btn { background: #fff; border: 0; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; color: var(--muted-foreground); }
+.uw-own-btn + .uw-own-btn { border-left: 1px solid var(--border); }
+.uw-own-btn.on { background: #0F2244; color: #fff; font-weight: 700; }
+.uw-bell { color: #dc3545; margin-left: 6px; font-size: 12px; }
+.uw-status.st-hold { background: #ede9fe; color: #6d28d9; }
+.uw-status.st-returned { background: #fff2d6; color: #8a5b00; }
+
+/* Client 16-10-2026: long applicant names cut with "…", full name on hover (same as Applications / Enquiries). */
+.ap-cut { max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Client 20-10-2026: no horizontal scroll - fixed layout, long text cut with "…" (tooltip via uiFitTip). */
+.uw-table { table-layout: fixed; }
+.uw-table th { white-space: normal; }
+.uw-table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uw-table td > div { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uw-table td:has(button) { overflow: visible; }
+.uw-table .ap-cut { max-width: 100%; }

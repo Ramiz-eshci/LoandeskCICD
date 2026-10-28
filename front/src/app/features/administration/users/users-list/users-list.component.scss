@@ -1,0 +1,10 @@
+      .ul-new { display: inline-flex; align-items: center; gap: 8px; }
+      .ul-filterbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      .ul-name { font-weight: 600; color: var(--foreground); }
+      .ul-actions { display: flex; gap: 8px; }
+      .ul-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .ul-modal-footer { display: flex; gap: 10px; justify-content: flex-end; }
+
+.ul-roles { display: inline-block; max-width: 230px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+.ul-delete { color: var(--danger, #b42318); }
+.ul-delete-confirm { background: #dc2626; border-color: #dc2626; }

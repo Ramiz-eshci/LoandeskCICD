@@ -1,0 +1,17 @@
+node_modules/
+.env
+npm-debug.log*
+uploads/documents/*
+uploads/enquiry_documents/*
+uploads/application_documents/*
+uploads/email_attachments/*
+uploads/*
+uploads/images/*
+!uploads/**/.gitkeep
+logs/
+*.log
+.env.live
+_to_delete/*
+# Pen-test 24-10-2026: offer/application template is source, keep it tracked
+!uploads/templates/
+!uploads/templates/application-form.pdf

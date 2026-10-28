@@ -1,0 +1,16 @@
+      .ui-drawer-scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 89;
+        background: rgba(15, 34, 68, 0.4);
+      }
+      .ui-drawer-title { margin: 0; font-size: 18px; font-weight: 700; color: var(--foreground); }
+      .ui-drawer-x {
+        border: 0;
+        background: transparent;
+        color: var(--muted-foreground);
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .ui-drawer-x:hover { color: var(--foreground); }
+      .drawer-footer:empty { display: none; }

@@ -1,0 +1,959 @@
+    @if (loading()) {
+      <div class="ad-state"><i class="bi bi-arrow-repeat spin"></i> Loading application…</div>
+    } @else if (app(); as a) {
+      <div class="f-header">
+        @if (!embedded) {
+        <div class="f-header-top">
+          <div class="f-breadcrumbs">
+            <a href="javascript:void(0)" (click)="back()"><i class="bi bi-arrow-left"></i> Applications</a>
+            &nbsp;&gt;&nbsp; <strong class="font-mono">{{ a.application_ref }}</strong>
+          </div>
+          <div class="f-top-actions">
+            @if (a.underwriting_case_id && canGoUnderwriting()) {
+              <button class="f-btn-outline" type="button" (click)="goToUnderwriting(a)">Go to Underwriting <i class="bi bi-arrow-right"></i></button>
+            }
+            @if (canRevert()) {
+              <button class="f-btn-outline" type="button" (click)="openReturn(a, 'revert')"><i class="bi bi-arrow-return-left"></i> Return / Revert</button>
+            }
+            @if (canRequestInfoApp()) {
+              <button class="f-btn-outline" type="button" (click)="openRequestInfo(a)">Request Info</button>
+            }
+            @if (forwardBtn(a); as fb) {
+              @if (canForward(fb)) {
+              <button class="f-btn-yellow" type="button" [disabled]="acting()" (click)="advance(a, fb.code)"><i class="bi bi-check-lg"></i> {{ fb.label }}</button>
+              }
+            }
+          </div>
+        </div>
+
+        <div class="f-header-main">
+          <div class="f-header-title">
+            <h1>{{ applicantName(a) }}</h1>
+            <div class="f-subtitle font-mono">{{ a.application_ref }} · {{ a.product_name || 'Loan' }}</div>
+          </div>
+          <div class="f-metrics-container">
+            <div class="f-metrics">
+              <!-- Client 15-10-2026: Gross Loan + actual Net; the basis chosen on the enquiry first. -->
+              @for (m of loanAmounts(a); track m.label) {
+                <div class="f-metric"><span class="f-metric-label">{{ m.label }}</span><span class="f-metric-value">{{ money(m.value) }}</span></div>
+              }
+              <div class="f-metric"><span class="f-metric-label">Branch</span><span class="f-metric-value">{{ a.branch_name || '—' }}</span></div>
+              <div class="f-metric"><span class="f-metric-label">BDM</span><span class="f-metric-value">{{ a.bdm_name || '—' }}</span></div>
+            </div>
+            <div class="f-header-badges">
+              @if (a.initial_offer_note) { <span class="f-badge-offer f-offer-converted">Offer: {{ a.initial_offer_note }}</span> }
+              <span class="f-badge-blue">{{ a.status_name || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        }
+
+        <!-- Signed offer + application form uploaded at convert: shown on the detail page the
+             same way Underwriting shows it, so it can be reviewed before the case is accepted
+             (client 02-10-2026). Hidden in the embedded view — Underwriting shows its own card. -->
+        @if (!embedded && signedDocs().length) {
+          <div class="ad-signed">
+            <div class="ad-signed-head">
+              <div class="ad-signed-titles">
+                <div class="ad-signed-title">SIGNED OFFER &amp; APPLICATION FORM <span class="ad-count">{{ signedDocs().length }}</span></div>
+                <div class="ad-signed-name"><i class="bi bi-file-earmark-pdf"></i> {{ signedSelName() }}</div>
+              </div>
+              <div class="ad-signed-actions">
+                <button class="ad-sbtn" type="button" [disabled]="!signedUrl()" (click)="downloadSigned()"><i class="bi bi-download"></i> Download</button>
+                <button class="ad-sbtn" type="button" [disabled]="!signedUrl()" (click)="openSignedInTab()"><i class="bi bi-box-arrow-up-right"></i> Open in new tab</button>
+                <button class="ad-sbtn" type="button" (click)="signedOpen.set(!signedOpen())"><i class="bi" [class.bi-chevron-up]="signedOpen()" [class.bi-chevron-down]="!signedOpen()"></i> {{ signedOpen() ? 'Hide' : 'View Document' }}</button>
+              </div>
+            </div>
+            @if (signedOpen()) {
+              @if (signedDocs().length > 1) {
+                <div class="ad-signed-tabs">
+                  @for (d of signedDocs(); track d.id; let i = $index) {
+                    <button type="button" class="ad-signed-tab" [class.active]="signedSel() === d.id" (click)="showSigned(d.id)" [title]="d.file_name">
+                      <i class="bi bi-file-earmark-text"></i> {{ i + 1 }}. {{ d.file_name }}
+                    </button>
+                  }
+                </div>
+              }
+              <div class="ad-signed-body">
+                @if (signedLoading()) { <p class="ad-signed-msg">Loading document…</p> }
+                @else if (signedUrl(); as u) {
+                  @if (signedInline()) { <iframe class="ad-signed-frame" [src]="u" title="Signed offer and application form"></iframe> }
+                  @else { <p class="ad-signed-msg">This file type can't be previewed here — use Download.</p> }
+                } @else { <p class="ad-signed-msg">The file could not be loaded.</p> }
+              </div>
+            }
+          </div>
+        }
+
+                        <div class="f-tabs">
+          @for (t of tabs(); track t.key) {
+            <button class="f-tab" [class.active]="activeTab() === t.key" type="button" (click)="tab.set(t.key)">{{ t.label }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="f-tab-content">
+        @if (isLocked()) {
+          <div class="f-locked-banner">
+            <i class="bi bi-lock-fill"></i>
+            This application is {{ (a.status_name || a.status_code) }} — it is read-only. Editing (notes, tasks, communications, documents) is disabled.
+          </div>
+        }
+
+        @switch (activeTab()) {
+
+          @case ('summary') {
+            <div class="d-grid">
+              <div class="d-main">
+                <div class="f-card">
+                  <div class="f-card-header">LOAN SUMMARY</div>
+                  <div class="f-card-body">
+                    <div class="f-deal-summary-grid">
+                      <div class="f-field"><span class="f-label">Product</span><span class="f-val">{{ a.product_name || '—' }}</span></div>
+                      @for (m of loanAmounts(a); track m.label) {
+                        <div class="f-field"><span class="f-label">{{ m.label }} Amount (£)</span><span class="f-val">{{ money(m.value) }}</span></div>
+                      }
+                      <div class="f-field"><span class="f-label">Term (Months)</span><span class="f-val">{{ a.term_months ? a.term_months + ' months' : '—' }}</span></div>
+                      <div class="f-field"><span class="f-label">LTV</span><span class="f-val">{{ pct(a.ltv_pct) }}</span></div>
+                      <!-- Client 17-10-2026: Total LTV = (gross + other charges) ÷ all security values. Summary tab only. -->
+                      <div class="f-field"><span class="f-label" title="(Gross loan + other charges, e.g. 1st charge) ÷ property value of all securities × 100">Total LTV</span><span class="f-val">{{ pct(a.summary_total_ltv_pct) }}</span></div>
+                      <div class="f-field"><span class="f-label">Monthly Fee</span><span class="f-val">{{ pct(a.monthly_fee_pct) }}</span></div>
+                      <div class="f-field"><span class="f-label">Arrangement Fee</span><span class="f-val">{{ pct(a.arrangement_fee_pct) }}</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="d-side">
+                <div class="f-card">
+                  <div class="f-card-header">APPLICANT</div>
+                  <div class="f-card-body">
+                    @if (a.primary_applicant; as ap) {
+                      <div class="f-app-header">
+                        <div class="f-app-avatar">{{ initials(applicantName(a)) }}</div>
+                        <div class="f-app-title">
+                          <div class="f-app-name">{{ applicantName(a) }}</div>
+                          <div class="f-app-type">{{ ap.applicant_type_name || 'Individual' }}</div>
+                        </div>
+                      </div>
+                      <div class="f-app-contact">
+                        <div class="f-app-contact-row"><i class="bi bi-calendar3"></i> {{ date(ap.dob) }}</div>
+                        <div class="f-app-contact-row"><i class="bi bi-envelope"></i> {{ ap.email || '—' }}</div>
+                        <div class="f-app-contact-row"><i class="bi bi-telephone"></i> {{ ap.phone || '—' }}</div>
+                      </div>
+                      @if (a.kyc_overall_status) { <span [class]="'f-chip ' + statusChip(a.kyc_overall_status)">KYC {{ a.kyc_overall_status }}</span> }
+                    } @else { <p class="text-muted-fg m-0">No applicant linked.</p> }
+                  </div>
+                </div>
+                <!-- Client 15-10-2026: SECURITY / PROPERTY side card removed from the Summary -
+                     the full security details live on the Security & Property tab. -->
+                <div class="f-card">
+                  <div class="f-card-header">CASE TEAM</div>
+                  <div class="f-card-body">
+                    <div class="f-fin-row"><span class="f-fin-label">BDM</span><span class="f-fin-value">{{ a.bdm_name || '—' }}</span></div>
+                    <!-- Client 21-10-2026: Credit Manager removed from Case Team. -->
+                    <div class="f-fin-row border-0"><span class="f-fin-label">Underwriter</span><span class="f-fin-value">{{ a.underwriter_name || '—' }}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case ('applicant') {
+            <div class="d-grid">
+              <div class="d-main">
+                <div class="f-card">
+                  <div class="f-card-header-flex">
+                    <span>PRIMARY APPLICANT</span>
+                    @if (canEditApplicant() && a.primary_applicant && !editApplicant()) { <button class="d-linkbtn" type="button" (click)="beginApplicant(a)"><i class="bi bi-pencil"></i> Edit</button> }
+                  </div>
+                  <div class="f-card-body">
+                    @if (editApplicant()) {
+                      @if (fieldErrorList().length) {
+                        <div class="srv-errors" role="alert">
+                          <div class="srv-errors-head"><i class="bi bi-exclamation-triangle-fill"></i>
+                            {{ fieldErrorList().length }} field{{ fieldErrorList().length === 1 ? '' : 's' }} need attention</div>
+                          <ul class="srv-errors-list">
+                            @for (e of fieldErrorList(); track e.field) {
+                              <li><b>{{ e.label }}</b><span class="srv-msg">{{ e.message }}</span></li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                      <div class="f-edit-grid">
+                        <label class="f-efield"><span>Type <small class="text-muted-fg">(locked)</small></span><input class="form-input" [value]="editAppTypeName()" disabled /></label>
+                        @if (showFullName(editAppTypeName())) {
+                          <label class="f-efield"><span>Applicant Name</span><input class="form-input" [(ngModel)]="applicantDraft['applicant_name']" /></label>
+                        }
+                        @if (showCompanyName(editAppTypeName())) {
+                          <label class="f-efield"><span>Company Name</span><input class="form-input" [(ngModel)]="applicantDraft['company_name']" /></label>
+                        }
+                        @if (showFullName(editAppTypeName())) {
+                          <label class="f-efield"><span>Email</span><input class="form-input" type="email" [(ngModel)]="applicantDraft['email']" /></label>
+                          <label class="f-efield"><span>Phone</span><input class="form-input" [(ngModel)]="applicantDraft['phone']" /></label>
+                        }
+                        @if (showDob(editAppTypeName())) {
+                          <label class="f-efield"><span>Date of Birth</span><input class="form-input" type="date" [max]="todayStr" [(ngModel)]="applicantDraft['dob']" /></label>
+                        }
+                        @if (showRegNo(editAppTypeName())) {
+                          <label class="f-efield"><span>Company Reg No.</span><input class="form-input" [(ngModel)]="applicantDraft['company_reg_no']" /></label>
+                        }
+                      </div>
+                      <div class="d-editactions">
+                        <button class="f-btn-outline" type="button" (click)="editApplicant.set(false)">Cancel</button>
+                        <button class="f-btn-dark" type="button" [disabled]="savingEdit()" (click)="saveApplicant(a)">{{ savingEdit() ? 'Saving…' : 'Save' }}</button>
+                      </div>
+                    } @else if (a.primary_applicant; as ap) {
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field"><span class="f-label">Type</span><span class="f-val">{{ ap.applicant_type_name || 'Individual' }}</span></div>
+                        @if (showFullName(ap.applicant_type_name)) {
+                          <div class="f-field"><span class="f-label">Applicant Name</span><span class="f-val">{{ applicantName(a) }}</span></div>
+                        }
+                        @if (showCompanyName(ap.applicant_type_name)) {
+                          <div class="f-field"><span class="f-label">Company Name</span><span class="f-val">{{ ap.company_name || '—' }}</span></div>
+                        }
+                        @if (showFullName(ap.applicant_type_name)) {
+                          <div class="f-field"><span class="f-label">Email</span><span class="f-val">{{ ap.email || '—' }}</span></div>
+                          <div class="f-field"><span class="f-label">Phone</span><span class="f-val">{{ ap.phone || '—' }}</span></div>
+                        }
+                        @if (showDob(ap.applicant_type_name)) {
+                          <div class="f-field"><span class="f-label">Date of Birth</span><span class="f-val">{{ dOnly(ap.dob) }}</span></div>
+                        }
+                        @if (showRegNo(ap.applicant_type_name)) {
+                          <div class="f-field"><span class="f-label">Company Reg No.</span><span class="f-val">{{ ap.company_reg_no || '—' }}</span></div>
+                        }
+                      </div>
+                    } @else { <p class="text-muted-fg m-0">No applicant linked.</p> }
+                  </div>
+                </div>
+                @if ((a.enquiry?.applicants || []).length) {
+                  <div class="f-card">
+                    <div class="f-card-header">{{ showCompanyName($safeNavigationMigration(a.primary_applicant?.applicant_type_name)) ? 'APPLICANTS / DIRECTORS' : 'APPLICANT DETAILS' }}</div>
+                    <div class="f-card-body pt-3">
+                      @for (ea of a.enquiry?.applicants || []; track ea.enquiry_applicant_id) {
+                        <div class="uw-applicant">
+                          <div class="uw-applicant-head">
+                            <span class="uw-applicant-name">{{ ea.full_name || '—' }}</span>
+                            @if (ea.is_primary) { <span class="uw-applicant-badge">Primary</span> }
+                            @if (ea.relationship) { <span class="uw-applicant-rel">{{ ea.relationship }}</span> }
+                            @if (canEditApplicant() && editingDirectorId() !== ea.enquiry_applicant_id) {
+                              <button class="d-linkbtn ms-auto" type="button" (click)="beginDirector(ea)"><i class="bi bi-pencil"></i> Edit</button>
+                            }
+                          </div>
+                          @if (editingDirectorId() === ea.enquiry_applicant_id) {
+                            <div class="f-edit-grid">
+                              <label class="f-efield"><span>Full Name</span><input class="form-input" [(ngModel)]="directorDraft['full_name']" /></label>
+                              @if (!hideRepeatedContact(a, ea)) {
+                                <label class="f-efield"><span>Email</span><input class="form-input" type="email" [(ngModel)]="directorDraft['email']" /></label>
+                                <label class="f-efield"><span>Mobile</span><input class="form-input" [(ngModel)]="directorDraft['mobile']" /></label>
+                                <label class="f-efield"><span>Date of Birth</span><input class="form-input" type="date" [max]="todayStr" [(ngModel)]="directorDraft['dob']" /></label>
+                              }
+                              <label class="f-efield"><span>Nationality</span><input class="form-input" [(ngModel)]="directorDraft['nationality']" /></label>
+                              <label class="f-efield"><span>Current Address</span><input class="form-input" [(ngModel)]="directorDraft['address']" /></label>
+                              <label class="f-efield"><span>Time at Address</span><input class="form-input" [(ngModel)]="directorDraft['time_at_address']" /></label>
+                              <label class="f-efield"><span>Own your home?</span>
+                                <select class="form-select" [(ngModel)]="directorDraft['owns_home']"><option value="">Select…</option><option value="true">Yes</option><option value="false">No</option></select>
+                              </label>
+                              <label class="f-efield"><span>Occupation</span><input class="form-input" [(ngModel)]="directorDraft['occupation']" /></label>
+                              <label class="f-efield"><span>Employer / Business Name</span><input class="form-input" maxlength="200" [(ngModel)]="directorDraft['employer_name']" /></label>
+                              <label class="f-efield"><span>Business Address</span><input class="form-input" [(ngModel)]="directorDraft['business_address']" /></label>
+                              <label class="f-efield"><span>Length of Service</span><input class="form-input" [(ngModel)]="directorDraft['length_of_service']" /></label>
+                              <label class="f-efield"><span>Relationship to Borrower</span><input class="form-input" [(ngModel)]="directorDraft['relationship']" /></label>
+                              <label class="f-efield"><span>Shareholding %</span><input class="form-input" type="number" step="0.01" [(ngModel)]="directorDraft['shareholding_pct']" /></label>
+                              <label class="f-efield"><span>Previous bridging experience?</span>
+                                <select class="form-select" [(ngModel)]="directorDraft['prev_bridging']"><option value="">Select…</option><option value="true">Yes</option><option value="false">No</option></select>
+                              </label>
+                              @if (directorDraft['prev_bridging'] === 'true') {
+                                <label class="f-efield"><span>If yes, which lender?</span><input class="form-input" [(ngModel)]="directorDraft['prev_bridging_lender']" /></label>
+                              }
+                            </div>
+                            <div class="d-editactions">
+                              <button class="f-btn-outline" type="button" (click)="cancelDirector()">Cancel</button>
+                              <button class="f-btn-dark" type="button" [disabled]="savingEdit()" (click)="saveDirector(a, ea)">{{ savingEdit() ? 'Saving—' : 'Save' }}</button>
+                            </div>
+                          } @else {
+                          <div class="f-deal-summary-grid">
+                            @if (!hideRepeatedContact(a, ea)) {
+                              <div class="f-field"><span class="f-label">Date of Birth</span><span class="f-val">{{ ea.dob ? dOnly(ea.dob) : '—' }}</span></div>
+                            }
+                            <div class="f-field"><span class="f-label">Nationality</span><span class="f-val">{{ ea.nationality || '—' }}</span></div>
+                            @if (!hideRepeatedContact(a, ea)) {
+                              <div class="f-field"><span class="f-label">Email</span><span class="f-val">{{ ea.email || '—' }}</span></div>
+                              <div class="f-field"><span class="f-label">Mobile</span><span class="f-val">{{ ea.mobile || '—' }}</span></div>
+                            }
+                            <div class="f-field"><span class="f-label">Address</span><span class="f-val">{{ ea.address || '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Time at Address</span><span class="f-val">{{ ea.time_at_address || '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Owns Home?</span><span class="f-val">{{ yesNo(ea.owns_home) }}</span></div>
+                            <div class="f-field"><span class="f-label">Occupation</span><span class="f-val">{{ ea.occupation || '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Employer / Business</span><span class="f-val">{{ ea.employer_name || '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Business Address</span><span class="f-val">{{ ea.business_address || '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Length of Service</span><span class="f-val">{{ ea.length_of_service || '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Shareholding %</span><span class="f-val">{{ ea.shareholding_pct != null ? ea.shareholding_pct + '%' : '—' }}</span></div>
+                            <div class="f-field"><span class="f-label">Prev. Bridging?</span><span class="f-val">{{ yesNo(ea.prev_bridging) }}</span></div>
+                            @if (ea.prev_bridging) {
+                              <div class="f-field"><span class="f-label">Bridging Lender</span><span class="f-val">{{ ea.prev_bridging_lender || '—' }}</span></div>
+                            }
+                          </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="d-side">
+                <div class="f-card">
+                  <div class="f-card-header">KYC / AML STATUS</div>
+                  <div class="f-card-body">
+                    <div class="f-fin-row"><span class="f-fin-label">Identity Check</span><span [class]="'f-chip ' + statusChip(a.kyc_identity_status)">{{ a.kyc_identity_status || '—' }}</span></div>
+                    <div class="f-fin-row"><span class="f-fin-label">AML / Sanctions</span><span [class]="'f-chip ' + statusChip(a.kyc_aml_status)">{{ a.kyc_aml_status || '—' }}</span></div>
+                    <div class="f-fin-row"><span class="f-fin-label">PEP Screening</span><span [class]="'f-chip ' + statusChip(a.kyc_pep_status)">{{ a.kyc_pep_status || '—' }}</span></div>
+                    <div class="f-fin-row border-0"><span class="f-fin-label">Overall KYC</span><span [class]="'f-chip ' + statusChip(a.kyc_overall_status)">{{ a.kyc_overall_status || '—' }}</span></div>
+                  </div>
+                </div>
+                <div class="f-card">
+                  <div class="f-card-header">CASE TEAM</div>
+                  <div class="f-card-body">
+                    <div class="f-fin-row"><span class="f-fin-label">BDM</span><span class="f-fin-value">{{ a.bdm_name || '—' }}</span></div>
+                    <!-- Client 21-10-2026: Credit Manager removed from Case Team. -->
+                    <div class="f-fin-row border-0"><span class="f-fin-label">Underwriter</span><span class="f-fin-value">{{ a.underwriter_name || '—' }}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case ('loan') {
+            <div class="d-grid d-full">
+              <div class="d-main">
+                <div class="f-card">
+                  <div class="f-card-header-flex">
+                    <span>LOAN STRUCTURE</span>
+                    @if (canEditLoan() && !editLoan()) { <button class="d-linkbtn" type="button" (click)="beginLoan(a)"><i class="bi bi-pencil"></i> Edit</button> }
+                  </div>
+                  <div class="f-card-body">
+                    @if (editLoan()) {
+                      @if (fieldErrorList().length) {
+                        <div class="srv-errors" role="alert">
+                          <div class="srv-errors-head"><i class="bi bi-exclamation-triangle-fill"></i>
+                            {{ fieldErrorList().length }} field{{ fieldErrorList().length === 1 ? '' : 's' }} need attention</div>
+                          <ul class="srv-errors-list">
+                            @for (e of fieldErrorList(); track e.field) {
+                              <li><b>{{ e.label }}</b><span class="srv-msg">{{ e.message }}</span></li>
+                            }
+                          </ul>
+                        </div>
+                      }
+                      <div class="f-edit-grid">
+                        <label class="f-efield"><span>Product *</span>
+                          <select class="form-select" [(ngModel)]="loanDraft['product_id']">
+                            <option [ngValue]="null">—</option>
+                            @for (o of options()?.products || []; track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+                          </select>
+                        </label>
+                        <label class="f-efield"><span>{{ a.amount_basis === 'Net' ? 'Net' : 'Gross' }} Loan Amount (£) <small class="text-muted-fg">(from accepted offer)</small></span><input class="form-input" type="number" [ngModel]="loanDraft['amount_requested']" disabled /></label>
+                        <label class="f-efield"><span>Term (Months) *</span><input class="form-input" type="number" min="1" max="600" [(ngModel)]="loanDraft['term_months']" /></label>
+                        <label class="f-efield"><span>Monthly Fee</span><input class="form-input" type="number" step="0.01" [(ngModel)]="loanDraft['monthly_fee_pct']" /></label>
+                        <label class="f-efield"><span>Arrangement Fee</span><input class="form-input" type="number" step="0.01" [(ngModel)]="loanDraft['arrangement_fee_pct']" /></label>
+                        <label class="f-efield"><span>Exit Fee</span><input class="form-input" type="number" [(ngModel)]="loanDraft['exit_fee']" /></label>
+                        <label class="f-efield"><span>Doc Fee</span><input class="form-input" type="number" [(ngModel)]="loanDraft['doc_fee']" /></label>
+                        <label class="f-efield"><span>Rolled Interest</span><input class="form-input" type="number" [(ngModel)]="loanDraft['rolled_interest']" /></label>
+                      </div>
+                      <div class="d-editactions">
+                        <button class="f-btn-outline" type="button" (click)="editLoan.set(false)">Cancel</button>
+                        <button class="f-btn-dark" type="button" [disabled]="savingEdit()" (click)="saveLoan(a)">{{ savingEdit() ? 'Saving…' : 'Save' }}</button>
+                      </div>
+                    } @else {
+                    <div class="f-deal-summary-grid">
+                      <div class="f-field"><span class="f-label">Product</span><span class="f-val">{{ a.product_name || '—' }}</span></div>
+                      @for (m of loanAmounts(a); track m.label) {
+                        <div class="f-field"><span class="f-label">{{ m.label }} Amount (£)</span><span class="f-val">{{ money(m.value) }}</span></div>
+                      }
+                      <div class="f-field"><span class="f-label">Term (Months)</span><span class="f-val">{{ a.term_months ? a.term_months + ' months' : '—' }}</span></div>
+                      <div class="f-field"><span class="f-label">LTV</span><span class="f-val">{{ pct(a.ltv_pct) }}</span></div>
+                      <div class="f-field"><span class="f-label">Monthly Fee</span><span class="f-val">{{ pct(a.monthly_fee_pct) }}</span></div>
+                      <div class="f-field"><span class="f-label">Arrangement Fee</span><span class="f-val">{{ pct(a.arrangement_fee_pct) }}</span></div>
+                      <div class="f-field"><span class="f-label">Exit Fee</span><span class="f-val">{{ money(a.exit_fee) }}</span></div>
+                      <div class="f-field"><span class="f-label">Doc Fee</span><span class="f-val">{{ money(a.doc_fee) }}</span></div>
+                      <div class="f-field"><span class="f-label">Rolled Interest</span><span class="f-val">{{ money(a.rolled_interest) }}</span></div>
+                    </div>
+                    }
+                  </div>
+                </div>
+                <!-- Tester 20-10-2026: the enquiry's loan request details were missing on the application
+                     (purpose, completion, drawdowns, project cost, solicitor, credit paper notes). -->
+                @if (a.enquiry; as e) {
+                  <div class="f-card">
+                    <div class="f-card-header">LOAN REQUEST DETAILS</div>
+                    <div class="f-card-body">
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field"><span class="f-label">Loan Purpose</span><span class="f-val">{{ a.purpose_name || e.purpose_name || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Requested Completion</span><span class="f-val">{{ e.requested_completion_date ? dOnly(e.requested_completion_date) : '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Interest Financing Type</span><span class="f-val">{{ e.interest_type || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Drawdowns Required?</span><span class="f-val">{{ yesNo(e.drawdowns_required) }}</span></div>
+                        <div class="f-field"><span class="f-label">Total Project Cost</span><span class="f-val">{{ e.total_project_cost != null ? money(+e.total_project_cost) : '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Own Contribution</span><span class="f-val">{{ e.own_contribution != null ? money(+e.own_contribution) : '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Deposit Source</span><span class="f-val">{{ e.deposit_source || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Any Additional Borrowing?</span><span class="f-val">{{ yesNo(e.additional_borrowing) }}</span></div>
+                        <div class="f-field-full"><span class="f-label">Deal Summary / Notes</span><span class="f-val pre-line">{{ e.summary || '—' }}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="f-card">
+                    <div class="f-card-header">SOLICITOR REPRESENTATION</div>
+                    <div class="f-card-body">
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field"><span class="f-label">Solicitor Representation</span><span class="f-val">{{ repLabel(e.rep_type) }}</span></div>
+                        @if (e.rep_type === 'single') {
+                          <div class="f-field"><span class="f-label">Borrower's Solicitor / Firm</span><span class="f-val">{{ e.borrower_sol_firm || '—' }}</span></div>
+                          <div class="f-field"><span class="f-label">Contact Name</span><span class="f-val">{{ e.borrower_sol_contact || '—' }}</span></div>
+                          <div class="f-field"><span class="f-label">Telephone</span><span class="f-val">{{ e.borrower_sol_telephone || '—' }}</span></div>
+                          <div class="f-field"><span class="f-label">Email</span><span class="f-val">{{ e.borrower_sol_email || '—' }}</span></div>
+                          <div class="f-field-full"><span class="f-label">Address</span><span class="f-val">{{ e.borrower_sol_address || '—' }}</span></div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div class="f-card">
+                    <div class="f-card-header">CREDIT PAPER NOTES</div>
+                    <div class="f-card-body">
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field-full"><span class="f-label">Deal Appraisal</span><span class="f-val pre-line">{{ e.deal_appraisal || '—' }}</span></div>
+                        <div class="f-field-full"><span class="f-label">Exit Strategy</span><span class="f-val pre-line">{{ e.exit_strategy || '—' }}</span></div>
+                        <div class="f-field-full"><span class="f-label">Risk Mitigants</span><span class="f-val pre-line">{{ e.risk_mitigants || '—' }}</span></div>
+                        <div class="f-field-full"><span class="f-label">Credit Recommendation</span><span class="f-val pre-line">{{ e.credit_recommendation || '—' }}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                }
+                <!-- Agreed terms carried over from the accepted offer on convert (28-09-2026). -->
+                @if (agreed(a); as t) {
+                  <div class="f-card">
+                    <div class="f-card-header">AGREED OFFER TERMS <span class="text-muted-fg fw-normal">· {{ t['source'] || 'enquiry' }}</span></div>
+                    <div class="f-card-body">
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field"><span class="f-label">Interest Type</span><span class="f-val">{{ t['interest_type'] || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Monthly Rate</span><span class="f-val">{{ t['monthly_rate_pct'] != null ? t['monthly_rate_pct'] + '% pm' : '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Arrangement Fee</span><span class="f-val">{{ money(tn(t, 'arrangement_fee')) }}{{ (tn(t, 'arrangement_fee_pct') ?? a.arrangement_fee_pct) != null ? ' (' + pct(tn(t, 'arrangement_fee_pct') ?? a.arrangement_fee_pct) + ')' : '' }}{{ arrangementToBroker(t) != null && t['broker_payee_name'] ? ' (of which ' + money(arrangementToBroker(t)) + ' is payable to ' + t['broker_payee_name'] + ')' : '' }}</span></div>
+                        <div class="f-field"><span class="f-label">Broker Fee</span><span class="f-val">{{ money(tn(t, 'broker_fee')) }}</span></div>
+                        <div class="f-field"><span class="f-label">Broker Fee Payable To</span><span class="f-val">{{ t['broker_payee_name'] || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Document Fee</span><span class="f-val">{{ money(tn(t, 'document_fee')) }}</span></div>
+                        <div class="f-field"><span class="f-label">{{ t['interest_type'] === 'Serviced' ? 'Serviced Interest' : 'Retained Interest' }}</span><span class="f-val">{{ money(tn(t, 'interest_total')) }}</span></div>
+                        <div class="f-field"><span class="f-label">Monthly Payment</span><span class="f-val">{{ money(tn(t, 'monthly_payment')) }}</span></div>
+                        <div class="f-field"><span class="f-label">Net Release Day 1</span><span class="f-val">{{ money(tn(t, 'net_release_day1')) }}</span></div>
+                        <div class="f-field"><span class="f-label">Net Incl. Drawdowns</span><span class="f-val">{{ money(tn(t, 'net_release_incl_drawdowns')) }}</span></div>
+                        <div class="f-field"><span class="f-label">Total Security Value</span><span class="f-val">{{ money(tn(t, 'total_security_value')) }}</span></div>
+                        <div class="f-field"><span class="f-label">Redemption Total</span><span class="f-val">{{ money(tn(t, 'redemption_total')) }}</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="f-card">
+                    <div class="f-card-header">DRAWDOWNS</div>
+                    <div class="f-card-body">
+                      @if (drawdowns(a).length) {
+                        <div class="table-responsive">
+                          <table class="table table-sm mb-0">
+                            <thead><tr><th>#</th><th>Month</th><th class="text-end">Gross</th><th class="text-end">Net</th></tr></thead>
+                            <tbody>
+                              @for (d of drawdowns(a); track $index) {
+                                <tr><td>{{ $index + 1 }}</td><td>{{ d.month ?? '—' }}</td><td class="text-end">{{ money(d.gross) }}</td><td class="text-end">{{ money(d.net) }}</td></tr>
+                              }
+                            </tbody>
+                            @if (t['drawdowns_total'] != null || drawdownsNetTotal(a) != null) {
+                              <tfoot><tr><th colspan="2">Total</th><th class="text-end">{{ money(tn(t, 'drawdowns_total')) }}</th><th class="text-end">{{ money(drawdownsNetTotal(a)) }}</th></tr></tfoot>
+                            }
+                          </table>
+                        </div>
+                      } @else { <p class="text-muted-fg m-0">No drawdowns on the agreed offer.</p> }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @case ('security') {
+            <div class="d-grid d-full">
+              <div class="d-main">
+                <div class="f-card">
+                  <div class="f-card-header-flex">
+                    <span>SECURITY & PROPERTY</span>
+                    @if (canEditSecurity() && a.security && !editSecurity()) { <button class="d-linkbtn" type="button" (click)="beginSecurity(a)"><i class="bi bi-pencil"></i> Edit</button> }
+                  </div>
+                  <div class="f-card-body">
+                    @if (editSecurity()) {
+                      @if (fieldErrorList().length) {
+                        <div class="srv-errors" role="alert">
+                          <div class="srv-errors-head"><i class="bi bi-exclamation-triangle-fill"></i>
+                            {{ fieldErrorList().length }} field{{ fieldErrorList().length === 1 ? '' : 's' }} need attention</div>
+                          <ul class="srv-errors-list">
+                            @for (e of fieldErrorList(); track e.field) { <li><b>{{ e.label }}</b><span class="srv-msg">{{ e.message }}</span></li> }
+                          </ul>
+                        </div>
+                      }
+                      <div class="f-edit-grid">
+                        <label class="f-efield f-efull"><span>Property Address *</span><input class="form-input" [(ngModel)]="securityDraft['property_address']" /></label>
+                        <label class="f-efield f-efull"><span>Google Maps Link</span><input class="form-input" placeholder="https://maps.app.goo.gl/…" [(ngModel)]="securityDraft['map_link']" />@if (editSecMapLinkInvalid()) { <small class="d-err">Enter a valid Google Maps link.</small> }</label>
+                        @if (editSecMapUrl(); as u) { <div class="f-efield f-efull"><div class="sec-map"><iframe [src]="u" title="Security location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div> }
+                        <label class="f-efield"><span>Postcode</span><input class="form-input" [(ngModel)]="securityDraft['postcode']" /></label>
+                        <label class="f-efield"><span>Property Type</span><input class="form-input" placeholder="Residential, Commercial, Land…" [(ngModel)]="securityDraft['property_type']" /></label>
+                        <label class="f-efield"><span>Tenure</span>
+                          <select class="form-select" [(ngModel)]="securityDraft['tenure']"><option value="">—</option><option value="Freehold">Freehold</option><option value="Leasehold">Leasehold</option></select>
+                        </label>
+                        <label class="f-efield"><span>Years Remaining (if Leasehold)</span><input class="form-input" type="number" [(ngModel)]="securityDraft['tenure_years']" /></label>
+                        <label class="f-efield"><span>Charge *</span>
+                          <select class="form-select" [(ngModel)]="securityDraft['charge_type']"><option value="">—</option><option value="1st">1st charge</option><option value="2nd">2nd charge</option></select>
+                        </label>
+                        @if (securityDraft['charge_type'] === '2nd') {
+                          <label class="f-efield"><span>Charge Amount (£)</span><input class="form-input" type="number" min="0" [(ngModel)]="securityDraft['charge_amount']" /></label>
+                        }
+                        <label class="f-efield"><span>Property Value (£) *</span><input class="form-input" type="number" min="1" [(ngModel)]="securityDraft['estimated_value']" /></label>
+                        <label class="f-efield"><span>GDV (£)</span><input class="form-input" type="number" [(ngModel)]="securityDraft['gdv']" /></label>
+                        <label class="f-efield"><span>Purchase Price (£)</span><input class="form-input" type="number" [(ngModel)]="securityDraft['purchase_price']" /></label>
+                        <label class="f-efield"><span>Purchase / Completion Date</span><input class="form-input" type="date" [(ngModel)]="securityDraft['purchase_date']" /></label>
+                        <label class="f-efield"><span>Outstanding Loan (£)</span><input class="form-input" type="number" [(ngModel)]="securityDraft['outstanding_loan']" /></label>
+                        <label class="f-efield"><span>Repaid on Completion?</span>
+                          <select class="form-select" [(ngModel)]="securityDraft['repaid_on_completion']"><option [ngValue]="null">—</option><option [ngValue]="1">Yes</option><option [ngValue]="0">No</option></select>
+                        </label>
+                        <label class="f-efield"><span>Existing Lender</span><input class="form-input" [(ngModel)]="securityDraft['lender']" /></label>
+                        <label class="f-efield f-efull"><span>Added Value Since Purchase</span><textarea class="form-input" rows="2" [(ngModel)]="securityDraft['added_value']"></textarea></label>
+                      </div>
+                      <div class="d-editactions">
+                        <button class="f-btn-outline" type="button" (click)="editSecurity.set(false)">Cancel</button>
+                        <button class="f-btn-dark" type="button" [disabled]="savingEdit()" (click)="saveSecurity(a)">{{ savingEdit() ? 'Saving—' : 'Save' }}</button>
+                      </div>
+                    } @else if (a.security; as sec) {
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field-full"><span class="f-label">Property Address</span><span class="f-val">{{ sec.property_address || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Postcode</span><span class="f-val">{{ sec.postcode || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Property Type</span><span class="f-val">{{ sec.property_type || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Tenure</span><span class="f-val">{{ sec.tenure || '—' }}{{ sec.tenure === 'Leasehold' && sec.tenure_years != null ? ' (' + sec.tenure_years + ' yrs)' : '' }}</span></div>
+                        <div class="f-field"><span class="f-label">Charge</span><span class="f-val">{{ chargeText(sec.charge_type) }}</span></div>
+                        @if (sec.charge_type === '2nd') { <div class="f-field"><span class="f-label">Charge Amount</span><span class="f-val">{{ money(num($any(sec)['charge_amount'])) }}</span></div> }
+                        <div class="f-field"><span class="f-label">Property Value</span><span class="f-val">{{ money(sec.estimated_value) }}</span></div>
+                        <div class="f-field"><span class="f-label">GDV</span><span class="f-val">{{ money(sec.gdv) }}</span></div>
+                        <div class="f-field"><span class="f-label">LTV</span><span class="f-val">{{ pct(a.ltv_pct) }}</span></div>
+                        <div class="f-field"><span class="f-label">Purchase Price</span><span class="f-val">{{ money(sec.purchase_price) }}</span></div>
+                        <div class="f-field"><span class="f-label">Purchase / Completion Date</span><span class="f-val">{{ dOnly(sec.purchase_date) }}</span></div>
+                        <div class="f-field"><span class="f-label">Outstanding Loan</span><span class="f-val">{{ money(sec.outstanding_loan) }}</span></div>
+                        <div class="f-field"><span class="f-label">Repaid on Completion?</span><span class="f-val">{{ yesNo(sec.repaid_on_completion) }}</span></div>
+                        <div class="f-field"><span class="f-label">Existing Lender</span><span class="f-val">{{ sec.lender || '—' }}</span></div>
+                        <div class="f-field-full"><span class="f-label">Added Value Since Purchase</span><span class="f-val">{{ sec.added_value || '—' }}</span></div>
+                        <div class="f-field-full"><span class="f-label">Location</span>
+                          @if (secMapUrl(sec); as u) {
+                            <div class="sec-map"><iframe [src]="u" title="Security location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+                            @if (secMapOpenUrl(sec); as o) { <a class="sec-map-link" [href]="o" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right"></i> Open in Google Maps</a> }
+                          } @else { <span class="f-val">No location yet.</span> }
+                        </div>
+                      </div>
+                    } @else { <p class="text-muted-fg m-0">No security recorded.</p> }
+                  </div>
+                </div>
+                <!-- Client 09-10-2026 (app pts 1+4): additional securities show the SAME full
+                     details as the enquiry, one card each, instead of a compact one-line table. -->
+                @for (x of otherSecurities(a); track $index) {
+                  <div class="f-card">
+                    <div class="f-card-header">ADDITIONAL SECURITY {{ $index + 1 }}{{ x['property_type'] ? ' — ' + x['property_type'] : '' }}</div>
+                    <div class="f-card-body pt-3">
+                      <div class="f-deal-summary-grid">
+                        @if (x['property_address']) { <div class="f-field-full"><span class="f-label">Property Address</span><span class="f-val">{{ addrPc(x['property_address'], x['postcode']) }}</span></div> }
+                        @if (secMapUrl($any(x)); as u) {
+                          <div class="f-field-full"><span class="f-label">Location</span>
+                            <div class="sec-map"><iframe [src]="u" title="Security location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+                            @if (secMapOpenUrl($any(x)); as o) { <a class="sec-map-link" [href]="o" target="_blank" rel="noopener noreferrer"><i class="bi bi-box-arrow-up-right"></i> Open in Google Maps</a> }
+                          </div>
+                        }
+                        @if (x['postcode']) { <div class="f-field"><span class="f-label">Postcode</span><span class="f-val">{{ x['postcode'] }}</span></div> }
+                        @if (x['property_type']) { <div class="f-field"><span class="f-label">Property Type</span><span class="f-val">{{ x['property_type'] }}</span></div> }
+                        @if (x['tenure']) { <div class="f-field"><span class="f-label">Tenure</span><span class="f-val">{{ x['tenure'] }}{{ x['tenure'] === 'Leasehold' && x['tenure_years'] != null ? ' (' + x['tenure_years'] + ' yrs)' : '' }}</span></div> }
+                        @if (x['charge_type']) { <div class="f-field"><span class="f-label">Charge</span><span class="f-val">{{ chargeText(x['charge_type']) }}</span></div> }
+                        @if (x['charge_type'] === '2nd' && x['charge_amount'] != null) { <div class="f-field"><span class="f-label">Charge Amount</span><span class="f-val">{{ money(num(x['charge_amount'])) }}</span></div> }
+                        @if (x['estimated_value'] != null) { <div class="f-field"><span class="f-label">Property Value</span><span class="f-val">{{ money(num(x['estimated_value'])) }}</span></div> }
+                        @if (x['gdv'] != null) { <div class="f-field"><span class="f-label">GDV</span><span class="f-val">{{ money(num(x['gdv'])) }}</span></div> }
+                        @if (x['purchase_price'] != null) { <div class="f-field"><span class="f-label">Purchase Price</span><span class="f-val">{{ money(num(x['purchase_price'])) }}</span></div> }
+                        @if (x['purchase_date']) { <div class="f-field"><span class="f-label">Purchase / Completion Date</span><span class="f-val">{{ dOnly($any(x['purchase_date'])) }}</span></div> }
+                        @if (x['outstanding_loan'] != null) { <div class="f-field"><span class="f-label">Outstanding Loan</span><span class="f-val">{{ money(num(x['outstanding_loan'])) }}</span></div> }
+                        @if (x['existing_charge'] != null) { <div class="f-field"><span class="f-label">Existing Charge</span><span class="f-val">{{ money(num(x['existing_charge'])) }}</span></div> }
+                        @if (x['repaid_on_completion'] != null) { <div class="f-field"><span class="f-label">Repaid on Completion?</span><span class="f-val">{{ yesNo(x['repaid_on_completion']) }}</span></div> }
+                        @if (x['lender']) { <div class="f-field"><span class="f-label">Existing Lender</span><span class="f-val">{{ x['lender'] }}</span></div> }
+                        @if (x['added_value']) { <div class="f-field-full"><span class="f-label">Added Value Since Purchase</span><span class="f-val">{{ x['added_value'] }}</span></div> }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          @case ('broker') {
+            <div class="f-card">
+              <div class="f-card-header">BROKER DETAILS</div>
+              <div class="f-card-body pt-3">
+                <div class="f-deal-summary-grid">
+                  <div class="f-field"><span class="f-label">Source</span><span class="f-val">{{ a.source_name || '—' }}</span></div>
+                  <div class="f-field"><span class="f-label">Lead Source</span><span class="f-val">{{ a['lead_source'] || '—' }}</span></div>
+                  <div class="f-field"><span class="f-label">Broker Name</span><span class="f-val">{{ a.broker_name || a['broker_name_text'] || '—' }}</span></div>
+                  <!-- Client 15-10-2026: broker company + contact details on their own lines. -->
+                  <div class="f-field"><span class="f-label">Broker Company</span><span class="f-val">{{ a['broker_company'] || '—' }}</span></div>
+                  <div class="f-field"><span class="f-label">Broker Email</span><span class="f-val">{{ a['broker_email'] || '—' }}</span></div>
+                  <div class="f-field"><span class="f-label">Broker Phone</span><span class="f-val">{{ a['broker_phone'] || '—' }}</span></div>
+                </div>
+              </div>
+            </div>
+          }
+
+          @case ('documents') {
+            <div class="f-card">
+              <div class="f-card-header-flex">
+                <span>DOCUMENTS</span>
+                @if (canUploadDocs()) { <button class="f-btn-yellow" type="button" (click)="openDocModal()"><i class="bi bi-upload"></i> Upload Document</button> }
+              </div>
+              <div class="f-card-body pt-3">
+                @if (a.documents.length) {
+                  <div class="table-responsive">
+                    <table class="d-doc-table">
+                      <thead><tr><th>DOCUMENT</th><th>CATEGORY</th><th>VERSION</th><th>UPLOADED</th><th>VERIFIED</th><th>STATUS</th><th class="d-doc-actions">ACTIONS</th></tr></thead>
+                      <tbody>
+                        @for (d of a.documents; track d.app_document_id) {
+                          <tr>
+                            <td><i class="bi bi-file-earmark"></i> {{ d.file_name }}</td>
+                            <td>{{ d.document_category || d.document_type_name || '—' }}</td>
+                            <td class="font-mono">{{ d.version || 'v1' }}</td>
+                            <td>{{ date(d.created_at) }}</td>
+                            <td><span [class]="'f-chip ' + statusChip(d.verified_status)">{{ d.verified_status || '—' }}</span></td>
+                            <td><span [class]="'f-chip ' + statusChip(d.status)">{{ d.status || '—' }}</span></td>
+                            <td class="d-doc-actions">
+                              <button class="d-linkbtn" type="button" (click)="preview(a, d.app_document_id)"><i class="bi bi-eye"></i> Preview</button>
+                              <button class="d-linkbtn" type="button" (click)="download(a, d.app_document_id)"><i class="bi bi-download"></i> Download</button>
+                              @if (canEditDocs()) {
+                                <button class="d-linkbtn" type="button" (click)="openDocEdit(d)"><i class="bi bi-pencil"></i> Edit</button>
+                              }
+                              @if (canDeleteDocs()) {
+                                <button class="d-linkbtn d-danger" type="button" (click)="deleteDoc(a, d)"><i class="bi bi-trash"></i></button>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                } @else { <p class="text-muted-fg m-0">No documents uploaded.</p> }
+              </div>
+            </div>
+            @if (a.enquiry_documents?.length) {
+              <div class="f-card mt-3">
+                <div class="f-card-header-flex">
+                  <span>FROM ENQUIRY {{ a.enquiry_ref || '' }}</span>
+                </div>
+                <div class="f-card-body pt-3">
+                  <div class="table-responsive">
+                    <table class="d-doc-table">
+                      <thead><tr><th>DOCUMENT</th><th>TYPE</th><th>UPLOADED</th><th class="d-doc-actions">ACTIONS</th></tr></thead>
+                      <tbody>
+                        @for (d of a.enquiry_documents; track d.enquiry_document_id) {
+                          <tr>
+                            <td><i class="bi bi-file-earmark"></i> {{ d.file_name }}</td>
+                            <td>{{ d.document_type_name || '—' }}</td>
+                            <td>{{ date(d.created_at) }}</td>
+                            <td class="d-doc-actions">
+                              <button class="d-linkbtn" type="button" (click)="previewEnquiryDoc(a, d.enquiry_document_id)"><i class="bi bi-eye"></i> Preview</button>
+                              <button class="d-linkbtn" type="button" (click)="downloadOfferDoc(a, d.enquiry_document_id, d.file_name)"><i class="bi bi-download"></i> Download</button>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Tasks + Communications tabs removed (client 29-09-2026). -->
+
+          @case ('initial_offer') {
+            <div class="f-card">
+              <div class="f-card-header">INITIAL OFFER</div>
+              <div class="f-card-body pt-3">
+                @if (displayOffer(a); as off) {
+                  <div class="f-deal-summary-grid">
+                    <div class="f-field"><span class="f-label">OFFER AMOUNT</span><span class="f-val">{{ money(off.gross_loan_amount) }}</span></div>
+                    <div class="f-field"><span class="f-label">INDICATIVE RATE</span><span class="f-val">{{ off.monthly_rate_pct != null ? off.monthly_rate_pct + '% pm' : '—' }}</span></div>
+                    <div class="f-field"><span class="f-label">VALID UNTIL</span><span class="f-val">{{ off.valid_until ? dOnly(off.valid_until) : '—' }}</span></div>
+                    <div class="f-field"><span class="f-label">ISSUED</span><span class="f-val">{{ off.sent_at ? date(off.sent_at) : '—' }}</span></div>
+                    <div class="f-field"><span class="f-label">OFFER STATUS</span><span class="f-val"><span class="ad-offer-badge" [class.ok]="off.status === 'Accepted'">{{ off.status }}</span>@if (acceptedOfferIndVer(a); as iv) { <span class="text-muted-fg"> · from Indicative v{{ iv }}</span> }</span></div>
+                    <div class="f-field-full"><span class="f-label">OFFER NOTES</span><div class="f-notes-box">{{ off.offer_notes || '—' }}</div></div>
+                  </div>
+                } @else {
+                  <p class="text-muted-fg m-0">No initial offer issued yet.</p>
+                }
+
+                @if (appIndicatives(a).length || appOffers(a).length) {
+                  <div class="offer-history">
+                    <div class="oh-title">INDICATIVE &amp; OFFER HISTORY</div>
+                    @for (iv of appIndicatives(a); track iv.enquiry_indicative_id) {
+                      <div class="oh-row">
+                        <span class="oh-tag ind">Indicative v{{ iv.version_no }}</span>
+                        <span class="oh-status">{{ iv.status }}</span>
+                        @if (acceptedIndIdApp(a) === iv.enquiry_indicative_id) { <span class="oh-accepted"><i class="bi bi-check-circle-fill"></i> Accepted offer</span> }
+                        <span class="oh-when">{{ iv.sent_at ? date(iv.sent_at) : date(iv.created_at) }}</span>
+                        @if (iv.document_id) { <button class="oh-link" type="button" (click)="downloadOfferDoc(a, iv.document_id, 'Indicative_v' + iv.version_no + '.pdf')"><i class="bi bi-download"></i> PDF</button> }
+                      </div>
+                    }
+                    @for (ov of appOffers(a); track ov.enquiry_offer_id) {
+                      <div class="oh-row">
+                        <span class="oh-tag offer">Offer v{{ ov.version_no }}</span>
+                        <span class="oh-status">{{ ov.status }}</span>
+                        @if (ov.status === 'Accepted') { <span class="oh-accepted"><i class="bi bi-check-circle-fill"></i> Accepted@if (offerIndVer(a, ov); as iv) { · from Indicative v{{ iv }} }</span> }
+                        <span class="oh-when">{{ ov.sent_at ? date(ov.sent_at) : date(ov.created_at) }}</span>
+                        @if (ov.offer_pdf_doc_id) { <button class="oh-link" type="button" (click)="downloadOfferDoc(a, ov.offer_pdf_doc_id, 'Offer_v' + ov.version_no + '.pdf')"><i class="bi bi-download"></i> Offer</button> }
+                        @if (ov.app_form_doc_id) { <button class="oh-link" type="button" (click)="downloadOfferDoc(a, ov.app_form_doc_id, 'Application_Form.pdf')"><i class="bi bi-download"></i> App form</button> }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+          @case ('communications') {
+            <div class="f-card">
+              <div class="f-card-header-flex">
+                <span>COMMUNICATIONS &amp; NOTES</span>
+                @if (canEditCase()) { <button class="d-linkbtn" type="button" (click)="showCommForm.set(!showCommForm())"><i class="bi bi-plus-lg"></i> Log Communication</button> }
+              </div>
+              <div class="f-card-body pt-3">
+                @if (showCommForm()) {
+                  <div class="d-addnote">
+                    <textarea class="form-input" rows="3" placeholder="Add a note or log a call…" [(ngModel)]="commDraft.body"></textarea>
+                    <div class="d-editactions">
+                      <button class="f-btn-outline" type="button" (click)="showCommForm.set(false)">Cancel</button>
+                      <button class="f-btn-dark" type="button" [disabled]="savingComm() || !commDraft.body.trim()" (click)="submitComm(a)">{{ savingComm() ? 'Saving…' : 'Save' }}</button>
+                    </div>
+                  </div>
+                }
+                @if (commTimeline(a).length) {
+                  <ui-timeline [items]="commTimeline(a)" />
+                } @else {
+                  <p class="text-muted-fg m-0">No communications yet.</p>
+                }
+              </div>
+            </div>
+          }
+          @case ('audit') {
+            <div class="f-card">
+              <div class="f-card-header">AUDIT TRAIL</div>
+              <div class="f-card-body pt-3">
+                @if (a.audit.length) {
+                  <ol class="aud-timeline">
+                    @for (r of a.audit; track $index) {
+                      <li class="aud-event" [attr.data-mod]="r.module">
+                        <span class="aud-event__rail"><span class="aud-event__dot"></span></span>
+                        <div class="aud-event__card">
+                          <div class="aud-event__head">
+                            <span class="aud-action">{{ auditAction(r.action) }}</span>
+                            <span class="aud-mod" [attr.data-mod]="r.module">{{ r.module || '—' }}</span>
+                            <span class="aud-when">{{ datetime(r.timestamp) }}</span>
+                          </div>
+                          <div class="aud-event__who">{{ r.user_name || 'System' }}@if (r.role_name) {<span class="aud-role">{{ r.role_name }}</span>}</div>
+                          @if (auditSummary(r)) {
+                            <div class="aud-detail">{{ auditSummary(r) }}</div>
+                          }
+                        </div>
+                      </li>
+                    }
+                  </ol>
+                } @else { <p class="text-muted-fg m-0">No audit entries recorded for this application yet.</p> }
+              </div>
+            </div>
+          }
+
+          @case ('enquiry') {
+            @if (a.enquiry; as e) {
+              <div class="f-card f-source-card">
+                <div class="f-card-body f-source-head">
+                  <div>
+                    <div class="f-label">SOURCE ENQUIRY</div>
+                    <div class="f-val font-mono">{{ e.enquiry_ref }}</div>
+                    <div class="text-muted-fg">Created {{ datetime(e.created_at) }} · Converted to this application</div>
+                    <div class="text-muted-fg small">As first requested on the enquiry - the current deal figures are on the Summary / Loan Request tabs.</div>
+                  </div>
+                  @if (canOpenEnquiry()) {
+                  <button class="f-btn-outline" type="button" (click)="openEnquiry(e.enquiry_id)">Open Enquiry →</button>
+                  }
+                </div>
+              </div>
+              <div class="d-grid">
+                <div class="d-main">
+                  <div class="f-card">
+                    <div class="f-card-header">ENQUIRY SNAPSHOT</div>
+                    <div class="f-card-body">
+                      <div class="f-deal-summary-grid">
+                        <div class="f-field"><span class="f-label">Product</span><span class="f-val">{{ e.product_name || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">{{ e.loan_basis === 'Net' ? 'Net Loan' : 'Gross Loan' }}</span><span class="f-val">{{ money(e.amount_requested) }}</span></div>
+                        <div class="f-field"><span class="f-label">Term</span><span class="f-val">{{ e.term_months ? e.term_months + ' months' : '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Purpose</span><span class="f-val">{{ e.purpose_name || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Completion Date</span><span class="f-val">{{ date(e.requested_completion_date) }}</span></div>
+                        <div class="f-field"><span class="f-label">Source</span><span class="f-val">{{ e.source_name || e.lead_source || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Broker</span><span class="f-val">{{ e.broker_name || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">BDM</span><span class="f-val">{{ e.bdm_name || '—' }}</span></div>
+                        <div class="f-field"><span class="f-label">Branch</span><span class="f-val">{{ e.branch_name || '—' }}</span></div>
+                      </div>
+                      @if (e.summary) { <div class="f-notes-box">{{ e.summary }}</div> }
+                    </div>
+                  </div>
+                </div>
+                <div class="d-side">
+                  <div class="f-card">
+                    <div class="f-card-header">APPLICANT AT ENQUIRY</div>
+                    <div class="f-card-body">
+                      <div class="f-fin-row"><span class="f-fin-label">Full Name</span><span class="f-fin-value">{{ e.applicant_name || e.company_name || '—' }}</span></div>
+                      <div class="f-fin-row"><span class="f-fin-label">Email</span><span class="f-fin-value">{{ e.email || '—' }}</span></div>
+                      <div class="f-fin-row"><span class="f-fin-label">Phone</span><span class="f-fin-value">{{ e.phone || '—' }}</span></div>
+                      <div class="f-fin-row"><span class="f-fin-label">Date of Birth</span><span class="f-fin-value">{{ date(e.dob) }}</span></div>
+                      @if (e.company_reg_no) { <div class="f-fin-row border-0"><span class="f-fin-label">Company Reg.</span><span class="f-fin-value">{{ e.company_reg_no }}</span></div> }
+                    </div>
+                  </div>
+                  <!-- Client 20-10-2026: SECURITY / PROPERTY side card removed from Original Enquiry. -->
+                </div>
+              </div>
+            } @else {
+              <div class="f-card"><div class="f-card-body pt-3"><p class="text-muted-fg m-0">This application was created directly (no source enquiry).</p></div></div>
+            }
+          }
+        }
+      </div>
+
+      <!-- Upload Document modal -->
+      @if (docModalOpen()) {
+        <ui-modal title="Upload Document" (closed)="docModalOpen.set(false)">
+          <label class="d-modal-field">DOCUMENT TYPE
+            <select class="form-select" [(ngModel)]="newDocTypeId">
+              <option [ngValue]="null">Select type…</option>
+              @for (t of options()?.documentTypes || []; track t.id) { <option [ngValue]="t.id">{{ t.name }}</option> }
+            </select>
+          </label>
+          <div class="d-modal-field">FILE
+            <ui-file-upload label="Upload File" emptyText="No file selected yet." (fileChange)="onFilePicked($event)" />
+          </div>
+          <div modalFooter class="d-modal-footer">
+            <button class="f-btn-outline" type="button" (click)="docModalOpen.set(false)">Cancel</button>
+            <button class="f-btn-dark" type="button" [disabled]="!pickedFile || uploadingDoc()" (click)="uploadDoc(a)"><i class="bi bi-upload"></i> {{ uploadingDoc() ? 'Uploading…' : 'Upload' }}</button>
+          </div>
+        </ui-modal>
+      }
+
+      <!-- Edit Document modal -->
+      @if (docEditOpen()) {
+        <ui-modal title="Edit Document" (closed)="docEditOpen.set(false)">
+          <label class="d-modal-field">DOCUMENT TYPE
+            <select class="form-select" [(ngModel)]="editDocTypeId">
+              <option [ngValue]="null">Select type…</option>
+              @for (t of options()?.documentTypes || []; track t.id) { <option [ngValue]="t.id">{{ t.name }}</option> }
+            </select>
+          </label>
+          <label class="d-modal-field">VERIFICATION STATUS
+            <select class="form-select" [(ngModel)]="editVerifiedStatus">
+              <option [ngValue]="null">Unchanged</option>
+              <option value="Pending Review">Pending Review</option>
+              <option value="Verified">Verified</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </label>
+          <div class="d-modal-field">REPLACE FILE (optional)
+            <ui-file-upload label="Upload File" emptyText="Keeping the current file." (fileChange)="onEditFilePicked($event)" />
+          </div>
+          <div modalFooter class="d-modal-footer">
+            <button class="f-btn-outline" type="button" (click)="docEditOpen.set(false)">Cancel</button>
+            <button class="f-btn-dark" type="button" [disabled]="savingDoc()" (click)="submitDocEdit(a)">{{ savingDoc() ? 'Saving…' : 'Save' }}</button>
+          </div>
+        </ui-modal>
+      }
+
+      <!-- Return / Revert modal (Figma) -->
+      @if (returnOpen()) {
+        <ui-modal [title]="returnMode() === 'bdm' ? 'Return to BDM' : 'Return / Revert Application'" (closed)="returnOpen.set(false)">
+          <label class="d-modal-field">COMMENTS
+            <textarea class="form-input" rows="3" [(ngModel)]="returnComments" placeholder="Optional note for the receiving team…"></textarea>
+          </label>
+          <p class="d-return-note"><i class="bi bi-info-circle"></i> The application leaves this queue and goes back a stage. Previous work is not deleted.</p>
+          <div modalFooter class="d-modal-footer">
+            <button class="f-btn-outline" type="button" (click)="returnOpen.set(false)">Cancel</button>
+            <button class="f-btn-yellow" type="button" [disabled]="savingReturn()" (click)="confirmReturn(a)">{{ savingReturn() ? 'Returning…' : 'Confirm Return' }}</button>
+          </div>
+        </ui-modal>
+      }
+
+      <!-- Reject modal (Figma) -->
+      @if (rejectOpen()) {
+        <ui-modal title="Reject Application" (closed)="rejectOpen.set(false)">
+          <label class="d-modal-field">REJECTION REASON *
+            <select class="form-select" [(ngModel)]="rejectReason">
+              <option value="">Select reason…</option>
+              @for (r of options()?.rejectionReasons || []; track r.id) { <option [value]="r.name">{{ r.name }}</option> }
+            </select>
+          </label>
+          <label class="d-modal-field">COMMENTS *
+            <textarea class="form-input" rows="3" [(ngModel)]="rejectComments" placeholder="Reason for rejection…"></textarea>
+          </label>
+          <p class="d-return-note d-reject-note"><i class="bi bi-exclamation-triangle"></i> This will decline the application. The applicant and broker will be notified.</p>
+          <div modalFooter class="d-modal-footer">
+            <button class="f-btn-outline" type="button" (click)="rejectOpen.set(false)">Cancel</button>
+            <button class="f-btn-danger-outline" type="button" [disabled]="savingReject()" (click)="confirmReject(a)">{{ savingReject() ? 'Rejecting…' : 'Confirm Reject' }}</button>
+          </div>
+        </ui-modal>
+      }
+
+      <!-- Accept Case modal (Figma) -->
+      @if (acceptOpen()) {
+        <ui-modal [title]="'Accept Case — ' + a.application_ref" (closed)="acceptOpen.set(false)">
+          <p class="d-return-note d-accept-note">You are accepting ownership of this case as the assigned Underwriter. You will coordinate all specialist checks.</p>
+          <div class="d-accept-cards">
+            <div class="d-accept-card"><span class="f-label">APPLICANT</span><b>{{ applicantName(a) }}</b></div>
+            <div class="d-accept-card"><span class="f-label">AMOUNT</span><b>{{ money(a.amount_requested) }}</b></div>
+            <div class="d-accept-card"><span class="f-label">PRODUCT</span><b>{{ a.product_name || '—' }}</b></div>
+          </div>
+          <label class="d-modal-field">ACCEPTANCE NOTES (OPTIONAL)
+            <textarea class="form-input" rows="3" [(ngModel)]="acceptComments" placeholder="Any initial observations…"></textarea>
+          </label>
+          <div modalFooter class="d-modal-footer">
+            <button class="f-btn-outline" type="button" (click)="acceptOpen.set(false)">Cancel</button>
+            <button class="f-btn-yellow" type="button" [disabled]="savingAccept()" (click)="confirmAccept(a)"><i class="bi bi-check-lg"></i> {{ savingAccept() ? 'Accepting…' : 'Accept Case' }}</button>
+          </div>
+        </ui-modal>
+      }
+
+      @if (requestInfoOpen()) {
+        <ui-modal title="Request Information" (closed)="requestInfoOpen.set(false)">
+          <label class="d-modal-field">SEND TO
+            <select class="form-select" [(ngModel)]="reqSendTo">
+              <option value="Broker">Broker</option>
+              <option value="Applicant">Applicant</option>
+            </select>
+            <small class="d-hint">The assigned BDM is automatically copied in (cc) on this request.</small>
+          </label>
+          <div class="d-modal-field">OUTSTANDING ITEMS
+            <div class="d-reqitems">
+              <label><input type="checkbox" [(ngModel)]="reqItems.bank" /> Bank Statements</label>
+              <label><input type="checkbox" [(ngModel)]="reqItems.address" /> Proof Of Address</label>
+              <label><input type="checkbox" [(ngModel)]="reqItems.income" /> Evidence Of Income</label>
+              <label><input type="checkbox" [(ngModel)]="reqItems.accounts" /> Company Accounts</label>
+              <label><input type="checkbox" [(ngModel)]="reqItems.assets" /> Asset &amp; Liability Statement</label>
+              <label><input type="checkbox" [(ngModel)]="reqItems.creditFile" /> Credit File</label>
+            </div>
+          </div>
+          <label class="d-modal-field">COMMENTS
+            <textarea class="form-input" rows="3" placeholder="Additional instructions..." [(ngModel)]="reqComments"></textarea>
+          </label>
+          <label class="d-modal-field">DUE DATE
+            <input class="form-input" type="date" [min]="todayStr" [(ngModel)]="reqDueDate" />
+          </label>
+          <div modalFooter class="d-modal-footer">
+            <button class="f-btn-outline" type="button" (click)="requestInfoOpen.set(false)">Cancel</button>
+            <button class="f-btn-dark" type="button" (click)="submitRequestInfo(a)"><i class="bi bi-send"></i> Send Request</button>
+          </div>
+        </ui-modal>
+      }
+    } @else {
+      <div class="ad-state"><i class="bi bi-exclamation-circle"></i> {{ error() || 'Application not found.' }}</div>
+    }
+  

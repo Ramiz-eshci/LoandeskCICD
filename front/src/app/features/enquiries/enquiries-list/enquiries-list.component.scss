@@ -1,0 +1,24 @@
+      .enq-new { display: inline-flex; align-items: center; gap: 8px; }
+      .enq-filterbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+      .enq-spacer { flex: 1; }
+      /* "My deals" toggle - same look as the Underwriting list. */
+      .own-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+      .own-btn { background: #fff; border: 0; padding: 7px 14px; font: inherit; font-size: 13px; cursor: pointer; color: var(--muted-foreground); }
+      .own-btn + .own-btn { border-left: 1px solid var(--border); }
+      .own-btn.on { background: #0F2244; color: #fff; font-weight: 700; }
+      .enq-sort { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted-foreground); }
+      .enq-sort .form-select { width: auto; }
+      .enq-date { white-space: nowrap; }
+      .enq-ref { white-space: nowrap; }
+      .enq-applicant { font-size: 14px; font-weight: 500; color: var(--foreground); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .enq-subtext { margin-top: 1px; font-size: 12px; color: var(--muted-foreground); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .enq-broker { color: #7d97b5; }
+      .enq-link { color: var(--primary); font-weight: 600; text-decoration: underline; }
+      .enq-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+
+.enq-ref-cell { white-space: nowrap; display: inline-flex; align-items: center; }
+.enq-chase { color: #dc2626; margin-left: 6px; font-size: 0.95em; cursor: default; vertical-align: middle; }
+
+// Loan Amount basis (client 15-10-2026): plain text "NET" / "GROSS" before the amount.
+.enq-basis { margin-right: 4px; font-weight: 600; }
+.enq-amt-cell { white-space: nowrap; }

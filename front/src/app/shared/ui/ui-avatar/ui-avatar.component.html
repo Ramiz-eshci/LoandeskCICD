@@ -1,0 +1,8 @@
+    <span
+      class="ui-avatar"
+      [class.ui-avatar--gold]="tone() === 'gold'"
+      [style.width.px]="size()"
+      [style.height.px]="size()"
+      [style.font-size.px]="fontSize()"
+    >@if (src()) { <img class="ui-avatar-img" [src]="src()" [alt]="name()" /> } @else { {{ initials() }} }</span>
+  

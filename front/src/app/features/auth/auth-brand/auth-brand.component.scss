@@ -1,0 +1,18 @@
+      .auth-brand { display: flex; align-items: center; justify-content: center; margin-bottom: 28px; }
+      .auth-brand img { max-height: 44px; object-fit: contain; }
+      .auth-brand-fallback { display: flex; align-items: center; gap: 10px; }
+      .auth-brand-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #eaab00 0%, #b98600 100%);
+        color: #0f2244;
+        font-size: 19px;
+        font-weight: 800;
+      }
+      .auth-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+      .auth-brand-text strong { font-size: 22px; font-weight: 800; color: #0f2244; letter-spacing: -0.01em; }
+      .auth-brand-text small { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; color: #5a7394; }

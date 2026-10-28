@@ -1,0 +1,131 @@
+<div class="cr-title">
+  <i class="bi bi-patch-check"></i>
+  <ui-page-header title="Credit Approval" [subtitle]="subtitle()" />
+  <span class="cr-badge"><i class="bi bi-shield-check"></i> Credit Committee</span>
+</div>
+
+<div class="row g-3 mb-3">
+  @for (kpi of kpis(); track kpi.label) {
+    <div class="col-12 col-sm-6 col-xl-3">
+      <ui-kpi-card labelStyle="plain" iconPlacement="inline" [icon]="kpi.icon" [label]="kpi.label"
+        [value]="kpi.value" [caption]="kpi.caption" [tone]="kpi.tone" [valueSize]="30" />
+    </div>
+  }
+</div>
+
+<ui-tab-filters class="mb-3" [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+<ui-card>
+  @if (activeTab() === 'queue') {
+    <ui-data-table [columns]="queueColumns" [rows]="queue()" [paginate]="false" emptyText="No applications in the credit queue.">
+      <ng-template uiCell="amount_requested" let-row>{{ money(row.amount_requested) }}</ng-template>
+      <ng-template uiCell="ltv_pct" let-row>{{ ltv(row.ltv_pct) }}</ng-template>
+      <ng-template uiCell="irr" let-row>{{ row.irr != null ? row.irr + '%' : '—' }}</ng-template>
+      <ng-template uiCell="policy_exceptions" let-row>
+        @if (row.policy_exceptions) { <ui-tag tone="warning">{{ row.policy_exceptions }}</ui-tag> } @else { <span class="text-muted-fg">None</span> }
+      </ng-template>
+      <ng-template uiCell="status" let-row><ui-tag tone="info">Credit Review</ui-tag></ng-template>
+      <ng-template uiCell="actions" let-row>
+        <div class="actions">
+          @if (canOpenApp()) {
+            <button uiButton variant="ghost" size="sm" type="button" (click)="view(row)">View</button>
+          }
+          <button uiButton variant="ghost" size="sm" type="button" (click)="openPaper(row)">Credit Paper</button>
+          @if (canDecide()) {
+            <button uiButton variant="primary" size="sm" type="button" (click)="openDecide(row)">Decide</button>
+          }
+        </div>
+      </ng-template>
+    </ui-data-table>
+  } @else {
+    <ui-data-table [columns]="decisionColumns" [rows]="decisions()" [paginate]="false" emptyText="No decisions recorded yet.">
+      <ng-template uiCell="amount_requested" let-row>{{ money(row.amount_requested) }}</ng-template>
+      <ng-template uiCell="ltv_pct" let-row>{{ ltv(row.ltv_pct) }}</ng-template>
+      <ng-template uiCell="decision" let-row><ui-tag [tone]="decisionTone(row.decision)">{{ decisionLabel(row.decision) }}</ui-tag></ng-template>
+      <ng-template uiCell="decided_at" let-row>{{ dt(row.decided_at) }}</ng-template>
+    </ui-data-table>
+  }
+  <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" />
+</ui-card>
+
+<!-- Credit Decision modal -->
+@if (decideOpen()) {
+  <ui-modal title="Credit Decision" (closed)="decideOpen.set(false)">
+    @if (decideRow(); as r) {
+      <div class="cd-summary">
+        <div><span class="cd-lbl">Applicant</span><span class="cd-val">{{ r.applicant_name || '—' }}</span></div>
+        <div><span class="cd-lbl">Gross Loan</span><span class="cd-val">{{ money(r.amount_requested) }}</span></div>
+        <div><span class="cd-lbl">LTV</span><span class="cd-val">{{ ltv(r.ltv_pct) }}</span></div>
+      </div>
+
+      <div class="cd-section">DECISION</div>
+      <div class="cd-options">
+        <button type="button" class="cd-opt" [class.sel]="decision() === 'approve'" (click)="decision.set('approve')">Approve</button>
+        <button type="button" class="cd-opt" [class.sel]="decision() === 'approve_conditions'" (click)="decision.set('approve_conditions')">Approve with Conditions</button>
+        <button type="button" class="cd-opt" [class.sel]="decision() === 'decline'" (click)="decision.set('decline')">Decline</button>
+        <button type="button" class="cd-opt" [class.sel]="decision() === 'refer'" (click)="decision.set('refer')">Refer</button>
+      </div>
+
+      @if (decision() === 'approve_conditions') {
+        <label class="cd-field">CONDITIONS
+          <textarea class="form-input" rows="3" [(ngModel)]="decideConditions" placeholder="One condition per line…"></textarea>
+        </label>
+      }
+
+      <label class="cd-field">COMMENTS *
+        <textarea class="form-input" rows="3" [(ngModel)]="decideComments" placeholder="Provide rationale for your decision…"></textarea>
+      </label>
+
+      <div class="cd-actions">
+        <button uiButton variant="ghost" type="button" (click)="decideOpen.set(false)">Cancel</button>
+        <button uiButton variant="primary" type="button" [disabled]="!decideValid() || saving()" (click)="confirmDecision()">
+          {{ saving() ? 'Saving…' : 'Confirm Decision' }}
+        </button>
+      </div>
+    }
+  </ui-modal>
+}
+
+<!-- Credit Paper modal -->
+@if (paperOpen()) {
+  <ui-modal title="Credit Paper" (closed)="paperOpen.set(false)">
+    @if (paper(); as p) {
+      <div class="cp-applicant">
+        <div class="cp-name">{{ p.applicant_name || '—' }}</div>
+        <div class="cp-addr">{{ p.property_address || '—' }}</div>
+      </div>
+
+      <div class="cp-summary">
+        <div class="cp-summary-title">LOAN SUMMARY</div>
+        <div class="cp-grid">
+          <div><span class="cd-lbl">Amount</span><span class="cd-val">{{ money(p.amount_requested) }}</span></div>
+          <div><span class="cd-lbl">LTV</span><span class="cd-val">{{ ltv(p.ltv_pct) }}</span></div>
+          <div><span class="cd-lbl">IRR</span><span class="cd-val">{{ p.irr != null ? p.irr + '%' : '—' }}</span></div>
+          <div><span class="cd-lbl">Product</span><span class="cd-val">{{ p.product_name || '—' }}</span></div>
+          <div><span class="cd-lbl">Term</span><span class="cd-val">{{ p.term_months != null ? p.term_months + ' months' : '—' }}</span></div>
+          <div><span class="cd-lbl">Property</span><span class="cd-val">{{ p.property_address || '—' }}</span></div>
+        </div>
+      </div>
+
+      <div class="cd-section">POLICY CHECKLIST</div>
+      <ul class="cp-checklist">
+        @for (item of p.checklist; track item.label) {
+          <li [class.fail]="!item.pass">
+            <i class="bi" [class.bi-check-square-fill]="item.pass" [class.bi-x-square]="!item.pass"></i>
+            {{ item.label }}
+          </li>
+        }
+      </ul>
+
+      <div class="cd-section">UW ASSESSMENT</div>
+      <div class="cp-uw">{{ p.uw_recommendation || '—' }}</div>
+
+      <div class="cd-actions">
+        <button uiButton variant="ghost" type="button" (click)="paperOpen.set(false)">Close</button>
+        <button uiButton variant="primary" type="button" (click)="paperToDecide()">Make Decision</button>
+      </div>
+    } @else {
+      <p class="text-muted-fg">Loading…</p>
+    }
+  </ui-modal>
+}

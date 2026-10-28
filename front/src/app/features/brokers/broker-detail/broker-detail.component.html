@@ -1,0 +1,260 @@
+@if (loading()) {
+  <ui-card>Loading broker…</ui-card>
+} @else if (error()) {
+  <ui-card><div class="alert alert-warning mb-0">{{ error() }}</div></ui-card>
+} @else if (profile(); as p) {
+  <div class="customer-page">
+    <div class="crumb-row">
+      <button uiButton variant="ghost" size="sm" type="button" (click)="back()">← Brokers</button>
+      <span class="crumb-sep">›</span>
+      <span class="crumb-id">{{ brokerRef() }} — {{ p.name }}</span>
+      <span class="spacer"></span>
+      <ui-badge [status]="active() ? 'active' : 'declined'">{{ active() ? 'Active Broker' : 'Inactive' }}</ui-badge>
+    </div>
+
+    <div class="cust-hero">
+      <div class="avatar">{{ initials() }}</div>
+      <div class="who">
+        <h1>{{ p.name }}</h1>
+        <p>{{ p.company || 'Broker' }} · {{ brokerRef() }}@if (p.fca_number) { · FCA {{ p.fca_number }}}</p>
+      </div>
+      <div class="stat"><span>Enquiries</span><strong>{{ s()?.enquiries ?? 0 }}</strong></div>
+      <div class="stat" title="Loans matured and fully paid (redeemed)"><span>Completed</span><strong>{{ s()?.completions ?? 0 }}</strong></div>
+      <div class="stat">
+        <span class="stat-head">Portfolio Introduced
+          <span class="basis-toggle">
+            <button type="button" [class.on]="basis() === 'gross'" (click)="basis.set('gross')">Gross</button>
+            <button type="button" [class.on]="basis() === 'net'" (click)="basis.set('net')">Net</button>
+          </span>
+        </span>
+        <strong class="mono">{{ money(basis() === 'net' ? (s()?.portfolio_net ?? s()?.portfolio_total) : (s()?.portfolio_gross ?? s()?.portfolio_total)) }}</strong>
+      </div>
+    </div>
+
+    <ui-tab-filters class="tabs" [tabs]="tabs()" [(active)]="activeTab" />
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <div class="content-grid">
+          <ui-card bodyClass="">
+            <div class="pad-card">
+              <div class="eyebrow profile-head">
+                <span>Broker Profile</span>
+                @if (canEdit()) {
+                  <button uiButton variant="ghost" size="sm" type="button" (click)="editBroker()"><i class="bi bi-pencil"></i> Edit</button>
+                }
+              </div>
+              <div class="profile-grid">
+                <div><span>Name</span><strong><i class="bi bi-person"></i>{{ p.name }}</strong></div>
+                <div><span>Company</span><strong><i class="bi bi-building"></i>{{ p.company || '—' }}</strong></div>
+                <div><span>Email</span><strong><i class="bi bi-envelope"></i>{{ p.email || '—' }}</strong></div>
+                <div><span>Phone</span><strong><i class="bi bi-telephone"></i>{{ p.phone || '—' }}</strong></div>
+                <div><span>FCA Number</span><strong><i class="bi bi-shield-check"></i>{{ p.fca_number || '—' }}</strong></div>
+                <div><span>Commission</span><strong><i class="bi bi-percent"></i>{{ p.commission_pct != null ? p.commission_pct + '%' : '—' }}</strong></div>
+                <div><span>Address</span><strong><i class="bi bi-geo-alt"></i>{{ p.address || '—' }}</strong></div>
+                <div><span>Broker Since</span><strong><i class="bi bi-calendar3"></i>{{ formatDate(p.created_at) }}</strong></div>
+                <div>
+                  <span>Signed Agreement</span>
+                  @if (s()?.has_signed_agreement) {
+                    <strong class="agree-ok"><i class="bi bi-check-circle"></i>On file</strong>
+                  } @else {
+                    <strong class="agree-missing"><i class="bi bi-exclamation-circle"></i>Not uploaded
+                      @if (canDocAdd()) { · <button type="button" class="link-btn" (click)="activeTab.set('documents'); openUpload()">Upload</button> }
+                    </strong>
+                  }
+                </div>
+              </div>
+            </div>
+          </ui-card>
+
+          <ui-card bodyClass="">
+            <div class="pad-card">
+              <div class="eyebrow">Business Summary</div>
+              <div class="kv">
+                <div><span>Live Facilities</span><strong>{{ s()?.live_facilities ?? 0 }}</strong></div>
+                <div><span>Live Balance</span><strong class="mono">{{ money($safeNavigationMigration(s()?.live_balance)) }}</strong></div>
+                <div><span>Live Loans ({{ basis() === 'net' ? 'Net' : 'Gross' }})</span><strong class="mono">{{ money(basis() === 'net' ? $safeNavigationMigration(s()?.live_net) : $safeNavigationMigration(s()?.live_gross)) }}</strong></div>
+                <div><span>Conversion</span><strong>{{ pct($safeNavigationMigration(s()?.conversion_pct)) }}</strong></div>
+                <div><span>Last Enquiry</span><strong>{{ formatDate($safeNavigationMigration(s()?.last_enquiry_at)) }}</strong></div>
+              </div>
+            </div>
+          </ui-card>
+
+          <!-- Client 23-10-2026: how much of this broker's business is completed vs still left. -->
+          <ui-card bodyClass="" class="sum-wrap">
+            <div class="pad-card">
+              <div class="eyebrow chart-head">
+                <span>Business Progress — Completed vs Left</span>
+                <ui-segmented [options]="journeyViews" [value]="journeyView()" (valueChange)="journeyView.set($event)" />
+              </div>
+              @if (journeySlices().length) {
+                <div class="journey-row">
+                  <ui-donut-chart [slices]="journeySlices()" [height]="220" [showLegend]="false" [valueFormat]="journeyView() === 'count' ? 'number' : 'currency'"
+                                  [centreValue]="journeyCentre()" centreLabel="Total" ariaLabel="Broker business progress" />
+                  <ul class="journey-legend">
+                    @for (j of journeySlices(); track j.label) {
+                      <li>
+                        <span class="dot" [style.background]="j.color"></span>
+                        <span class="jl-name">{{ j.label }}</span>
+                        <b class="mono">{{ journeyView() === 'count' ? j.value : money(j.value) }}</b>
+                        <small>{{ journeyShare(j.value) }}</small>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              } @else {
+                <p class="muted mb-0">{{ journeyView() === 'loans' ? 'No loans from this broker yet.' : 'No enquiries from this broker yet.' }}</p>
+              }
+            </div>
+          </ui-card>
+
+          <div class="sum-wrap">
+            <div class="sum-grid">
+              <div class="sum-tile"><span>Enquiries</span><strong>{{ s()?.enquiries ?? 0 }}</strong><small>{{ money($safeNavigationMigration(s()?.enquiry_value)) }} requested</small></div>
+              <div class="sum-tile"><span>Quoted</span><strong>{{ s()?.quoted ?? 0 }}</strong><small>Indicative / offer sent</small></div>
+              <div class="sum-tile"><span>Applications</span><strong>{{ s()?.applications ?? 0 }}</strong><small>{{ money($safeNavigationMigration(s()?.application_value)) }}</small></div>
+              <div class="sum-tile"><span>In Underwriting</span><strong>{{ s()?.underwriting ?? 0 }}</strong><small>Open cases</small></div>
+              <div class="sum-tile"><span>Funded</span><strong>{{ s()?.funded ?? s()?.completions ?? 0 }}</strong><small>{{ money(basis() === 'net' ? $safeNavigationMigration(s()?.portfolio_net) : $safeNavigationMigration(s()?.portfolio_gross)) }} lent ({{ basis() }})</small></div>
+              <div class="sum-tile"><span>Completed</span><strong>{{ s()?.completions ?? 0 }}</strong><small>Matured &amp; paid off · {{ money($safeNavigationMigration(s()?.completed_value)) }}</small></div>
+              <div class="sum-tile"><span>Avg Loan Size</span><strong>{{ money($safeNavigationMigration(s()?.avg_loan)) }}</strong><small>Completed loans</small></div>
+              <div class="sum-tile"><span>Avg Rate</span><strong>{{ pct($safeNavigationMigration(s()?.avg_rate_pct), '% pm') }}</strong><small>Completed loans</small></div>
+              <div class="sum-tile"><span>Broker Fees</span><strong>{{ money($safeNavigationMigration(s()?.broker_fees)) }}</strong><small>On completed deals</small></div>
+              <div class="sum-tile"><span>Declined</span><strong>{{ s()?.declined ?? 0 }}</strong><small>Enquiries declined</small></div>
+            </div>
+          </div>
+        </div>
+      }
+      @case ('enquiries') {
+        <ui-card bodyClass="">
+          <div class="table-wrap"><div class="table-scroll">
+            <table class="c360-table">
+              <thead><tr>
+                <th scope="col">Enquiry</th><th scope="col">Customer</th><th scope="col" class="num">Amount</th>
+                <th scope="col">Status</th><th scope="col">BDM</th><th scope="col">Date</th><th scope="col" class="actions-col">Actions</th>
+              </tr></thead>
+              <tbody>
+                @for (e of enquiries(); track e.enquiry_id) {
+                  <tr>
+                    <td class="app-id mono">{{ e.enquiry_ref }}</td>
+                    <td><div class="trunc" [title]="e.customer || ''">{{ e.customer || '—' }}</div></td>
+                    <td class="num mono">{{ money(e.amount) }}</td>
+                    <td><span class="pill">{{ e.status.toLowerCase() }}</span></td>
+                    <td><div class="trunc trunc--sm" [title]="e.bdm">{{ e.bdm }}</div></td>
+                    <td class="date">{{ formatDate(e.created_at) }}</td>
+                    <td class="actions-col"><button type="button" class="row-btn" (click)="openEnquiry(e.enquiry_id)">Open</button></td>
+                  </tr>
+                } @empty { <tr><td colspan="7" class="empty">No enquiries from this broker.</td></tr> }
+              </tbody>
+            </table>
+          </div></div>
+        </ui-card>
+      }
+      @case ('applications') {
+        <ui-card bodyClass="">
+          <div class="table-wrap"><div class="table-scroll">
+            <table class="c360-table">
+              <thead><tr>
+                <th scope="col">Application ID</th><th scope="col">Customer</th><th scope="col">Product</th><th scope="col" class="num">Amount</th>
+                <th scope="col">Stage</th><th scope="col">BDM</th><th scope="col">Date</th><th scope="col" class="actions-col">Actions</th>
+              </tr></thead>
+              <tbody>
+                @for (a of applications(); track a.application_id) {
+                  <tr>
+                    <td class="app-id mono">{{ a.application_ref }}</td>
+                    <td><div class="trunc" [title]="a.customer || ''">{{ a.customer || '—' }}</div></td>
+                    <td><div class="trunc trunc--sm" [title]="a.product">{{ a.product }}</div></td>
+                    <td class="num mono">{{ a.amount_requested != null ? money(a.amount_requested) : '—' }}</td>
+                    <td><span class="pill">{{ (a.uw_status || a.status).toLowerCase() }}</span></td>
+                    <td><div class="trunc trunc--sm" [title]="a.bdm">{{ a.bdm }}</div></td>
+                    <td class="date">{{ formatDate(a.created_at) }}</td>
+                    <td class="actions-col"><button type="button" class="row-btn" (click)="openApplication(a.application_id)">Open</button></td>
+                  </tr>
+                } @empty { <tr><td colspan="8" class="empty">No applications from this broker.</td></tr> }
+              </tbody>
+            </table>
+          </div></div>
+        </ui-card>
+      }
+      @case ('facilities') {
+        <ui-card bodyClass="">
+          <div class="table-wrap"><div class="table-scroll">
+            <table class="c360-table">
+              <thead><tr>
+                <th scope="col">Facility ID</th><th scope="col">Customer</th><th scope="col">Product</th><th scope="col" class="num">Balance</th>
+                <th scope="col">Rate</th><th scope="col">Maturity</th><th scope="col">Status</th><th scope="col" class="actions-col">Actions</th>
+              </tr></thead>
+              <tbody>
+                @for (f of facilities(); track f.loan_id) {
+                  <tr>
+                    <td class="app-id mono">{{ f.loan_number }}</td>
+                    <td><div class="trunc" [title]="f.customer || ''">{{ f.customer }}</div></td>
+                    <td><div class="trunc trunc--sm" [title]="f.product">{{ f.product }}</div></td>
+                    <td class="num mono strong">{{ money(f.outstanding_balance ?? f.principal) }}</td>
+                    <td class="mono">{{ f.rate_pct }}% pm</td>
+                    <td class="date">{{ formatDate(f.maturity_date) }}</td>
+                    <td><span class="pill" [class.pill-overdue]="f.status !== 'Active'">{{ f.status }}</span></td>
+                    <td class="actions-col"><button type="button" class="row-btn" (click)="openFacility(f.loan_number)">Open</button></td>
+                  </tr>
+                } @empty { <tr><td colspan="8" class="empty">No completed loans from this broker yet.</td></tr> }
+              </tbody>
+            </table>
+          </div></div>
+        </ui-card>
+      }
+      @case ('documents') {
+        <ui-card bodyClass="">
+          <div class="d-flex justify-content-end" style="padding: 12px 12px 0;">
+            @if (canDocAdd()) {
+              <button uiButton variant="primary" size="sm" type="button" (click)="openUpload()">Upload</button>
+            }
+          </div>
+          <div class="table-wrap"><div class="table-scroll">
+            <table class="c360-table">
+              <thead><tr>
+                <th scope="col">Document</th><th scope="col">Type</th><th scope="col">Uploaded By</th><th scope="col">Uploaded</th><th scope="col" class="actions-col">Actions</th>
+              </tr></thead>
+              <tbody>
+                @for (d of documents(); track d.doc_id) {
+                  <tr>
+                    <td><div class="trunc" [title]="d.file_name">{{ d.file_name }}</div></td>
+                    <td><span class="pill">{{ d.document_type || '—' }}</span></td>
+                    <td><div class="trunc trunc--sm" [title]="d.uploaded_by_name">{{ d.uploaded_by_name }}</div></td>
+                    <td class="date">{{ formatDate(d.created_at) }}</td>
+                    <td class="actions-col doc-actions">
+                      <button type="button" class="row-btn" (click)="viewDocument(d.doc_id)">View</button>
+                      <button type="button" class="row-btn" (click)="downloadDocument(d.doc_id, d.file_name)">Download</button>
+                      @if (canDocDelete()) {
+                        <button type="button" class="row-btn row-btn--danger" (click)="removeDocument(d.doc_id, d.file_name)">Delete</button>
+                      }
+                    </td>
+                  </tr>
+                } @empty { <tr><td colspan="5" class="empty">No documents yet — upload the signed broker agreement here.</td></tr> }
+              </tbody>
+            </table>
+          </div></div>
+        </ui-card>
+      }
+    }
+
+    @if (uploadOpen()) {
+      <app-portfolio-doc-upload
+        title="Upload Broker Document"
+        [docTypes]="docTypes()"
+        [saving]="uploadSaving()"
+        [error]="uploadError()"
+        (submitDoc)="onUploadSubmit($event)"
+        (closed)="uploadOpen.set(false)"
+      />
+    }
+
+    @if (confirmOpen()) {
+      <ui-modal title="Please confirm" (closed)="confirmOpen.set(false)">
+        <p>{{ confirmMessage() }}</p>
+        <div modalFooter class="request-footer">
+          <button uiButton variant="ghost" type="button" (click)="confirmOpen.set(false)">Cancel</button>
+          <button uiButton variant="danger" type="button" (click)="confirmYes()">Delete</button>
+        </div>
+      </ui-modal>
+    }
+  </div>
+}

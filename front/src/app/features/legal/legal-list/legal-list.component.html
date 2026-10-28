@@ -1,0 +1,116 @@
+<div class="legal-title">
+  <i class="bi bi-bank"></i>
+  <ui-page-header title="Legal &amp; Completion" [subtitle]="subtitle()" />
+</div>
+
+<div class="row g-3 mb-3">
+  @for (kpi of kpis(); track kpi.label) {
+    <div class="col-12 col-sm-6 col-xl-3">
+      <ui-kpi-card labelStyle="plain" iconPlacement="inline" [icon]="kpi.icon" [label]="kpi.label"
+        [value]="kpi.value" [caption]="kpi.caption" [tone]="kpi.tone" [valueSize]="30" />
+    </div>
+  }
+</div>
+
+<ui-card title="Legal Stage Pipeline" class="mb-3">
+  <ui-step-indicator class="pt-2" variant="pipeline" [steps]="pipeline()" />
+</ui-card>
+
+<ui-tab-filters class="mb-3" [tabs]="tabs()" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+<ui-card bodyClass="">
+  <ui-data-table [columns]="columns" [rows]="filtered()" [paginate]="false" emptyText="No cases in this view.">
+    <ng-template uiCell="amount_requested" let-row>{{ money(row.amount_requested) }}</ng-template>
+    <ng-template uiCell="property_address" let-row>
+      <span class="clamp" [title]="row.property_address">{{ row.property_address || '—' }}</span>
+    </ng-template>
+    <ng-template uiCell="borrower_solicitor" let-row>{{ row.borrower_solicitor || '—' }}</ng-template>
+    <ng-template uiCell="lender_solicitor" let-row>{{ row.lender_solicitor || '—' }}</ng-template>
+    <ng-template uiCell="offer_date" let-row>{{ dt(row.offer_date) }}</ng-template>
+    <ng-template uiCell="target_completion_date" let-row>{{ dt(row.target_completion_date) }}</ng-template>
+    <ng-template uiCell="conditions" let-row>
+      @if (row.conditions_total) {
+        <ui-tag [tone]="row.conditions_all_met ? 'success' : 'warning'">{{ row.conditions_met }}/{{ row.conditions_total }} Met</ui-tag>
+      } @else { <span class="text-muted-fg">—</span> }
+    </ng-template>
+    <ng-template uiCell="legal_stage" let-row><span class="fw-semibold">{{ row.legal_stage }}</span></ng-template>
+    <ng-template uiCell="actions" let-row>
+      <div class="actions">
+        @if (canOpenApp()) {
+          <button uiButton variant="ghost" size="sm" type="button" (click)="open(row)">Open</button>
+        }
+        <button uiButton variant="ghost" size="sm" type="button" (click)="openConditions(row)">Conditions</button>
+        <button uiButton variant="ghost" size="sm" type="button" (click)="openCreditPaper(row)">Credit Paper</button>
+        @if (canEdit() && row.legal_stage === 'Completion' && !row.completed_at) {
+          <button uiButton variant="primary" size="sm" type="button" (click)="openComplete(row)">Complete</button>
+        }
+      </div>
+    </ng-template>
+  </ui-data-table>
+  <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" />
+</ui-card>
+
+<!-- Conditions modal -->
+@if (condOpen()) {
+  <ui-modal [title]="'Conditions — ' + (condRow()?.applicant_name || '')" (closed)="condDone()">
+    <div class="lc-ref">{{ condRow()?.application_ref }}</div>
+    @if (conditions().length) {
+      @for (c of conditions(); track c.legal_condition_id) {
+        <button type="button" class="lc-row" [class.done]="c.status === 'Satisfied'" [disabled]="savingCond() || !canEdit()" (click)="toggleCond(c)">
+          <i class="bi" [class.bi-check-square-fill]="c.status === 'Satisfied'" [class.bi-square]="c.status !== 'Satisfied'"></i>
+          <span class="lc-name">{{ c.name }}</span>
+          <span class="lc-status" [class.sat]="c.status === 'Satisfied'">{{ c.status }}</span>
+        </button>
+      }
+    } @else {
+      <p class="text-muted-fg">No conditions recorded for this case.</p>
+    }
+    <div class="lc-actions">
+      <button uiButton variant="ghost" type="button" (click)="condDone()">Close</button>
+    </div>
+  </ui-modal>
+}
+
+<!-- Confirm Completion modal -->
+@if (completeOpen()) {
+  <ui-modal title="Confirm Completion" (closed)="completeOpen.set(false)">
+    @if (completeRow(); as r) {
+      <p class="cc-lead">You are about to mark the following application as completed:</p>
+      <div class="cc-card">
+        <div class="cc-name">{{ r.applicant_name || '—' }}</div>
+        <div class="cc-ref">{{ r.application_ref }}</div>
+        <div class="cc-amt">{{ money(r.amount_requested) }}</div>
+        <div class="cc-prop">{{ r.property_address || '—' }}</div>
+      </div>
+      <p class="cc-warn"><i class="bi bi-exclamation-triangle"></i> This action will update the application stage to Completed and cannot be undone.</p>
+      <div class="lc-actions">
+        <button uiButton variant="ghost" type="button" (click)="completeOpen.set(false)">Cancel</button>
+        <button uiButton variant="primary" type="button" [disabled]="completing()" (click)="confirmComplete()">
+          {{ completing() ? 'Completing…' : 'Confirm Completion' }}
+        </button>
+      </div>
+    }
+  </ui-modal>
+}
+
+<!-- Credit Paper modal — upload the prepared credit paper; no manual fields -->
+@if (cpOpen()) {
+  <ui-modal [title]="'Credit Paper — ' + (cpRow()?.applicant_name || cpRow()?.application_ref || '')" (closed)="cpOpen.set(false)">
+    <div class="cp-wrap">
+      @if (cpLoading()) {
+        <div class="cp-muted">Loading…</div>
+      } @else if (!cpEditable()) {
+        <div class="cp-muted">This application has no underwriting credit paper step yet, so there is nothing to upload against.</div>
+      } @else {
+        <div class="cp-section-title">{{ cpLabel() }}</div>
+        <!-- Standard LoanDesk upload (Underwriting Step 8 design). -->
+        <ui-file-upload label="Upload Document" [multiple]="true" [readonly]="!canEdit()" [busy]="cpUploading()"
+          [items]="cpItems()" emptyText="No credit paper uploaded yet."
+          (filesChange)="onCreditPaperFiles($event)" (itemView)="viewCreditPaperById($event.id)" (itemRemove)="removeCreditPaperById($event.id)" />
+      }
+    </div>
+    <div class="lc-actions">
+      <button uiButton variant="ghost" type="button" (click)="cpOpen.set(false)">Close</button>
+    </div>
+  </ui-modal>
+}

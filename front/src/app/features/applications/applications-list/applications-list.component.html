@@ -1,0 +1,69 @@
+    <ui-page-header title="Applications" [subtitle]="subtitle()">
+      <!-- New Application temporarily hidden (showNewApplication=false); flip to re-enable, canAdd() perm gate preserved. -->
+      @if (showNewApplication && canAdd()) {
+        <button uiButton variant="accent" type="button" class="icon-btn" (click)="newApplication()">
+          <i class="bi bi-plus-lg"></i> New Application
+        </button>
+      }
+    </ui-page-header>
+
+    <ui-filter-chips class="mb-3" [chips]="chips()" [active]="activeChip()" (activeChange)="onChip($event)" />
+
+    <div class="filterbar">
+      <ui-search-input variant="field" width="440px" placeholder="Search applications…" [(value)]="query" />
+      <button uiButton variant="ghost" type="button" (click)="applySearch()"><i class="bi bi-search"></i> Search</button>
+      <!-- Scoped users already see only their own applications, so the toggle is hidden. -->
+      @if (!assignedOnly()) {
+        <div class="own-toggle">
+          <button type="button" class="own-btn" [class.on]="!ownOnly()" (click)="toggleOwn(false)">All deals</button>
+          <button type="button" class="own-btn" [class.on]="ownOnly()" (click)="toggleOwn(true)">My deals</button>
+        </div>
+      }
+    </div>
+
+    @if (error()) { <ui-card class="mb-3"><p class="app-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+    <ui-card bodyClass="">
+      <ui-data-table
+        [columns]="columns"
+        [rows]="rows()"
+        [paginate]="false"
+        [rowClickable]="true"
+        (rowClick)="open($event)"
+        emptyText="No applications match this filter."
+      >
+        <ng-template uiCell="applicant_name" let-row>
+          <!-- Client 16-10-2026: long names cut with "…", full name on hover (same as Enquiries). -->
+          <div class="app-applicant" [title]="row.applicant_name || ''">{{ row.applicant_name }}</div>
+          <div class="app-subtext" [title]="row.applicant_contact || ''">{{ row.applicant_contact || '' }}</div>
+        </ng-template>
+
+        <ng-template uiCell="amount_requested" let-row>
+          <span class="text-nowrap">@if ((row.loan_basis === 'Net' ? (row.net_loan ?? row.amount_requested) : row.amount_requested) != null) { <span class="fw-semibold me-1">{{ row.loan_basis === 'Net' ? 'NET' : 'GROSS' }}</span> }<span class="font-mono">{{ money(row.loan_basis === 'Net' ? (row.net_loan ?? row.amount_requested) : row.amount_requested) }}</span></span>
+        </ng-template>
+
+        <ng-template uiCell="term_months" let-row>{{ row.term_months ? row.term_months + 'm' : '—' }}</ng-template>
+        <ng-template uiCell="total_ltv_pct" let-row>{{ row.total_ltv_pct != null ? row.total_ltv_pct + '%' : '—' }}</ng-template>
+
+        <ng-template uiCell="status_name" let-row>
+          <ui-badge [status]="tone(row.status_code)">{{ row.status_name }}</ui-badge>
+        </ng-template>
+
+        <ng-template uiCell="initial_offer_note" let-row>
+          @if (row.initial_offer_note) {
+            <ui-tag [tone]="offerTone(row.initial_offer_state)">{{ row.initial_offer_note }}</ui-tag>
+          } @else { <span class="text-muted-fg">—</span> }
+        </ng-template>
+
+        <ng-template uiCell="sla_days" let-row>
+          <span class="font-mono" [class]="'sla-' + slaTone(row.sla_days)">{{ row.sla_days != null ? row.sla_days + (row.sla_days === 1 ? ' day' : ' days') : '—' }}</span>
+        </ng-template>
+
+        <ng-template uiCell="actions" let-row>
+          <button uiButton variant="ghost" size="sm" type="button" (click)="open(row); $event.stopPropagation()">Open</button>
+        </ng-template>
+      </ui-data-table>
+
+      @if (paginate) { <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" /> }
+    </ui-card>
+  

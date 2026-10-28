@@ -1,0 +1,12 @@
+    @if (label() || showValue()) {
+      <div class="ui-progress-head">
+        <span>{{ label() }}</span>
+        @if (showValue()) {
+          <span class="font-mono tabular-nums">{{ clamped() }}%</span>
+        }
+      </div>
+    }
+    <div class="progress-bar-track">
+      <div class="progress-fill" [style.width.%]="clamped()"></div>
+    </div>
+  

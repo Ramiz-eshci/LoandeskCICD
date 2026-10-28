@@ -1,0 +1,26 @@
+      :host { display: block; overflow-x: auto; }
+      .step-label { font-size: 13px; font-weight: 600; color: var(--foreground); white-space: nowrap; }
+      .step-label--muted { color: var(--muted-foreground); font-weight: 500; }
+      .step { margin-right: 8px; }
+      .step-line { margin-right: 8px; }
+
+      /* Compact: fits a three-step rail inside a drawer. */
+      .step-indicator--compact .step-circle { width: 24px; height: 24px; font-size: 11px; }
+      .step-indicator--compact .step-label { font-size: 12px; }
+      .step-indicator--compact .step { gap: 7px; margin-right: 6px; }
+      .step-indicator--compact .step-line { width: 22px; margin-right: 6px; }
+
+      /* Pipeline: numbers under-labelled, connectors in accent. */
+      .step-indicator--pipeline { align-items: flex-start; }
+      .step-indicator--pipeline .step {
+        flex-direction: column;
+        gap: 10px;
+        width: 96px;
+        text-align: center;
+      }
+      .step-indicator--pipeline .step-circle { background: var(--primary); color: #fff; width: 34px; height: 34px; }
+      .step-indicator--pipeline .step-label { white-space: normal; font-size: 12px; }
+      .step-indicator--pipeline .step-line { margin-top: 16px; background: var(--accent); width: 64px; }
+
+.step--clickable { cursor: pointer; }
+.step--clickable:hover .step-label { text-decoration: underline; }

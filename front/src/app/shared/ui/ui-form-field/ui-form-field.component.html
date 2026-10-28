@@ -1,0 +1,14 @@
+    <div class="ui-field">
+      <div class="d-flex align-items-center justify-content-between">
+        <label class="form-label" [attr.for]="for()">{{ label() }}</label>
+        <ng-content select="[fieldAction]" />
+      </div>
+      <ng-content />
+      @if (hint()) {
+        <div class="ui-field-hint">{{ hint() }}</div>
+      }
+      @if (error()) {
+        <div class="ui-field-error">{{ error() }}</div>
+      }
+    </div>
+  

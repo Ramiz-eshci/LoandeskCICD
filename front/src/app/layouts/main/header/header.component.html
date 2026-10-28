@@ -1,0 +1,76 @@
+    <header class="top-header">
+      <!-- Global search hidden (#1): no cross-entity search backend yet. Keeps the flex slot so the header stays balanced. -->
+      <div class="hd-search"></div>
+
+      <div class="hd-context">
+        <span class="hd-chip"><i class="bi bi-buildings"></i>{{ session.branchName() }}</span>
+        <span class="hd-chip"><i class="bi bi-person"></i>{{ session.roleName() }}</span>
+      </div>
+
+      <div class="hd-actions">
+        <div class="hd-notif dropdown">
+          <button
+            type="button"
+            class="hd-icon"
+            aria-label="Notifications"
+            data-bs-toggle="dropdown"
+            data-bs-auto-close="outside"
+            data-bs-display="static"
+            aria-expanded="false"
+            (click)="onOpen()"
+          >
+            <i class="bi bi-bell"></i>
+            @if (unread() > 0) {
+              <span class="notif-badge">{{ unread() > 99 ? '99+' : unread() }}</span>
+            }
+          </button>
+          <div class="dropdown-menu dropdown-menu-end hd-notif-menu">
+            <div class="nf-head">
+              <span class="nf-title">Notifications</span>
+              @if (unread() > 0) {
+                <button type="button" class="nf-mark" (click)="markAll($event)">Mark all read</button>
+              }
+            </div>
+            <div class="nf-list">
+              @if (loading()) {
+                <div class="nf-empty">Loading…</div>
+              } @else if (!items().length) {
+                <div class="nf-empty">You're all caught up.</div>
+              } @else {
+                @for (n of items(); track n.notification_id) {
+                  <button type="button" class="nf-item" [class.nf-unread]="!n.is_read" (click)="open(n)">
+                    <span class="nf-dot" [class.on]="!n.is_read"></span>
+                    <span class="nf-body">
+                      <span class="nf-item-title">{{ n.title }}</span>
+                      @if (n.body) { <span class="nf-item-sub">{{ n.body }}</span> }
+                      <span class="nf-time">{{ ago(n.created_at) }}</span>
+                    </span>
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="hd-account dropdown">
+          <button
+            type="button"
+            class="hd-account-btn"
+            data-bs-toggle="dropdown"
+            data-bs-display="static"
+            aria-expanded="false"
+          >
+            <ui-avatar [name]="session.userName()" [src]="session.avatar()" tone="navy" [size]="34" />
+            <span class="hd-account-name">{{ session.firstName() }}</span>
+            <i class="bi bi-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end hd-menu">
+            <li><a class="dropdown-item" routerLink="/profile">Profile &amp; preferences</a></li>
+            <li><button class="dropdown-item" type="button" (click)="switchWorkspace()">Switch workspace</button></li>
+            <li><hr class="dropdown-divider" /></li>
+            <li><button class="dropdown-item text-danger" type="button" (click)="logout()">Sign out</button></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+  

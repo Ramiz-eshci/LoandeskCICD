@@ -1,0 +1,92 @@
+    <ui-page-header [title]="editMode() ? 'Edit User' : 'New User'" [subtitle]="subtitle()">
+      <button uiButton variant="ghost" type="button" (click)="cancel()"><i class="bi bi-arrow-left"></i> Back to Users</button>
+    </ui-page-header>
+
+    @if (error()) { <ui-card class="mb-3"><p class="uf-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <ui-card title="Profile" class="mb-3">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Full name *" [error]="err('full_name')">
+              <input class="form-input" formControlName="full_name" placeholder="Full name" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Email *" [error]="err('email')">
+              <input class="form-input" type="email" formControlName="email" placeholder="name@example.com" />
+            </ui-form-field>
+          </div>
+          @if (!editMode()) {
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Password *" [error]="err('password')" [hint]="passwordHint">
+                <input class="form-input" type="password" formControlName="password" placeholder="e.g. Loan@2026" />
+              </ui-form-field>
+            </div>
+          }
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Phone" [error]="err('phone')"><input class="form-input" formControlName="phone" placeholder="+44 7123 456789" /></ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Branch">
+              <select class="form-select" formControlName="branch_id">
+                <option value="">Select branch</option>
+                @for (b of branches(); track b.value) { <option [value]="b.value">{{ b.label }}</option> }
+              </select>
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-md-6">
+            <ui-form-field label="Status">
+              <label class="uf-toggle"><input type="checkbox" formControlName="is_active" /><span>{{ form.controls.is_active.value ? 'Active' : 'Inactive' }}</span></label>
+            </ui-form-field>
+          </div>
+        </div>
+      </ui-card>
+
+      <ui-card title="Roles (multiple)">
+        <p class="uf-hint">User can hold several roles. On login they pick one from the “Select Your Workspace” screen. The first checked role is the primary workspace.</p>
+        @if (roles().length) {
+          <div class="uf-roles">
+            @for (r of roles(); track r.role_id) {
+              <label class="uf-role">
+                <input type="checkbox" [checked]="isChecked(r.role_id)" (change)="toggle(r.role_id)" />
+                <span>{{ r.role_name }}</span>
+              </label>
+            }
+          </div>
+          <p class="uf-count">{{ selected().size }} role(s) selected</p>
+        } @else {
+          <p class="uf-hint">No roles loaded. You may not have permission to view roles — please contact your administrator.</p>
+        }
+      </ui-card>
+
+      <div class="uf-actions">
+        <button uiButton variant="ghost" type="button" (click)="cancel()">Cancel</button>
+        <button uiButton variant="accent" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : (editMode() ? 'Save Changes' : 'Create User') }}</button>
+      </div>
+    </form>
+
+    @if (editMode()) {
+      <!-- Client 26-10-2026: admin sets a new password for this user. -->
+      <form [formGroup]="pwForm" (ngSubmit)="changePassword()" novalidate>
+        <ui-card title="Change Password" class="mt-3">
+          <p class="uf-hint">Set a new password for this user. They are signed out of other sessions and must use the new password next time.</p>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">
+              <ui-form-field label="New password *" [error]="pwErr('password')" [hint]="passwordHint">
+                <input class="form-input" type="password" formControlName="password" autocomplete="new-password" placeholder="e.g. Loan@2026" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-md-6">
+              <ui-form-field label="Confirm password *" [error]="pwErr('confirmPassword')">
+                <input class="form-input" type="password" formControlName="confirmPassword" autocomplete="new-password" placeholder="Re-enter the new password" />
+              </ui-form-field>
+            </div>
+          </div>
+          <div class="uf-actions">
+            <button uiButton variant="primary" type="submit" [disabled]="pwSaving()"><i class="bi bi-key"></i> {{ pwSaving() ? 'Changing…' : 'Change Password' }}</button>
+          </div>
+        </ui-card>
+      </form>
+    }
+  

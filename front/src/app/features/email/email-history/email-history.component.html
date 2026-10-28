@@ -1,0 +1,109 @@
+<div class="eh-title">
+  <i class="bi bi-envelope-paper"></i>
+  <ui-page-header title="Email History" [subtitle]="subtitle()" />
+</div>
+
+<div class="row g-3 mb-3">
+  @for (k of kpis(); track k.label) {
+    <div class="col-12 col-sm-6 col-xl-3">
+      <ui-kpi-card labelStyle="plain" iconPlacement="inline" [icon]="k.icon" [label]="k.label" [value]="k.value" [caption]="k.caption" [tone]="k.tone" [valueSize]="30" />
+    </div>
+  }
+</div>
+
+<ui-card class="mb-3">
+  <div class="eh-filters">
+    <div class="eh-f">
+      <label class="eh-label" for="eh-from">From</label>
+      <input id="eh-from" class="form-input" type="date" [(ngModel)]="from" (change)="apply()" />
+    </div>
+    <div class="eh-f">
+      <label class="eh-label" for="eh-to">To</label>
+      <input id="eh-to" class="form-input" type="date" [(ngModel)]="to" (change)="apply()" />
+    </div>
+    <div class="eh-f">
+      <label class="eh-label" for="eh-module">Module</label>
+      <select id="eh-module" class="form-select" [(ngModel)]="module" (change)="onModuleChange()">
+        <option value="">All modules</option>
+        @for (m of opts()?.modules || []; track m.key) { <option [value]="m.key">{{ m.label }}</option> }
+      </select>
+    </div>
+    <div class="eh-f">
+      <label class="eh-label" for="eh-event">Email</label>
+      <select id="eh-event" class="form-select" [(ngModel)]="event" (change)="apply()">
+        <option value="">All e-mails</option>
+        @for (e of events(); track e.key) { <option [value]="e.key">{{ e.name }}</option> }
+      </select>
+    </div>
+    <div class="eh-f">
+      <label class="eh-label" for="eh-status">Status</label>
+      <select id="eh-status" class="form-select" [(ngModel)]="status" (change)="apply()">
+        <option value="">All</option>
+        <option value="Sent">Sent</option>
+        <option value="Failed">Failed</option>
+      </select>
+    </div>
+    <div class="eh-f eh-grow">
+      <label class="eh-label" for="eh-search">Number / e-mail / subject</label>
+      <input id="eh-search" class="form-input" type="search" placeholder="e.g. ENQ-000123, APP-000045, broker@…" [(ngModel)]="search" (keyup.enter)="apply()" />
+    </div>
+    <div class="eh-f eh-btns">
+      <button uiButton variant="primary" type="button" (click)="apply()"><i class="bi bi-search"></i> Search</button>
+      <button uiButton variant="ghost" type="button" (click)="reset()">Reset</button>
+    </div>
+  </div>
+  <div class="eh-quick">
+    <span class="eh-label">Quick</span>
+    <button type="button" class="eh-pill" (click)="quick('today')">Today</button>
+    <button type="button" class="eh-pill" (click)="quick('7d')">Last 7 days</button>
+    <button type="button" class="eh-pill" (click)="quick('30d')">Last 30 days</button>
+    <button type="button" class="eh-pill" (click)="quick('all')">All dates</button>
+    @if (summary()?.by_module?.length) {
+      <span class="eh-sep"></span>
+      <span class="eh-label">By module</span>
+      @for (m of summary()!.by_module; track m.module) {
+        <button type="button" class="eh-pill" [class.on]="module === m.module" (click)="filterModule(m.module)">{{ m.module_name }} <b>{{ m.count }}</b></button>
+      }
+    }
+  </div>
+</ui-card>
+
+@if (error()) { <ui-card class="mb-3"><p class="eh-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+<ui-card bodyClass="">
+  <ui-data-table [columns]="columns" [rows]="rows()" [paginate]="false" [rowClickable]="true" (rowClick)="open($any($event))"
+    [emptyText]="loading() ? 'Loading…' : 'No e-mails for these filters.'">
+    <ng-template uiCell="event_name" let-row>
+      <div class="eh-ev">{{ row.event_name }}</div>
+      <div class="eh-subj">{{ row.subject }}</div>
+    </ng-template>
+    <ng-template uiCell="status" let-row>
+      <ui-tag [tone]="row.status === 'Sent' ? 'success' : 'danger'">{{ row.status }}</ui-tag>
+    </ng-template>
+  </ui-data-table>
+  <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" />
+</ui-card>
+
+@if (selected(); as s) {
+  <ui-drawer [title]="s.event_name" [subtitle]="(s.record_ref || '') + ' · ' + fmt(s.sent_at)" [width]="640" (closed)="selected.set(null)">
+    <dl class="eh-dl">
+      <dt>Status</dt><dd><ui-tag [tone]="s.status === 'Sent' ? 'success' : 'danger'">{{ s.status }}</ui-tag></dd>
+      @if (s.error) { <dt>Error</dt><dd class="eh-err">{{ s.error }}</dd> }
+      <dt>Module</dt><dd>{{ s.module_name }}</dd>
+      <dt>Number</dt><dd>{{ s.record_ref || '–' }}
+        @if (s.record_ref) { <button uiButton variant="ghost" size="sm" type="button" (click)="allForRecord(s)">All e-mails for this number</button> }
+      </dd>
+      <dt>To</dt><dd>{{ s.to_list }}</dd>
+      <dt>CC</dt><dd>{{ s.cc_list || '–' }}</dd>
+      <dt>Subject</dt><dd>{{ s.subject || '–' }}</dd>
+      <dt>Attachments</dt><dd>{{ s.attachments || '–' }}</dd>
+      <dt>Sent by</dt><dd>{{ s.sent_by_name || 'System' }}</dd>
+    </dl>
+    @if (s.body) {
+      <div class="eh-label mt-3">Email</div>
+      <iframe class="eh-frame" sandbox="" [srcdoc]="selectedHtml()" title="Email body"></iframe>
+    } @else if (s.body === null && s.module === 'AUTH') {
+      <p class="eh-muted mt-3">Security e-mail - the text is not stored.</p>
+    }
+  </ui-drawer>
+}

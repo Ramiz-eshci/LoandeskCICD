@@ -1,0 +1,48 @@
+    <ui-page-header title="Underwriting" [subtitle]="subtitle()" />
+
+    <!-- Compact filters, same pattern as Enquiries: stage chips + search. -->
+    <ui-filter-chips class="mb-3" [chips]="chips()" [active]="activeChip()" (activeChange)="onChip($event)" />
+
+    <div class="uw-filters">
+      <ui-search-input variant="field" width="360px" placeholder="Search applicant, ID, product…" [(value)]="query" />
+      <div class="uw-own">
+        <button type="button" class="uw-own-btn" [class.on]="!ownOnly()" (click)="toggleOwn(false)">All deals</button>
+        <button type="button" class="uw-own-btn" [class.on]="ownOnly()" (click)="toggleOwn(true)">My deals</button>
+      </div>
+    </div>
+
+    @if (error()) { <p class="uw-err">{{ error() }}</p> }
+
+    <div class="uw-tablewrap">
+      <table class="uw-table" uiFitTip>
+        <colgroup><col style="width:13%"><col style="width:20%"><col style="width:12%"><col style="width:13%"><col style="width:10%"><col style="width:13%"><col style="width:10%"><col style="width:9%"></colgroup>
+        <thead>
+          <tr>
+            <th>APPLICATION</th><th>APPLICANT</th><th>UNDERWRITER</th><th>LOAN AMOUNT</th><th>BDM</th>
+            <th>UW STAGE</th><th>STATUS</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of rows(); track r.underwriting_case_id) {
+            <tr (click)="open(r)">
+              <td class="mono bold">
+                {{ r.application_ref }}
+                @if (stale(r)) { <i class="bi bi-bell-fill uw-bell" [title]="'Not updated for ' + staleDays(r) + ' days'"></i> }
+              </td>
+              <td><div class="ap ap-cut" [title]="applicant(r)">{{ applicant(r) }}</div><div class="sub ap-cut" [title]="r.branch_name || ''">{{ r.branch_name || '' }}</div></td>
+              <td>{{ r.underwriter_name || '— Unassigned' }}</td>
+              <td class="mono bold text-nowrap">@if ((r.loan_basis === 'Net' ? (r.net_loan ?? r.amount_requested) : r.amount_requested) != null) { <span class="me-1">{{ r.loan_basis === 'Net' ? 'NET' : 'GROSS' }}</span> }{{ money(r.loan_basis === 'Net' ? (r.net_loan ?? r.amount_requested) : r.amount_requested) }}</td>
+              <td>{{ r.bdm_name || '—' }}</td>
+              <td>
+                @if (r.status === 'In Portfolio') { <span>Completed</span> }
+                @else if (r.status === 'New Review') { <span>Awaiting review</span> }
+                @else { <div>{{ stageName(r.current_step) }}</div><div class="sub">{{ stageNo(r.current_step) }}</div> }
+              </td>
+              <td><span class="uw-status" [class]="'uw-status ' + statusClass(r)">{{ statusLabel(r) }}</span></td>
+              <td><button type="button" class="uw-open" (click)="open(r); $event.stopPropagation()">Open Case</button></td>
+            </tr>
+          } @empty { <tr><td colspan="8" class="empty">No cases in this view.</td></tr> }
+        </tbody>
+      </table>
+    </div>
+    @if (paginate) { <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" /> }

@@ -1,0 +1,22 @@
+    <div
+      class="step-indicator"
+      [class.step-indicator--pipeline]="variant() === 'pipeline'"
+      [class.step-indicator--compact]="compact()"
+    >
+      @for (step of steps(); track step.label; let i = $index; let last = $last) {
+        <div class="step" [class.step--clickable]="canClick(i)" (click)="pick(i)" [attr.role]="canClick(i) ? 'button' : null" [attr.tabindex]="canClick(i) ? 0 : null">
+          <span class="step-circle" [class]="state(i)">
+            @if (variant() === 'progress' && state(i) === 'done') {
+              <i class="bi bi-check-lg"></i>
+            } @else {
+              {{ i + 1 }}
+            }
+          </span>
+          <span class="step-label" [class.step-label--muted]="state(i) === 'upcoming'">{{ step.label }}</span>
+        </div>
+        @if (!last) {
+          <span class="step-line" [class.done]="variant() === 'pipeline' || i < current()"></span>
+        }
+      }
+    </div>
+  

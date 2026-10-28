@@ -1,0 +1,13 @@
+      .ui-modal-title { margin: 0; font-size: 18px; font-weight: 700; color: var(--foreground); }
+      .ui-modal-x {
+        border: 0;
+        background: transparent;
+        color: var(--muted-foreground);
+        font-size: 15px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .ui-modal-x:hover { color: var(--foreground); }
+      .ui-modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+      .ui-modal-footer:empty { display: none; }
+      .ui-modal-footer > [modalFooter] { display: flex; justify-content: flex-end; gap: 12px; }

@@ -1,0 +1,25 @@
+    <div class="ui-drawer-scrim" (click)="closed.emit()"></div>
+    <aside class="drawer" [style.width.px]="width()">
+      <div class="drawer-header">
+        <div>
+          <h2 class="ui-drawer-title">{{ title() }}</h2>
+          @if (subtitle()) {
+            <div class="page-subtitle">{{ subtitle() }}</div>
+          }
+        </div>
+        <button type="button" class="ui-drawer-x" (click)="closed.emit()" aria-label="Close">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <ng-content select="[drawerHeaderExtra]" />
+
+      <div class="drawer-body">
+        <ng-content />
+      </div>
+
+      <div class="drawer-footer">
+        <ng-content select="[drawerFooter]" />
+      </div>
+    </aside>
+  

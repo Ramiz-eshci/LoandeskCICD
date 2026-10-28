@@ -1,0 +1,42 @@
+    <ui-page-header [title]="(editMode() ? 'Edit ' : 'New ') + (cfg()?.title || 'Master')" [subtitle]="subtitle()">
+      <button uiButton variant="ghost" type="button" (click)="cancel()"><i class="bi bi-arrow-left"></i> Back</button>
+    </ui-page-header>
+
+    @if (error()) { <ui-card class="mb-3"><p class="mf-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+    @if (cfg(); as c) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <ui-card [title]="c.title">
+          <div class="row g-3">
+            @for (f of c.fields; track f.name) {
+              @if (!f.auto) {
+              <div class="col-12 col-md-6">
+                @if (f.type === 'bool') {
+                  <ui-form-field [label]="f.label">
+                    <label class="mf-toggle"><input type="checkbox" [formControlName]="f.name" /><span>{{ form.get(f.name)?.value ? 'Yes' : 'No' }}</span></label>
+                  </ui-form-field>
+                } @else if (f.type === 'select') {
+                  <ui-form-field [label]="f.label + (f.required ? ' *' : '')" [error]="fieldError(f)">
+                    <select class="form-select" [formControlName]="f.name">
+                      <option value="">{{ f.placeholder }}</option>
+                      @for (o of options()[f.name] || []; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+                    </select>
+                  </ui-form-field>
+                } @else {
+                  <ui-form-field [label]="f.label + (f.required ? ' *' : '')" [error]="fieldError(f)">
+                    <input class="form-input" [type]="inputType(f)" [placeholder]="f.placeholder || ''" [formControlName]="f.name" />
+                  </ui-form-field>
+                }
+              </div>
+              }
+            }
+          </div>
+        </ui-card>
+
+        <div class="mf-actions">
+          <button uiButton variant="ghost" type="button" (click)="cancel()">Cancel</button>
+          <button uiButton variant="accent" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : (editMode() ? 'Save Changes' : 'Create') }}</button>
+        </div>
+      </form>
+    }
+  

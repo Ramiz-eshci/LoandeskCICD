@@ -1,0 +1,9 @@
+      :host { display: block; }
+      .ui-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+      }
+      .ui-card-head--divided { border-bottom: 1px solid var(--border); }
+      .ui-card-title { margin: 0; font-size: 15px; font-weight: 700; color: var(--foreground); }

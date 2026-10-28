@@ -1,0 +1,54 @@
+    <div class="ad-title">
+      <i class="bi bi-gear"></i>
+      <ui-page-header title="Administration" [subtitle]="subtitle()" />
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-people" label="Total Users"
+          [value]="users().length" caption="System users" tone="default" [valueSize]="30" />
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-person-check" label="Active Users"
+          [value]="activeUsers()" caption="Enabled" tone="accent" [valueSize]="30" />
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-shield" label="Roles"
+          [value]="roles().length" caption="Configured" tone="default" [valueSize]="30" />
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <ui-kpi-card labelStyle="plain" iconPlacement="inline" icon="bi-hdd-network" label="Data Source"
+          [value]="live() ? 'Live API' : 'Offline'" [caption]="live() ? '/api connected' : 'no session'"
+          [tone]="live() ? 'positive' : 'warning'" [valueSize]="22" [mono]="false" />
+      </div>
+    </div>
+
+    @if (error()) {
+      <ui-card class="mb-3">
+        <p class="ad-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p>
+      </ui-card>
+    }
+
+    <ui-tab-filters class="mb-3" [tabs]="tabs()" [(active)]="activeTab" />
+
+    @if (activeTab() === 'users') {
+      <ui-card>
+        <ui-data-table [columns]="userColumns" [rows]="users()" emptyText="No users found.">
+          <ng-template uiCell="is_active" let-row>
+            <ui-tag [tone]="row.is_active ? 'success' : 'neutral'">{{ row.is_active ? 'Active' : 'Inactive' }}</ui-tag>
+          </ng-template>
+          <ng-template uiCell="is_super_admin" let-row>
+            <ui-tag [tone]="row.is_super_admin ? 'info' : 'neutral'">{{ row.is_super_admin ? 'Super Admin' : 'Standard' }}</ui-tag>
+          </ng-template>
+        </ui-data-table>
+      </ui-card>
+    } @else {
+      <ui-card>
+        <ui-data-table [columns]="roleColumns" [rows]="roles()" emptyText="No roles found.">
+          <ng-template uiCell="is_active" let-row>
+            <ui-tag [tone]="row.is_active ? 'success' : 'neutral'">{{ row.is_active ? 'Active' : 'Inactive' }}</ui-tag>
+          </ng-template>
+        </ui-data-table>
+      </ui-card>
+    }
+  

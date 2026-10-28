@@ -1,0 +1,19 @@
+    <div class="ui-tabs">
+      @for (tab of tabs(); track tab.key) {
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="active() === tab.key"
+          (click)="active.set(tab.key)"
+        >
+          @if (tab.count !== undefined && countPosition() === 'before') {
+            <span class="ui-tab-count ui-tab-count--lead font-mono">{{ tab.count }}</span>
+          }
+          {{ tab.label }}
+          @if (tab.count !== undefined && countPosition() === 'after') {
+            <span class="ui-tab-count font-mono">{{ tab.count }}</span>
+          }
+        </button>
+      }
+    </div>
+  

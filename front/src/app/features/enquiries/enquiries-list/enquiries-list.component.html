@@ -1,0 +1,85 @@
+    <ui-page-header title="Enquiries" [subtitle]="subtitle()">
+      @if (canAdd()) {
+        <button uiButton variant="accent" type="button" class="enq-new" (click)="creating.set(true)">
+          <i class="bi bi-plus-lg"></i> New Enquiry
+        </button>
+      }
+    </ui-page-header>
+
+    <ui-filter-chips class="mb-3" [chips]="chips()" [active]="activeChip()" (activeChange)="onChip($event)" />
+
+    <div class="enq-filterbar">
+      <ui-search-input variant="field" width="360px" placeholder="Search by applicant, ID, email, phone…" [(value)]="query" />
+      <button uiButton variant="ghost" type="button" (click)="applySearch()"><i class="bi bi-search"></i> Search</button>
+      <span class="enq-spacer"></span>
+      <!-- Scoped users already see only their own enquiries, so the toggle would do nothing. -->
+      @if (!assignedOnly()) {
+        <div class="own-toggle">
+          <button type="button" class="own-btn" [class.on]="!ownOnly()" (click)="toggleOwn(false)">All deals</button>
+          <button type="button" class="own-btn" [class.on]="ownOnly()" (click)="toggleOwn(true)">My deals</button>
+        </div>
+      }
+      <label class="enq-sort">Sort
+        <select class="form-select" [value]="sort()" (change)="onSort($event)">
+          <option value="enquiry_id">Newest</option>
+          <option value="applicant_name">Applicant</option>
+          <option value="amount_requested">Amount</option>
+          <option value="created_at">Date</option>
+        </select>
+      </label>
+      <button uiButton variant="ghost" type="button" (click)="toggleDir()" [title]="dir() === 'asc' ? 'Ascending' : 'Descending'">
+        <i class="bi" [class.bi-sort-down]="dir() === 'desc'" [class.bi-sort-up]="dir() === 'asc'"></i>
+      </button>
+    </div>
+
+    @if (error()) { <ui-card class="mb-3"><p class="enq-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+    <ui-card bodyClass="">
+      <ui-data-table
+        [columns]="columns"
+        [rows]="rows()"
+        [paginate]="false"
+        [rowClickable]="true"
+        (rowClick)="open($event)"
+        emptyText="No enquiries match this filter."
+      >
+        <ng-template uiCell="enquiry_ref" let-row>
+          <span class="enq-ref">{{ row.enquiry_ref }}</span>
+        </ng-template>
+        <ng-template uiCell="created_at" let-row>
+          <span class="enq-date">{{ formatDate(row.created_at) }}</span>
+        </ng-template>
+        <ng-template uiCell="enquiry_ref" let-row>
+          <span class="enq-ref-cell">{{ row.enquiry_ref || '—' }}@if (chaseDue(row)) { <i class="bi bi-bell-fill enq-chase" [title]="chaseTitle(row)"></i> }</span>
+        </ng-template>
+        <ng-template uiCell="applicant_name" let-row>
+          <div class="enq-applicant" [title]="row.company_name || row.applicant_name || ''">{{ row.company_name || row.applicant_name || '—' }}</div>
+          <div class="enq-subtext" [title]="row.email || row.phone || ''">{{ row.email || row.phone || '' }}</div>
+        </ng-template>
+        <ng-template uiCell="broker_name" let-row>
+          @if (row.broker_name) { <span class="enq-broker">{{ row.broker_name }}</span> } @else { <span class="text-muted-fg">—</span> }
+        </ng-template>
+        <ng-template uiCell="amount_requested" let-row>
+          <!-- Client 15-10-2026: "NET £200,000" / "GROSS £200,000" - the basis typed on the
+               enquiry until an offer / sent indicative gives the real gross. -->
+          @if ((row.loan_amount ?? row.amount_requested) != null) {
+            <span class="enq-amt-cell"><span class="enq-basis" [class.enq-basis-net]="(row.loan_amount_basis || row.loan_basis) === 'Net'"
+                  [title]="(row.loan_amount_basis || row.loan_basis) === 'Net' ? 'Net amount - the typed net until an indicative is sent, then the indicative / offer net' : 'Gross loan'">{{ (row.loan_amount_basis || row.loan_basis) === 'Net' ? 'NET' : 'GROSS' }}</span>
+            <span class="font-mono">{{ money(row.loan_amount ?? row.amount_requested) }}</span></span>
+          } @else { <span class="text-muted-fg">—</span> }
+        </ng-template>
+        <ng-template uiCell="assigned_to_name" let-row>
+          {{ row.assigned_to_name || '—' }}
+        </ng-template>
+        <ng-template uiCell="status_name" let-row>
+          <ui-badge [status]="tone(row.status_code)">{{ row.status_name || '—' }}</ui-badge>
+        </ng-template>
+      </ui-data-table>
+
+      @if (paginate) { <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" /> }
+    </ui-card>
+
+    @if (creating()) {
+      <app-new-enquiry-drawer (closed)="creating.set(false)" (created)="onCreated()" />
+    }
+  

@@ -1,0 +1,67 @@
+    <ui-page-header title="Portfolio" [subtitle]="subtitle()">
+    </ui-page-header>
+
+    <!-- Client 26-10-2026: all seven KPIs on one line as compact tiles (was two tall rows). -->
+    <div class="kpi-strip mb-4">
+      <ui-kpi-card label="Portfolio value" [value]="portfolioValue()" caption="Outstanding balance" icon="bi-graph-up-arrow" [bareIcon]="true" [compact]="true" [valueSize]="18" />
+      <ui-kpi-card label="Active facilities" [value]="activeCount()" caption="Live book" icon="bi-people" [bareIcon]="true" [compact]="true" [valueSize]="18" />
+      <ui-kpi-card label="In extensions" [value]="extensionsCount()" caption="Being extended" icon="bi-arrow-repeat" [bareIcon]="true" tone="warning" [compact]="true" [valueSize]="18" />
+      <ui-kpi-card label="In arrears" [value]="arrearsCount()" [caption]="arrearsCaption()" icon="bi-exclamation-triangle" [bareIcon]="true" tone="danger" [compact]="true" [valueSize]="18" />
+      @for (bucket of buckets(); track bucket.label) {
+        <div class="kpi-clickable" [class.kpi-picked]="maturityFilter() === bucket.days" role="button" tabindex="0" (click)="filterByMaturity(bucket.days)">
+          <ui-kpi-card
+            [label]="bucket.label"
+            [value]="bucket.value"
+            [caption]="bucket.caption"
+            [tone]="bucket.tone"
+            [mono]="false"
+            [compact]="true"
+            [valueSize]="18"
+          />
+        </div>
+      }
+    </div>
+
+    <ui-tab-filters class="mb-3" [tabs]="tabs" [active]="activeTab()" (activeChange)="onTab($event)" />
+
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+      <ui-search-input variant="field" width="440px" [placeholder]="searchPlaceholder()" [(value)]="query" />
+      @if (activeTab() === 'all') {
+        <select class="form-select status-filter" [value]="statusFilter()" (change)="setStatusFilter($any($event.target).value)" aria-label="Facility status">
+          @for (o of statusOptions; track o.value) { <option [value]="o.value">{{ o.label }}</option> }
+        </select>
+      }
+      @if (maturityFilter() !== null && activeTab() === 'facilities') {
+        <span class="mat-filter-chip">Maturing ≤ {{ maturityFilter() }} days</span>
+        <button uiButton variant="ghost" size="sm" type="button" (click)="clearMaturityFilter()">Clear filter</button>
+      }
+    </div>
+
+    <ui-card bodyClass="">
+      @if (isFacilityTab()) {
+        <ui-data-table [columns]="facilityColumns()" [rows]="facilities()" [rowClickable]="true" [rowClass]="todayRowClass" [paginate]="false" (rowClick)="openFacility($event)" [emptyText]="portfolioLoading() ? 'Loading facilities…' : 'No facilities match this search.'">
+          <ng-template uiCell="today" let-row>
+            <div class="today-chips">
+              @if (row.todayCall) {
+                <span class="t-chip t-call" title="Follow-up due — call the client"><i class="bi bi-telephone-fill"></i> Call</span>
+              }
+              @if (row.todayPayment) {
+                <span class="t-chip t-pay" title="Payment due — the facility matures today"><i class="bi bi-cash-coin"></i> Payment</span>
+              }
+              @if (row.todayMaturity) {
+                <span class="t-chip t-mat" [title]="row.maturityIsToday ? 'Matures today' : 'Matured — overdue'"><i class="bi bi-flag-fill"></i> {{ row.maturityIsToday ? 'Maturity' : 'Overdue' }}</span>
+              }
+              @if (!row.todayCall && !row.todayPayment && !row.todayMaturity) { <span class="muted">—</span> }
+            </div>
+          </ng-template>
+          <ng-template uiCell="status" let-row>
+            <ui-badge [status]="row.statusTone">{{ row.status }}</ui-badge>
+          </ng-template>
+          <ng-template uiCell="actions" let-row>
+            <button uiButton variant="ghost" size="sm" type="button" (click)="$event.stopPropagation(); openFacility(row)">Open</button>
+          </ng-template>
+        </ui-data-table>
+      }
+    </ui-card>
+
+    @if (paginate) { <ui-pagination class="d-block mt-3" [summary]="pageSummary()" [hasPrevious]="hasPrev()" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" /> }

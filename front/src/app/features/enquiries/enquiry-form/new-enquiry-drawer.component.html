@@ -1,0 +1,693 @@
+    <ui-drawer title="New Enquiry" [subtitle]="'Step ' + (step() + 1) + ' of ' + steps.length" [width]="820" (closed)="closed.emit()">
+      <div drawerHeaderExtra class="wizard-rail">
+        <ui-step-indicator [steps]="steps" [current]="step()" [compact]="true" [clickable]="true" [maxStep]="maxStep()" (stepSelect)="goStep($event)" />
+      </div>
+
+      <!-- Step 1 — Source & Assignment -->
+      <!-- Everything the server rejected, visible on every step. Each row jumps
+           to the step that owns the field, so nothing can hide behind the wizard. -->
+      @if (serverErrorList().length) {
+        <div class="srv-errors" role="alert">
+          <div class="srv-errors-head">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            {{ serverErrorList().length }} field{{ serverErrorList().length === 1 ? '' : 's' }} need attention
+          </div>
+          <ul class="srv-errors-list">
+            @for (e of serverErrorList(); track e.field) {
+              <li>
+                <button type="button" class="srv-jump" (click)="goToErrorStep(e.step)">
+                  {{ e.label }}
+                </button>
+                <span class="srv-msg">{{ e.message }}</span>
+                @if (e.step !== step()) { <span class="srv-step">{{ stepName(e.step) }}</span> }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (step() === 0) {
+        <section [formGroup]="form">
+          <h3 class="form-section">Source &amp; Assignment</h3>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Source type">
+                <select class="form-select" formControlName="application_source_id">
+                  <option value="">Select…</option>
+                  @for (o of opts()?.sources || []; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Lead source">
+                <select class="form-select" formControlName="lead_source_id">
+                  <option value="">Select…</option>
+                  @for (o of opts()?.leadSources || []; track o.id) { <option [ngValue]="o.id">{{ o.name }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+          <ui-form-field label="Broker">
+            <span fieldAction class="ff-actions">
+              @if (brokerSelected() && !brokerAddOpen()) {
+                <button type="button" class="ff-addbtn" title="Edit selected broker" (click)="brokerEditOpen() ? cancelBrokerEdit() : openBrokerEdit()">
+                  <i class="bi bi-pencil-square"></i> {{ brokerEditOpen() ? 'Cancel' : 'Edit' }}
+                </button>
+              }
+              <button type="button" class="ff-addbtn" (click)="toggleBrokerAdd()">{{ brokerAddOpen() ? 'Cancel' : '+ Add new' }}</button>
+            </span>
+            <select class="form-select" formControlName="broker_id">
+              <option value="">Select broker…</option>
+              @for (o of opts()?.brokers || []; track o.id) { <option [value]="o.id">{{ o.name }}{{ o.company ? ' (' + o.company + ')' : '' }}</option> }
+            </select>
+            @if (brokerAddOpen()) {
+              <div class="broker-add">
+                @if (brokerError()) { <div class="alert alert-warning mb-2">{{ brokerError() }}</div> }
+                <div class="broker-add-grid">
+                  <label class="broker-sub">Broker name *
+                    <input class="form-input" [(ngModel)]="brokerDraft.name" [ngModelOptions]="{standalone: true}" placeholder="e.g. Alpha Brokers" />
+                  </label>
+                  <label class="broker-sub">Broker email *
+                    <input class="form-input" type="email" [(ngModel)]="brokerDraft.email" [ngModelOptions]="{standalone: true}" placeholder="name@broker.com" />
+                  </label>
+                  <label class="broker-sub">Broker phone
+                    <input class="form-input" [(ngModel)]="brokerDraft.phone" [ngModelOptions]="{standalone: true}" placeholder="e.g. 020 7946 0000" />
+                  </label>
+                  <label class="broker-sub">Company name *
+                    <input class="form-input" [(ngModel)]="brokerDraft.company" [ngModelOptions]="{standalone: true}" placeholder="e.g. Alpha Brokers Ltd" />
+                  </label>
+                  <label class="broker-sub">FCA number
+                    <input class="form-input" maxlength="50" [(ngModel)]="brokerDraft.fca_number" [ngModelOptions]="{standalone: true}" placeholder="e.g. 123456" />
+                  </label>
+                  <label class="broker-sub">Address
+                    <input class="form-input" maxlength="500" [(ngModel)]="brokerDraft.address" [ngModelOptions]="{standalone: true}" placeholder="Broker's address" />
+                  </label>
+                </div>
+                <div class="broker-add-actions">
+                  <button type="button" uiButton variant="primary" size="sm" [disabled]="brokerSaving()" (click)="saveBroker()">{{ brokerSaving() ? 'Saving…' : 'Save broker' }}</button>
+                </div>
+              </div>
+            }
+            @if (brokerEditOpen()) {
+              <div class="broker-add">
+                @if (brokerEditError()) { <div class="alert alert-warning mb-2">{{ brokerEditError() }}</div> }
+                <div class="broker-add-grid">
+                  <label class="broker-sub">Broker name *
+                    <input class="form-input" [(ngModel)]="brokerEditDraft.name" [ngModelOptions]="{standalone: true}" placeholder="e.g. Alpha Brokers" />
+                  </label>
+                  <label class="broker-sub">Broker email
+                    <input class="form-input" type="email" [(ngModel)]="brokerEditDraft.email" [ngModelOptions]="{standalone: true}" placeholder="name@broker.com" />
+                  </label>
+                  <label class="broker-sub">Broker phone
+                    <input class="form-input" [(ngModel)]="brokerEditDraft.phone" [ngModelOptions]="{standalone: true}" placeholder="e.g. 020 7946 0000" />
+                  </label>
+                  <label class="broker-sub">Company name *
+                    <input class="form-input" [(ngModel)]="brokerEditDraft.company" [ngModelOptions]="{standalone: true}" placeholder="e.g. Alpha Brokers Ltd" />
+                  </label>
+                  <label class="broker-sub">FCA number
+                    <input class="form-input" maxlength="50" [(ngModel)]="brokerEditDraft.fca_number" [ngModelOptions]="{standalone: true}" placeholder="e.g. 123456" />
+                  </label>
+                  <label class="broker-sub">Address
+                    <input class="form-input" maxlength="500" [(ngModel)]="brokerEditDraft.address" [ngModelOptions]="{standalone: true}" placeholder="Broker's address" />
+                  </label>
+                </div>
+                <div class="broker-add-actions">
+                  <button type="button" uiButton variant="primary" size="sm" [disabled]="brokerEditSaving()" (click)="saveBrokerEdit()">{{ brokerEditSaving() ? 'Saving…' : 'Update broker' }}</button>
+                  <button type="button" uiButton variant="ghost" size="sm" [disabled]="brokerEditSaving()" (click)="cancelBrokerEdit()">Cancel</button>
+                </div>
+              </div>
+            }
+          </ui-form-field>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Assigned BDM">
+                <select class="form-select" formControlName="assigned_to">
+                  <option value="">— Unassigned —</option>
+                  @for (o of opts()?.assignees || []; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Branch *" [error]="err('branch_id')">
+                <select class="form-select" formControlName="branch_id">
+                  <option value="">Select branch…</option>
+                  @for (o of opts()?.branches || []; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- Step 2 — Applicant Details (Individual / Company) -->
+      @if (step() === 1) {
+        <section [formGroup]="form">
+          <h3 class="form-section">Applicant Details</h3>
+          <ui-form-field label="Applicant type *" [error]="applicantTypeError()">
+            <ui-segmented [options]="applicantTypeOptions()" [value]="applicantType()" (valueChange)="onTypeChange($event)" />
+          </ui-form-field>
+
+          @if (isCompany()) {
+            <div class="row g-3">
+              <div class="col-12 col-sm-7">
+                <ui-form-field label="Company name" [error]="err('company_name')">
+                  <input class="form-input" formControlName="company_name" placeholder="Company Ltd" />
+                </ui-form-field>
+              </div>
+              <div class="col-12 col-sm-5">
+                <ui-form-field label="Company reg. no." [error]="err('company_reg_no')">
+                  <input class="form-input" formControlName="company_reg_no" placeholder="00000000" maxlength="50" />
+                </ui-form-field>
+              </div>
+            </div>
+          }
+
+          <h4 class="form-subsection">{{ isCompany() ? 'Directors / Applicants' : 'Applicant' }}</h4>
+
+          <div formArrayName="applicants">
+            @for (ag of applicants.controls; track $index) {
+              <div class="applicant-card" [formGroupName]="$index">
+                <div class="applicant-card-head">
+                  <span class="applicant-card-title">{{ isCompany() ? 'Director ' + ($index + 1) : 'Applicant details' }}</span>
+                  @if (isCompany() && applicants.length > 1) {
+                    <button type="button" class="applicant-remove" (click)="removeApplicant($index)">Remove</button>
+                  }
+                </div>
+
+                <ui-form-field label="Full name" [error]="aerr($index, 'full_name')">
+                  <input class="form-input" maxlength="200" formControlName="full_name" placeholder="First Last" />
+                </ui-form-field>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Email address" [error]="aerr($index, 'email')">
+                      <input class="form-input" type="email" maxlength="150" formControlName="email" placeholder="email@example.com" />
+                    </ui-form-field>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Mobile number" [error]="aerr($index, 'mobile')">
+                      <input class="form-input" formControlName="mobile" type="tel" inputmode="tel" maxlength="20" placeholder="07xxx xxxxxx" (input)="sanitizeMobile($index, $event)" />
+                    </ui-form-field>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Date of birth">
+                      <input class="form-input" type="date" [max]="today" formControlName="dob" />
+                    </ui-form-field>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Nationality" [error]="aerr($index, 'nationality')">
+                      <input class="form-input" maxlength="80" formControlName="nationality" placeholder="e.g. British" />
+                    </ui-form-field>
+                  </div>
+                </div>
+                <ui-form-field label="Current address" [error]="aerr($index, 'address')">
+                  <input class="form-input" maxlength="400" formControlName="address" placeholder="Full address including postcode" />
+                </ui-form-field>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Time at address" [error]="aerr($index, 'time_at_address')">
+                      <input class="form-input" maxlength="80" formControlName="time_at_address" placeholder="e.g. 3 years" />
+                    </ui-form-field>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Own your home?">
+                      <select class="form-select" formControlName="owns_home">
+                        <option value="">Select…</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </ui-form-field>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Occupation" [error]="aerr($index, 'occupation')">
+                      <input class="form-input" maxlength="150" formControlName="occupation" placeholder="Occupation" />
+                    </ui-form-field>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Employer / business name" [error]="aerr($index, 'employer_name')">
+                      <input class="form-input" maxlength="200" formControlName="employer_name" placeholder="Employer / business" />
+                    </ui-form-field>
+                  </div>
+                </div>
+                <ui-form-field label="Business address" [error]="aerr($index, 'business_address')">
+                  <input class="form-input" maxlength="400" formControlName="business_address" placeholder="Business address" />
+                </ui-form-field>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Length of service" [error]="aerr($index, 'length_of_service')">
+                      <input class="form-input" maxlength="80" formControlName="length_of_service" placeholder="e.g. 5 years" />
+                    </ui-form-field>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Relationship to borrower" [error]="aerr($index, 'relationship')">
+                      <input class="form-input" maxlength="120" formControlName="relationship" placeholder="e.g. Director / Shareholder" />
+                    </ui-form-field>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Shareholding %" [error]="aerr($index, 'shareholding_pct')">
+                      <input class="form-input font-mono" type="number" formControlName="shareholding_pct" placeholder="%" min="0" max="100" step="0.01" />
+                    </ui-form-field>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <ui-form-field label="Previous bridging experience?">
+                      <select class="form-select" formControlName="prev_bridging">
+                        <option value="">Select…</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
+                    </ui-form-field>
+                  </div>
+                </div>
+                @if (applicantGroup($index).get('prev_bridging')?.value === 'true') {
+                  <ui-form-field label="If yes, which lender?" [error]="aerr($index, 'prev_bridging_lender')">
+                    <input class="form-input" maxlength="200" formControlName="prev_bridging_lender" placeholder="Lender name" />
+                  </ui-form-field>
+                }
+              </div>
+            }
+          </div>
+
+          @if (isCompany()) {
+            <button type="button" class="applicant-add" (click)="addApplicant()">+ Add another director / applicant</button>
+          }
+        </section>
+      }
+
+      <!-- Step 3 — Loan Request -->
+      @if (step() === 2) {
+        <section [formGroup]="form">
+          <h3 class="form-section">Proposed Loan</h3>
+          <ui-form-field label="Product *" [error]="err('product_id')">
+            <select class="form-select" formControlName="product_id">
+              <option value="">Select product…</option>
+              @for (o of opts()?.products || []; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+            </select>
+          </ui-form-field>
+          <div class="row g-3">
+            <div class="col-12 col-sm-2">
+              <ui-form-field label="Loan basis *">
+                <select class="form-select" formControlName="loan_basis">
+                  <option value="Gross">Gross</option>
+                  <option value="Net">Net</option>
+                </select>
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-5">
+              <ui-form-field label="Loan amount (£) *" [error]="err('amount_requested')">
+                <input class="form-input font-mono" type="number" formControlName="amount_requested" placeholder="000,000" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-5">
+              <ui-form-field label="Term (months) *" [error]="err('term_months')">
+                <input class="form-input font-mono" type="number" formControlName="term_months" placeholder="0" />
+              </ui-form-field>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Loan purpose *" [error]="err('loan_purpose_id')">
+                <select class="form-select" formControlName="loan_purpose_id">
+                  <option value="">Select purpose…</option>
+                  @for (o of opts()?.purposes || []; track o.id) { <option [value]="o.id">{{ o.name }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Requested completion">
+                <input class="form-input" type="date" formControlName="requested_completion_date" />
+              </ui-form-field>
+            </div>
+          </div>
+          <!-- Client 26-10-2026: Type of Deal - drives the Overall Summary "Average Time Taken" breakdown. -->
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Type of deal">
+                <select class="form-select" formControlName="deal_type">
+                  <option value="">Select…</option>
+                  @for (t of dealTypes; track t) { <option [value]="t">{{ t }}</option> }
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+          <!-- Client 15-10-2026: Interest financing type + Drawdowns required? on one line. -->
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Interest financing type">
+                <select class="form-select" formControlName="interest_type">
+                  <option value="Serviced">Serviced</option>
+                  <option value="Retained">Retained</option>
+                </select>
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Drawdowns required?">
+                <select class="form-select" formControlName="drawdowns_required" (change)="onDrawdownsRequired()">
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+          <!-- Client 15-10-2026: application form section 2 "Loan Details". -->
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Total project cost (£)" [error]="err('total_project_cost')">
+                <input class="form-input font-mono" type="number" min="0" numInput formControlName="total_project_cost" placeholder="000,000" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Own contribution (£)" [error]="err('own_contribution')">
+                <input class="form-input font-mono" type="number" min="0" numInput formControlName="own_contribution" placeholder="000,000" />
+              </ui-form-field>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Deposit source" [error]="err('deposit_source')">
+                <input class="form-input" type="text" maxlength="500" formControlName="deposit_source" placeholder="e.g. Savings, sale of property" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Any additional borrowing?" [error]="err('additional_borrowing')">
+                <select class="form-select" formControlName="additional_borrowing">
+                  <option value="">Select…</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+          <ui-form-field label="Exit strategy" [error]="err('exit_strategy')">
+            <textarea class="form-input" rows="2" maxlength="4000" formControlName="exit_strategy" placeholder="How the loan will be repaid, e.g. sale or refinance…"></textarea>
+          </ui-form-field>
+
+          <!-- Client 15-10-2026: solicitor representation. Single rep -> the borrower's own
+               solicitor (pre-fills underwriting "Solicitor Quote" + application form section 5). -->
+          <!-- Client 15-10-2026: Representation is a dropdown; single rep picks the borrower's
+               solicitor from the Solicitor master (edit / add new, same as the broker dropdown). -->
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Solicitor">
+                <select class="form-select" formControlName="rep_type" (change)="onRepTypeChange()">
+                  <option value="">Select…</option>
+                  <option value="single">Single Representation</option>
+                  <option value="dual">Dual Representation</option>
+                </select>
+              </ui-form-field>
+            </div>
+            @if (isSingleRep()) {
+              <div class="col-12 col-sm-6">
+                <ui-form-field label="Borrower's solicitor / firm name" [error]="err('borrower_solicitor_id')">
+                  <span fieldAction class="ff-actions">
+                    @if (selectedSolicitor() && !solAddOpen()) {
+                      <button type="button" class="ff-addbtn" title="Edit selected solicitor" (click)="toggleSolEdit()">
+                        <i class="bi bi-pencil-square"></i> {{ solEditOpen() ? 'Cancel' : 'Edit' }}
+                      </button>
+                    }
+                    <button type="button" class="ff-addbtn" (click)="toggleSolAdd()">{{ solAddOpen() ? 'Cancel' : '+ Add new' }}</button>
+                  </span>
+                  <select class="form-select" formControlName="borrower_solicitor_id">
+                    <option value="">Select solicitor…</option>
+                    @for (o of opts()?.solicitors || []; track o.id) { <option [value]="o.id">{{ o.firm }}{{ o.contact_name ? ' (' + o.contact_name + ')' : '' }}</option> }
+                  </select>
+                </ui-form-field>
+              </div>
+            }
+          </div>
+          @if (isSingleRep()) {
+            @if (solAddOpen() || solEditOpen()) {
+              <div class="broker-add">
+                @if (solError()) { <div class="alert alert-warning mb-2">{{ solError() }}</div> }
+                <div class="broker-add-grid">
+                  <label class="broker-sub">Borrower's solicitor / firm name *
+                    <input class="form-input" [(ngModel)]="solDraft.firm" [ngModelOptions]="{standalone: true}" placeholder="e.g. Smith &amp; Co Solicitors" />
+                  </label>
+                  <label class="broker-sub">Contact name
+                    <input class="form-input" [(ngModel)]="solDraft.contact_name" [ngModelOptions]="{standalone: true}" />
+                  </label>
+                  <label class="broker-sub">Telephone
+                    <input class="form-input" type="tel" [(ngModel)]="solDraft.telephone" [ngModelOptions]="{standalone: true}" placeholder="e.g. 020 7946 0000" />
+                  </label>
+                  <label class="broker-sub">Email
+                    <input class="form-input" type="email" [(ngModel)]="solDraft.email" [ngModelOptions]="{standalone: true}" placeholder="name@firm.com" />
+                  </label>
+                  <label class="broker-sub">Number of SRA partners
+                    <input class="form-input" type="number" min="0" numInput integer [(ngModel)]="solDraft.sra_partners" [ngModelOptions]="{standalone: true}" placeholder="e.g. 4" />
+                  </label>
+                </div>
+                <label class="broker-sub d-block mt-2">Address
+                  <textarea class="form-input" rows="2" [(ngModel)]="solDraft.address" [ngModelOptions]="{standalone: true}"></textarea>
+                </label>
+                <div class="broker-add-actions">
+                  <button type="button" uiButton variant="primary" size="sm" [disabled]="solSaving()" (click)="saveSol()">{{ solSaving() ? 'Saving…' : (solEditOpen() ? 'Update solicitor' : 'Save solicitor') }}</button>
+                  <button type="button" uiButton variant="ghost" size="sm" [disabled]="solSaving()" (click)="cancelSol()">Cancel</button>
+                </div>
+              </div>
+            }
+          }
+          <!-- Client 15-10-2026: Deal summary / notes moved to the end, after Solicitor. -->
+          <ui-form-field label="Deal summary / notes">
+            <textarea class="form-input" rows="3" formControlName="summary" placeholder="Summary of the deal, special requirements…"></textarea>
+          </ui-form-field>
+        </section>
+      }
+
+      <!-- Step 4 — Security / Property (client PDF section 3) -->
+      @if (step() === 3) {
+        <section [formGroup]="form">
+          <h3 class="form-section">Security / Property</h3>
+          <ui-form-field label="Property address *" [error]="err('property_address')">
+            <input class="form-input" formControlName="property_address" placeholder="Full property address…" />
+          </ui-form-field>
+          <ui-form-field label="Google Maps link" hint="Paste a Google Maps share link, or just enter the address / postcode — the map finds the location" [error]="mapLinkInvalid() ? 'Enter a valid Google Maps link (https://maps.app.goo.gl/… or https://www.google.com/maps/…).' : err('map_link')">
+            <input class="form-input" formControlName="map_link" placeholder="https://maps.app.goo.gl/…" />
+          </ui-form-field>
+          @if (mapUrl(); as u) {
+            <div class="map-frame"><iframe [src]="u" title="Security location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+          }
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Postcode">
+                <input class="form-input" formControlName="postcode" placeholder="AB12 3CD" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Property type">
+                <input class="form-input" formControlName="property_type" placeholder="e.g. Residential, Commercial, Land" />
+              </ui-form-field>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Tenure">
+                <select class="form-select" formControlName="tenure">
+                  <option value="">Select…</option>
+                  <option value="Freehold">Freehold</option>
+                  <option value="Leasehold">Leasehold</option>
+                </select>
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Years remaining (if leasehold)" [error]="err('tenure_years')">
+                <input class="form-input font-mono" type="number" min="0" max="999" numInput integer formControlName="tenure_years" placeholder="Years" />
+              </ui-form-field>
+            </div>
+          </div>
+          <!-- Charge Amount sits right after Charge (client 28-09-2026); the row wraps. -->
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Charge *" [error]="err('charge_type')">
+                <select class="form-select" formControlName="charge_type">
+                  <option value="">Select…</option>
+                  <option value="1st">1st charge</option>
+                  <option value="2nd">2nd charge</option>
+                </select>
+              </ui-form-field>
+            </div>
+            @if (mainIs2nd()) {
+              <div class="col-12 col-sm-6">
+                <ui-form-field label="Charge Amount (£)" [error]="err('charge_amount')">
+                  <input class="form-input font-mono" type="number" formControlName="charge_amount" placeholder="000,000" />
+                </ui-form-field>
+              </div>
+            }
+            <!-- Client 20-10-2026: "Do you own the property?" removed - the applicant answers it on the application form. -->
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Property value (£) *" [error]="err('estimated_value')">
+                <input class="form-input font-mono" type="number" formControlName="estimated_value" placeholder="000,000" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="GDV — gross development value (£)">
+                <input class="form-input font-mono" type="number" formControlName="gdv" placeholder="000,000" />
+              </ui-form-field>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Purchase price (£)">
+                <input class="form-input font-mono" type="number" formControlName="purchase_price" placeholder="000,000" />
+              </ui-form-field>
+            </div>
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="Date of purchase / completion">
+                <input class="form-input" type="date" formControlName="purchase_date" />
+              </ui-form-field>
+            </div>
+          </div>
+          <div class="row g-3">
+            <div class="col-12 col-sm-6">
+              <ui-form-field label="To be repaid on completion?">
+                <select class="form-select" formControlName="repaid_on_completion">
+                  <option value="">Select…</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </ui-form-field>
+            </div>
+          </div>
+          <ui-form-field label="Existing lender">
+            <input class="form-input" formControlName="lender" placeholder="Lender name" />
+          </ui-form-field>
+          <ui-form-field label="Added value since purchase?">
+            <textarea class="form-input" rows="2" formControlName="added_value" placeholder="Describe works / value added since purchase…"></textarea>
+          </ui-form-field>
+          <ui-form-field [label]="ltvLabel()">
+            <input class="form-input font-mono" [value]="ltv()" readonly />
+          </ui-form-field>
+        </section>
+      }
+
+      @if (step() === 4) {
+        <section class="wizard-section" [formGroup]="form">
+          <p class="step-hint">Add any other securities that support the main property (optional).</p>
+          <div formArrayName="securities">
+            @for (sg of securities.controls; track $index) {
+              <div class="sec-card" [formGroupName]="$index">
+                <div class="sec-card-head">
+                  <span class="sec-card-title">Security {{ $index + 1 }}</span>
+                  <button type="button" class="btn-ghost btn-sm sec-remove" (click)="removeSecurity($index)"><i class="bi bi-trash"></i> Remove</button>
+                </div>
+                <div class="sec-grid">
+                  <div class="sec-fld sec-fld--full">
+                    <label class="form-label">Property address *</label>
+                    <input class="form-input" formControlName="address" placeholder="Full property address…" />
+                    @if (serr($index,'address')) { <div class="sec-err">{{ serr($index,'address') }}</div> }
+                  </div>
+                  <div class="sec-fld sec-fld--full">
+                    <label class="form-label">Google Maps link</label>
+                    <input class="form-input" formControlName="map_link" placeholder="https://maps.app.goo.gl/…" />
+                    @if (serr($index,'map_link')) { <div class="sec-err">{{ serr($index,'map_link') }}</div> }
+                  </div>
+                  @if (secMapUrl($index); as u) {
+                    <div class="sec-fld sec-fld--full">
+                      <div class="map-frame"><iframe [src]="u" title="Security location" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+                    </div>
+                  }
+                  <div class="sec-fld">
+                    <label class="form-label">Postcode</label>
+                    <input class="form-input" formControlName="postcode" placeholder="AB12 3CD" />
+                    @if (serr($index,'postcode')) { <div class="sec-err">{{ serr($index,'postcode') }}</div> }
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">Property type</label>
+                    <input class="form-input" formControlName="property_type" placeholder="e.g. Residential, Commercial, Land" />
+                    @if (serr($index,'property_type')) { <div class="sec-err">{{ serr($index,'property_type') }}</div> }
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">Tenure</label>
+                    <select class="form-select" formControlName="tenure">
+                      <option value="">Select…</option>
+                      <option value="Freehold">Freehold</option>
+                      <option value="Leasehold">Leasehold</option>
+                    </select>
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">Years remaining (if leasehold)</label>
+                    <input class="form-input font-mono" type="number" min="0" max="999" numInput integer formControlName="tenure_years" placeholder="Years" />
+                    @if (serr($index,'tenure_years')) { <div class="sec-err">{{ serr($index,'tenure_years') }}</div> }
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">Charge *</label>
+                    <select class="form-select" formControlName="charge_type">
+                      <option value="">Select…</option>
+                      <option value="1st">1st charge</option>
+                      <option value="2nd">2nd charge</option>
+                    </select>
+                    @if (serr($index,'charge_type')) { <div class="sec-err">{{ serr($index,'charge_type') }}</div> }
+                  </div>
+                  @if (secIs2nd($index)) {
+                    <div class="sec-fld">
+                      <label class="form-label">Charge Amount (£)</label>
+                      <input class="form-input font-mono" type="number" formControlName="charge_amount" placeholder="000,000" />
+                      @if (serr($index,'charge_amount')) { <div class="sec-err">{{ serr($index,'charge_amount') }}</div> }
+                    </div>
+                  }
+                  <div class="sec-fld">
+                    <label class="form-label">Property value (£) *</label>
+                    <input class="form-input font-mono" type="number" formControlName="estimated_value" placeholder="000,000" />
+                    @if (serr($index,'estimated_value')) { <div class="sec-err">{{ serr($index,'estimated_value') }}</div> }
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">GDV — gross development value (£)</label>
+                    <input class="form-input font-mono" type="number" formControlName="gdv" placeholder="000,000" />
+                    @if (serr($index,'gdv')) { <div class="sec-err">{{ serr($index,'gdv') }}</div> }
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">Purchase price (£)</label>
+                    <input class="form-input font-mono" type="number" formControlName="purchase_price" placeholder="000,000" />
+                    @if (serr($index,'purchase_price')) { <div class="sec-err">{{ serr($index,'purchase_price') }}</div> }
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">Date of purchase / completion</label>
+                    <input class="form-input" type="date" formControlName="purchase_date" />
+                  </div>
+                  <div class="sec-fld">
+                    <label class="form-label">To be repaid on completion?</label>
+                    <select class="form-select" formControlName="repaid_on_completion">
+                      <option value="">Select…</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div class="sec-fld sec-fld--full">
+                    <label class="form-label">Existing lender</label>
+                    <input class="form-input" formControlName="lender" placeholder="Lender name" />
+                    @if (serr($index,'lender')) { <div class="sec-err">{{ serr($index,'lender') }}</div> }
+                  </div>
+                  <div class="sec-fld sec-fld--full">
+                    <label class="form-label">Added value since purchase?</label>
+                    <textarea class="form-input" rows="2" formControlName="added_value" placeholder="Describe works / value added since purchase…"></textarea>
+                    @if (serr($index,'added_value')) { <div class="sec-err">{{ serr($index,'added_value') }}</div> }
+                  </div>
+                </div>
+              </div>
+            } @empty {
+              <div class="sec-empty">No additional securities added yet. Click &ldquo;Add security&rdquo; to add one.</div>
+            }
+          </div>
+          <button type="button" class="btn-primary sec-add" (click)="addSecurity()"><i class="bi bi-plus-lg"></i> Add security</button>
+          <ui-form-field [label]="ltvLabel()">
+            <input class="form-input font-mono" [value]="ltv()" readonly />
+          </ui-form-field>
+        </section>
+      }
+
+      <div drawerFooter class="wizard-footer">
+        @if (step() > 0) { <button uiButton variant="ghost" type="button" (click)="back()">Back</button> }
+        <button uiButton variant="ghost" type="button" (click)="closed.emit()">Cancel</button>
+        @if (step() < steps.length - 1) {
+          <button uiButton variant="primary" type="button" (click)="next()">Continue</button>
+        } @else {
+          <button uiButton variant="primary" type="button" class="wizard-submit" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Creating…' : 'Create Enquiry' }}</button>
+        }
+      </div>
+    </ui-drawer>
+  

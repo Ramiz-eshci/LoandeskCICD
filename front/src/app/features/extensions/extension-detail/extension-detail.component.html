@@ -1,0 +1,535 @@
+@if (loading()) {
+  <ui-card>Loading extension…</ui-card>
+} @else if (error()) {
+  <ui-card><div class="alert alert-warning mb-0">{{ error() }}</div></ui-card>
+} @else if (ext(); as x) {
+  <div class="ext-page">
+    <div class="ext-top">
+      <button uiButton variant="ghost" size="sm" type="button" (click)="back()">← Extensions</button>
+      <div class="ext-title">{{ x.extension_ref }}</div>
+      <ui-badge [status]="tone(awaitingFees() ? 'Awaiting Fees' : x.status)">{{ awaitingFees() ? 'Approved · Awaiting Fees' : x.status }}</ui-badge>
+      <span class="spacer"></span>
+      <a class="facility-link" [routerLink]="['/portfolio/facilities', x.loan_number]">Open facility {{ x.loan_number }} →</a>
+      @if (editable()) {
+        <button uiButton variant="ghost" type="button" (click)="askCancel()">Cancel Extension</button>
+      }
+    </div>
+
+    <section class="ext-hero">
+      <div>
+        <h1>{{ x.customer_name }}</h1>
+        <p>{{ x.loan_number }} · {{ x.application_ref }} · raised {{ shortDate(x.created_at) }}{{ x.created_by_name ? ' by ' + x.created_by_name : '' }}</p>
+      </div>
+      <div class="metric-grid">
+        @if (x.status === 'Approved') {
+          <div><span>Gross Loan</span><strong>{{ money(x.gross_after ?? x.gross_amount) }}</strong></div>
+          <div><span>Net Loan</span><strong>{{ x.net_amount ? money(x.net_amount) : '—' }}</strong></div>
+        }
+        <div><span>Rate</span><strong>{{ x.monthly_rate_pct ? x.monthly_rate_pct + '% pm' : '—' }}</strong></div>
+        <div><span>Current Maturity</span><strong>{{ shortDate(x.current_maturity) }}</strong></div>
+        <div><span>New Maturity</span><strong class="gold">{{ shortDate(editable() ? figures().newMaturity : x.new_maturity) }}</strong></div>
+      </div>
+    </section>
+
+    <!-- Extension change bar (client 09-10-2026): net unchanged; gross grows only if interest is retained. -->
+    <section class="ext-change-bar">
+      <div><span>Net Loan</span><strong>{{ x.net_amount ? money(x.net_amount) : '—' }}</strong><em>no change</em></div>
+      <div>
+        <span>Gross Loan</span>
+        <strong>{{ money(figures().newGross) }}</strong>
+        @if (figures().grossDelta > 0) {
+          <em class="up">{{ money(x.gross_amount) }}@if (figures().retainedFees > 0) { + {{ money(figures().retainedFees) }} fees}@if (figures().retainedInterest > 0) { + {{ money(figures().retainedInterest) }} interest} retained</em>
+        }
+        @else { <em>no change (fees upfront, interest serviced)</em> }
+      </div>
+      <div><span>Interest over extension</span><strong>{{ money(figures().totalInterest) }}</strong><em>{{ draft.interest_treatment === 'Retained' ? 'retained' : 'serviced' }} · {{ figures().months }} mo</em></div>
+      <div><span>Extension Fee</span><strong>{{ money(figures().extFee) }}</strong><em>{{ draft.ext_fee_type === 'PCT' ? (draft.ext_fee_value ?? 0) + '% of gross' : 'flat' }} · {{ draft.ext_fee_timing === 'Retained' ? 'retained' : 'upfront' }}</em></div>
+      <div><span>Document Fee</span><strong>{{ money(figures().docFee) }}</strong><em>{{ draft.doc_fee_type === 'PCT' ? (draft.doc_fee_value ?? 0) + '% of gross' : 'flat' }} · {{ draft.doc_fee_timing === 'Retained' ? 'retained' : 'upfront' }}</em></div>
+      <div><span>Maturity</span><strong class="gold">{{ shortDate(editable() ? figures().newMaturity : x.new_maturity) }}</strong><em>was {{ shortDate(x.current_maturity) }}</em></div>
+    </section>
+
+    @if (x.status === 'Approved' || x.status === 'Rejected' || x.status === 'Cancelled') {
+      <div class="alert mb-0" [class.alert-success]="x.status === 'Approved'" [class.alert-warning]="x.status !== 'Approved'">
+        <b>{{ x.status }}</b>
+        @if (x.decided_at) { by {{ x.decided_by_name || '—' }} on {{ dateTime(x.decided_at) }}. }
+        @if (x.status === 'Approved') {
+          Facility {{ x.loan_number }} now matures on {{ longDate(x.new_maturity) }}.
+          @if ((x.retained_fees ?? 0) > 0) { {{ money2(x.retained_fees) }} of retained fees added to the gross loan and outstanding. }
+          @if (awaitingFees()) { <b>Upfront fees still to collect ({{ money2(schedule()?.upfront_due ?? 0) }})</b> – mark them paid below to move the extension back to the portfolio. }
+          @else if ((schedule()?.upfront_total ?? 0) > 0) { All upfront fees paid. }
+        }
+        @if (x.decision_notes) { <div class="mt-1">{{ x.decision_notes }}</div> }
+      </div>
+    }
+
+    <!-- Step rail: done steps ticked, current highlighted, later steps locked until the status reaches them. -->
+    <ol class="ext-steps">
+      @for (s of steps; track s.key; let i = $index; let last = $last) {
+        <li>
+          <button type="button" class="step" [disabled]="i > reached()"
+                  [class.done]="i <= doneUpTo()" [class.viewing]="view() === i"
+                  [class.rejected]="x.status === 'Rejected' && i === 3"
+                  (click)="go(i)">
+            <span class="num">
+              @if (x.status === 'Rejected' && i === 3) { <i class="bi bi-x-lg"></i> }
+              @else if (i <= doneUpTo()) { <i class="bi bi-check-lg"></i> }
+              @else { {{ i + 1 }} }
+            </span>
+            <span class="txt"><b>{{ s.label }}</b><small>{{ s.hint }}</small></span>
+          </button>
+        </li>
+        @if (!last) { <li class="sep" aria-hidden="true"><i class="bi bi-chevron-right"></i></li> }
+      }
+    </ol>
+
+    <div class="ext-grid">
+      <div class="ext-main">
+        <!-- Payment schedule (client 28-10-2026): fees raised by the extension + its interest instalments. -->
+        @if (x.status === 'Approved' && schedule()) {
+          @let ps = schedule()!;
+          <ui-card title="Payment Schedule" [dividedHeader]="true" class="d-block mb-3">
+            <div class="pay-sum">
+              <div><span>Upfront fees</span><strong>{{ money2(ps.upfront_total) }}</strong></div>
+              <div><span>Paid</span><strong class="ok">{{ money2(ps.upfront_paid) }}</strong></div>
+              <div><span>Outstanding</span><strong [class.due]="ps.upfront_due > 0">{{ money2(ps.upfront_due) }}</strong></div>
+              <div><span>Added to gross</span><strong>{{ money2(x.retained_fees ?? 0) }}</strong></div>
+            </div>
+            <div class="table-responsive">
+              <table class="pay-table">
+                <thead>
+                  <tr><th>Item</th><th>Treatment</th><th class="num">Amount</th><th>Due</th><th>Status</th><th>Paid</th><th></th></tr>
+                </thead>
+                <tbody>
+                  @for (f of ps.fees; track f.fee_id) {
+                    <tr>
+                      <td>{{ f.fee_type === 'Document' ? 'Document / admin fee' : 'Extension fee' }}</td>
+                      <td>{{ f.status === 'Capitalised' ? 'Retained – added to gross' : 'Paid upfront' }}</td>
+                      <td class="num mono">{{ money2(f.amount) }}</td>
+                      <td>{{ f.status === 'Capitalised' ? '—' : shortDate(f.due_date) }}</td>
+                      <td><ui-badge [status]="feeStatusTone(f.status)">{{ feeStatusLabel(f.status) }}</ui-badge></td>
+                      <td class="small">{{ f.paid_on ? shortDate(f.paid_on) + (f.paid_method ? ' · ' + f.paid_method : '') + (f.paid_reference ? ' · ' + f.paid_reference : '') : '—' }}</td>
+                      <td class="text-end">
+                        @if (f.status === 'Due' && canEdit()) {
+                          <button uiButton variant="primary" size="sm" type="button" [disabled]="!!busy()" (click)="openPay(f)">Mark paid</button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                  @for (s of ps.instalments; track s.schedule_id) {
+                    <tr class="inst">
+                      <td>Interest · instalment {{ s.installment_no }}</td>
+                      <td>{{ x.interest_treatment === 'Retained' ? 'Retained to end' : 'Serviced monthly' }}</td>
+                      <td class="num mono">{{ money2(s.total_due) }}</td>
+                      <td>{{ shortDate(s.due_date) }}</td>
+                      <td><ui-badge [status]="feeStatusTone(s.status)">{{ s.status }}</ui-badge></td>
+                      <td class="small muted">via Transactions</td>
+                      <td></td>
+                    </tr>
+                  }
+                  @if (!ps.fees.length && !ps.instalments.length) {
+                    <tr><td colspan="7" class="muted">No fees or instalments on this extension.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <p class="small muted mb-0 mt-2">Upfront fees are also listed on the facility's Transactions › Fees. Interest instalments are paid by recording a payment on the facility.</p>
+          </ui-card>
+        }
+        @switch (view()) {
+
+          <!-- ================= STEP 1: TERMS & FEES ================= -->
+          @case (0) {
+            <ui-card [title]="'Step 1 · Terms & Fees'" [dividedHeader]="true">
+              <!-- Compact terms form (client 30-09-2026): fees are % or £. Client 28-10-2026: each fee is
+                   Paid upfront or Retained (added to the gross; a % interest rate then runs on the new gross). -->
+              <fieldset [disabled]="!editable()" class="ext-form compact">
+                <div class="tf-grid">
+                  <label class="tf">
+                    <span>Extension (months) *</span>
+                    <input class="form-input" type="number" min="1" max="60" step="1" [(ngModel)]="draft.extension_months" (ngModelChange)="onChange()" />
+                  </label>
+                  <div class="tf">
+                    <span>Current maturity</span>
+                    <div class="tf-ro">{{ shortDate(x.current_maturity) }}</div>
+                  </div>
+                  <div class="tf">
+                    <span>New maturity</span>
+                    <div class="tf-ro strong">{{ shortDate(figures().newMaturity) }}</div>
+                  </div>
+                </div>
+
+                <div class="tf-grid two">
+                  <div class="tf">
+                    <span>Extension fee <small>(% of gross {{ money(x.gross_amount) }})</small></span>
+                    <div class="fee-input">
+                      <div class="seg">
+                        <button type="button" [class.on]="draft.ext_fee_type === 'PCT'" (click)="draft.ext_fee_type = 'PCT'; onChange()">%</button>
+                        <button type="button" [class.on]="draft.ext_fee_type === 'AMOUNT'" (click)="draft.ext_fee_type = 'AMOUNT'; onChange()">£</button>
+                      </div>
+                      <input class="form-input" type="number" min="0" [step]="draft.ext_fee_type === 'PCT' ? 0.01 : 1" [(ngModel)]="draft.ext_fee_value" (ngModelChange)="onChange()" />
+                      <b class="eq">= {{ money2(figures().extFee) }}</b>
+                    </div>
+                    <select class="form-select mt-2" aria-label="Extension fee treatment" [(ngModel)]="draft.ext_fee_timing" (ngModelChange)="onChange()">
+                      <option value="Upfront">Paid upfront (separate charge)</option>
+                      <option value="Retained">Retained (added to gross loan)</option>
+                    </select>
+                  </div>
+                  <div class="tf">
+                    <span>Document / admin fee</span>
+                    <div class="fee-input">
+                      <div class="seg">
+                        <button type="button" [class.on]="draft.doc_fee_type === 'PCT'" (click)="draft.doc_fee_type = 'PCT'; onChange()">%</button>
+                        <button type="button" [class.on]="draft.doc_fee_type === 'AMOUNT'" (click)="draft.doc_fee_type = 'AMOUNT'; onChange()">£</button>
+                      </div>
+                      <input class="form-input" type="number" min="0" [step]="draft.doc_fee_type === 'PCT' ? 0.01 : 1" [(ngModel)]="draft.doc_fee_value" (ngModelChange)="onChange()" />
+                      <b class="eq">= {{ money2(figures().docFee) }}</b>
+                    </div>
+                    <select class="form-select mt-2" aria-label="Document fee treatment" [(ngModel)]="draft.doc_fee_timing" (ngModelChange)="onChange()">
+                      <option value="Upfront">Paid upfront (separate charge)</option>
+                      <option value="Retained">Retained (added to gross loan)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="tf-grid">
+                  <label class="tf">
+                    <span>Interest</span>
+                    <select class="form-select" [(ngModel)]="draft.interest_treatment" (ngModelChange)="onChange()">
+                      <option value="Serviced">Serviced monthly</option>
+                      <option value="Retained">Retained to the end</option>
+                    </select>
+                  </label>
+                  <label class="tf">
+                    <span>Monthly interest</span>
+                    <div class="fee-input">
+                      <div class="seg">
+                        <button type="button" [class.on]="interestMode === 'PCT'" (click)="setInterestMode('PCT')">%</button>
+                        <button type="button" [class.on]="interestMode === 'AMOUNT'" (click)="setInterestMode('AMOUNT')">£</button>
+                      </div>
+                      @if (interestMode === 'PCT') {
+                        <input class="form-input" type="number" min="0" max="100" step="0.01" placeholder="Rate % pm" [(ngModel)]="draft.monthly_rate_pct" (ngModelChange)="onChange()" />
+                        <b class="eq">= {{ money2(figures().monthly) }} pm</b>
+                      } @else {
+                        <input class="form-input" type="number" min="0" step="0.01" placeholder="Enter monthly interest" [(ngModel)]="draft.monthly_interest" (ngModelChange)="onChange()" />
+                      }
+                    </div>
+                  </label>
+                  <label class="tf">
+                    <span>First payment date</span>
+                    <input class="form-input" type="date" [disabled]="draft.interest_treatment === 'Retained'" [(ngModel)]="draft.first_payment_date" (ngModelChange)="onChange()" />
+                  </label>
+                </div>
+
+                <label class="tf full">
+                  <span>Exit plan at the end of the extension</span>
+                  <textarea class="form-input" rows="2" placeholder="e.g. sale agreed, term sheet from next lender…" [(ngModel)]="draft.exit_plan" (ngModelChange)="onChange()"></textarea>
+                </label>
+
+                <div class="sub-head mt-3">Exit evidence <small>(sales agreement, next lender's term sheet…)</small></div>
+                @for (d of exitDocs(); track d.ext_doc_id) {
+                  <div class="doc-row">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <button type="button" class="link" (click)="viewDoc(d)">{{ d.file_name }}</button>
+                    @if (editable()) { <button type="button" class="x" title="Delete" (click)="askDelete(d)">×</button> }
+                  </div>
+                } @empty { <p class="muted small mb-2">No evidence uploaded yet.</p> }
+                @if (editable()) {
+                  <ui-file-upload label="Upload Exit Evidence" accept=".pdf,.doc,.docx,.xls,.xlsx,image/*" emptyText=""
+                    [busy]="busy() === 'upload-EXIT_EVIDENCE'" (fileChange)="upload('EXIT_EVIDENCE', $event)" />
+                }
+              </fieldset>
+
+              <div class="step-foot">
+                <span class="muted small">{{ dirty() ? 'Unsaved changes' : '' }}</span>
+                @if (editable()) {
+                  <button uiButton variant="ghost" type="button" [disabled]="busy() === 'save' || !dirty()" (click)="save()">{{ busy() === 'save' ? 'Saving…' : 'Save' }}</button>
+                }
+                <button uiButton variant="primary" type="button" [disabled]="busy() === 'save'" (click)="nextFromTerms()">
+                  {{ editable() && dirty() ? 'Save & Continue →' : 'Next: Extension Agreement →' }}
+                </button>
+              </div>
+            </ui-card>
+          }
+
+          <!-- ================= STEP 2: EXTENSION AGREEMENT ================= -->
+          @case (1) {
+            <ui-card [title]="'Step 2 · Extension Agreement'" [dividedHeader]="true">
+              <p class="small">The <b>Bridging Loan Extension Agreement</b> is built from facility {{ x.loan_number }} and the terms from step 1. Check it, then send it to the broker to sign and return.</p>
+              <div class="kv">
+                <div><span>Borrower</span><strong>{{ x.paper.borrower_name || x.customer_name }}</strong></div>
+                <div><span>Extension Date</span><strong>{{ longDate(x.new_maturity) }}</strong></div>
+                <div><span>Agreement date</span><strong>
+                  @if (editable()) { <input class="form-input date-inline" type="date" [(ngModel)]="draft.agreement_date" (ngModelChange)="onChange()" /> }
+                  @else { {{ longDate(x.agreement_date) || '—' }} }
+                </strong></div>
+                <div><span>Sent</span><strong>{{ x.agreement_sent_at ? dateTime(x.agreement_sent_at) : 'Not yet' }}</strong></div>
+                @if (x.agreement_sent_to) { <div><span>Sent to</span><strong>{{ x.agreement_sent_to }}</strong></div> }
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                <button uiButton variant="ghost" type="button" [disabled]="busy() === 'preview-agreement'" (click)="preview('agreement')">
+                  <i class="bi bi-eye"></i> {{ busy() === 'preview-agreement' ? 'Building…' : 'Preview Agreement PDF' }}
+                </button>
+                @if (agreementDoc(); as d) {
+                  <button uiButton variant="ghost" type="button" (click)="viewDoc(d)"><i class="bi bi-file-earmark-pdf"></i> Open sent copy</button>
+                }
+                @if (editable()) {
+                  <button uiButton variant="primary" type="button" (click)="openSend('broker')"><i class="bi bi-send"></i> {{ x.agreement_sent_at ? 'Re-send to Broker' : 'Send to Broker' }}</button>
+                  <button uiButton variant="ghost" type="button" (click)="openSend('borrower')"><i class="bi bi-send"></i> {{ x.agreement_sent_at ? 'Re-send to Borrower' : 'Send to Borrower' }}</button>
+                }
+              </div>
+              <div class="step-foot">
+                <button uiButton variant="ghost" type="button" (click)="go(0)">← Back</button>
+                <span class="spacer"></span>
+                <button uiButton variant="primary" type="button" [disabled]="reached() < 2" (click)="go(2)">Next: Signed Agreement →</button>
+              </div>
+              @if (reached() < 2) { <small class="form-hint d-block text-end">Send the agreement to continue.</small> }
+            </ui-card>
+          }
+
+          <!-- ================= STEP 3: SIGNED AGREEMENT ================= -->
+          @case (2) {
+            <ui-card [title]="'Step 3 · Signed Agreement'" [dividedHeader]="true">
+              <p class="small">When the broker returns the agreement signed, upload it here. Once the signed copy and the exit evidence are in, send the request straight to the Head of Extension.</p>
+              @if (signedDoc(); as d) {
+                <div class="doc-row big">
+                  <i class="bi bi-file-earmark-check"></i>
+                  <button type="button" class="link" (click)="viewDoc(d)">{{ d.file_name }}</button>
+                  <span class="muted small">{{ dateTime(d.created_at) }} · {{ d.uploaded_by_name }}</span>
+                  @if (editable()) { <button type="button" class="x" title="Delete" (click)="askDelete(d)">×</button> }
+                </div>
+              } @else if (editable()) {
+                <ui-file-upload label="Upload Signed Agreement" accept=".pdf,.doc,.docx,image/*" emptyText="Not uploaded yet."
+                  [busy]="busy() === 'upload-SIGNED_AGREEMENT'" (fileChange)="upload('SIGNED_AGREEMENT', $event)" />
+              } @else {
+                <p class="muted small">Not uploaded.</p>
+              }
+
+              <div class="sub-head mt-3">Exit evidence <small>(sales agreement, next lender's term sheet…)</small></div>
+              @for (d of exitDocs(); track d.ext_doc_id) {
+                <div class="doc-row">
+                  <i class="bi bi-file-earmark-text"></i>
+                  <button type="button" class="link" (click)="viewDoc(d)">{{ d.file_name }}</button>
+                  @if (editable()) { <button type="button" class="x" title="Delete" (click)="askDelete(d)">×</button> }
+                </div>
+              } @empty { <p class="muted small mb-2">No evidence uploaded.</p> }
+              @if (editable()) {
+                <ui-file-upload label="Upload Exit Evidence" accept=".pdf,.doc,.docx,.xls,.xlsx,image/*" emptyText=""
+                  [busy]="busy() === 'upload-EXIT_EVIDENCE'" (fileChange)="upload('EXIT_EVIDENCE', $event)" />
+              }
+
+              <div class="step-foot">
+                <button uiButton variant="ghost" type="button" (click)="go(1)">← Back</button>
+                <span class="spacer"></span>
+                @if (editable()) {
+                  <button uiButton variant="primary" type="button" [disabled]="x.status !== 'Agreement Signed'" (click)="openSubmit()"><i class="bi bi-send"></i> Send to Head of Extension</button>
+                } @else if (reached() >= 3) {
+                  <button uiButton variant="primary" type="button" (click)="go(3)">Next: Approval →</button>
+                }
+              </div>
+              @if (editable() && x.status !== 'Agreement Signed') { <small class="form-hint d-block text-end">Upload the signed agreement to send it to the Head of Extension.</small> }
+            </ui-card>
+          }
+
+          <!-- ================= STEP 4: APPROVAL (final) ================= -->
+          @case (3) {
+            <ui-card [title]="'Step 4 · Approval'" [dividedHeader]="true">
+              @if (x.submitted_at) {
+                <p class="small">Sent to the Head of Extension {{ dateTime(x.submitted_at) }}{{ x.submitted_by_name ? ' by ' + x.submitted_by_name : '' }}.</p>
+              }
+              @if (x.submitted_at) {
+                <button uiButton variant="ghost" size="sm" type="button" class="mb-3" [disabled]="busy() === 'preview-request'" (click)="openRequestPaper()"><i class="bi bi-file-earmark-pdf"></i> {{ busy() === 'preview-request' ? 'Opening…' : 'Open Extension Request paper' }}</button>
+              }
+              @if (x.status === 'Pending Approval') {
+                @if (isHead()) {
+                  <div class="decision-box">
+                    <p class="small mb-2">Approving moves facility {{ x.loan_number }} to <b>{{ longDate(x.new_maturity) }}</b>, adds {{ x.extension_months }} month(s) to its schedule and raises the extension fees on the facility.
+                      @if ((x.retained_fees ?? 0) > 0) { Retained fees of <b>{{ money2(x.retained_fees) }}</b> are added to the gross loan ({{ money2(x.gross_amount) }} → {{ money2(x.gross_after) }}). }
+                      @if (figures().upfrontFees > 0) { Upfront fees of <b>{{ money2(figures().upfrontFees) }}</b> must be marked paid before the extension goes back to the portfolio. }
+                    </p>
+                    <label class="form-label">Decision notes</label>
+                    <textarea class="form-input mb-2" rows="3" placeholder="Required when rejecting" [(ngModel)]="decisionNotes"></textarea>
+                    <div class="d-flex gap-2">
+                      <button uiButton variant="primary" type="button" [disabled]="!!busy()" (click)="askDecision('approve')"><i class="bi bi-check-lg"></i> Approve</button>
+                      <button uiButton variant="danger" type="button" [disabled]="!!busy()" (click)="askDecision('reject')"><i class="bi bi-x-lg"></i> Reject</button>
+                    </div>
+                  </div>
+                } @else {
+                  <p class="muted small">Waiting for the Head of Extension to approve or reject.</p>
+                }
+              } @else if (x.status === 'Approved' || x.status === 'Rejected') {
+                <div class="kv">
+                  <div><span>Decision</span><strong>{{ x.status }}</strong></div>
+                  <div><span>By</span><strong>{{ x.decided_by_name || '—' }}</strong></div>
+                  <div><span>On</span><strong>{{ dateTime(x.decided_at) }}</strong></div>
+                  @if (x.status === 'Approved') { <div><span>Facility now matures</span><strong>{{ longDate(x.new_maturity) }}</strong></div> }
+                </div>
+                @if (x.decision_notes) { <p class="small mb-0"><b>Notes:</b> {{ x.decision_notes }}</p> }
+              } @else {
+                <p class="muted small mb-0">{{ x.status }}.</p>
+              }
+              <div class="step-foot">
+                <button uiButton variant="ghost" type="button" (click)="go(2)">← Back</button>
+              </div>
+            </ui-card>
+          }
+        }
+      </div>
+
+      <!-- ================= SIDE: summary + documents ================= -->
+      <div class="ext-side">
+        <ui-card title="Summary" [dividedHeader]="true">
+          <div class="kv">
+            <div><span>Status</span><strong>{{ x.status }}</strong></div>
+            <div><span>Extension</span><strong>{{ figures().months }} month{{ figures().months === 1 ? '' : 's' }}</strong></div>
+            <div><span>New maturity</span><strong>{{ shortDate(figures().newMaturity) }}</strong></div>
+            @if (x.status === 'Approved') {
+              <div><span>Extension fee</span><strong>{{ money2(figures().extFee) }} · {{ x.ext_fee_timing === 'Retained' ? 'retained' : 'upfront' }}</strong></div>
+              <div><span>Document fee</span><strong>{{ money2(figures().docFee) }} · {{ x.doc_fee_timing === 'Retained' ? 'retained' : 'upfront' }}</strong></div>
+              <div><span>Gross loan</span><strong>{{ money2(x.gross_after ?? x.gross_amount) }}</strong></div>
+              <div><span>Interest</span><strong>{{ money2(figures().monthly) }} pm · {{ draft.interest_treatment === 'Retained' ? 'retained' : 'serviced' }}</strong></div>
+            }
+          </div>
+        </ui-card>
+
+        <ui-card title="Documents" [dividedHeader]="true">
+          @for (d of docs(); track d.ext_doc_id) {
+            <div class="doc-row">
+              <i class="bi bi-file-earmark"></i>
+              <div class="doc-meta">
+                <button type="button" class="link" (click)="viewDoc(d)">{{ d.file_name }}</button>
+                <small class="muted">{{ kindLabel(d.kind) }} · {{ shortDate(d.created_at) }}</small>
+              </div>
+              <button type="button" class="dl" title="Download" (click)="viewDoc(d, true)"><i class="bi bi-download"></i></button>
+            </div>
+          } @empty { <p class="muted small mb-0">No documents yet.</p> }
+        </ui-card>
+      </div>
+    </div>
+
+    @if (sendOpen()) {
+      <ui-modal [title]="'Send Extension Agreement to ' + (sendDraft.recipient === 'borrower' ? 'Borrower' : 'Broker')" (closed)="sendOpen.set(false)">
+        <div class="row g-3 send-form">
+          <div class="col-12">
+            <label class="form-label">Recipient</label>
+            <div class="seg seg-block" role="group" aria-label="Recipient">
+              <button type="button" [class.on]="sendDraft.recipient === 'broker'" (click)="setSendRecipient('broker')"><i class="bi bi-briefcase"></i> Broker</button>
+              <button type="button" [class.on]="sendDraft.recipient === 'borrower'" (click)="setSendRecipient('borrower')"><i class="bi bi-person"></i> Borrower</button>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="send-email" [class.on]="sendDraft.send_email">
+              <input type="checkbox" [(ngModel)]="sendDraft.send_email" />
+              <span>
+                <b>E-mail it to the {{ sendDraft.recipient }} now</b>
+                <small>{{ sendDraft.send_email ? 'The agreement PDF is attached to the e-mail and saved to the documents.' : 'The agreement is generated and saved to the documents; you send it yourself.' }}</small>
+              </span>
+            </label>
+          </div>
+          @if (sendDraft.send_email) {
+            <div class="col-12"><label class="form-label">To *</label><input class="form-input" type="email" [(ngModel)]="sendDraft.to" /></div>
+            <div class="col-12"><label class="form-label">Cc</label><input class="form-input" type="email" [(ngModel)]="sendDraft.cc" /></div>
+            <div class="col-12"><label class="form-label">Message</label><textarea class="form-input" rows="3" [(ngModel)]="sendDraft.message"></textarea></div>
+          }
+        </div>
+        <div modalFooter class="d-flex justify-content-end gap-2">
+          <button uiButton variant="ghost" type="button" (click)="sendOpen.set(false)">Cancel</button>
+          <button uiButton variant="primary" type="button" [disabled]="busy() === 'send'" (click)="sendAgreement()">{{ busy() === 'send' ? 'Sending…' : (sendDraft.send_email ? 'Send' : 'Generate & mark sent') }}</button>
+        </div>
+      </ui-modal>
+    }
+
+    @if (submitOpen()) {
+      <ui-modal title="Send to Head of Extension" (closed)="submitOpen.set(false)">
+        <p class="small">The Extension Request paper is built and e-mailed (with the PDF) to everyone you tick below and any address you type.</p>
+        <div class="row g-3 send-form">
+          <div class="col-12">
+            <div class="heads-head">
+              <label class="form-label mb-0">Head of Extension</label>
+              @if (heads().length > 1) {
+                <button type="button" class="link-btn" (click)="toggleAllHeads()">{{ pickedHeads().length === heads().length ? 'Clear all' : 'Select all' }}</button>
+              }
+            </div>
+            @if (headsLoading()) {
+              <div class="heads-empty">Loading…</div>
+            } @else if (!heads().length) {
+              <div class="heads-empty">No Head of Extension user with an e-mail address. Type an address below.</div>
+            } @else {
+              <div class="heads-list">
+                @for (h of heads(); track h.user_id) {
+                  <label class="head-item" [class.on]="isHeadPicked(h.user_id)">
+                    <input type="checkbox" [checked]="isHeadPicked(h.user_id)" (change)="toggleHead(h.user_id)" />
+                    <span><b>{{ h.full_name || h.email }}</b>@if (h.full_name) { <small>{{ h.email }}</small> }</span>
+                  </label>
+                }
+              </div>
+            }
+          </div>
+          <div class="col-12">
+            <label class="form-label">Other e-mail address(es)</label>
+            <input class="form-input" type="text" placeholder="name@example.com, another@example.com" [(ngModel)]="submitTo" />
+            @if (submitBadEmails().length) {
+              <small class="form-hint text-danger d-block mt-1">Not a valid e-mail address: {{ submitBadEmails().join(', ') }}</small>
+            } @else {
+              <small class="form-hint d-block mt-1">Optional. Separate several addresses with a comma.</small>
+            }
+          </div>
+          <div class="col-12">
+            <label class="form-label">Cc</label>
+            <input class="form-input" type="email" placeholder="optional" [(ngModel)]="submitCc" />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes for the e-mail (optional)</label>
+            <textarea class="form-input" rows="3" [(ngModel)]="submitMessage"></textarea>
+          </div>
+        </div>
+        <div modalFooter class="d-flex justify-content-end align-items-center gap-2">
+          @if (!canSubmit() && !submitBadEmails().length && !headsLoading()) {
+            <small class="form-hint me-auto">Tick a Head of Extension or type an e-mail address.</small>
+          }
+          <button uiButton variant="ghost" type="button" (click)="submitOpen.set(false)">Cancel</button>
+          <button uiButton variant="primary" type="button" [disabled]="busy() === 'submit' || headsLoading() || !canSubmit()" (click)="submit()">{{ busy() === 'submit' ? 'Sending…' : 'Send' }}</button>
+        </div>
+      </ui-modal>
+    }
+
+    @if (payFee(); as pf) {
+      <ui-modal [title]="'Mark ' + (pf.fee_type === 'Document' ? 'document fee' : 'extension fee') + ' paid'" (closed)="payFee.set(null)">
+        <p class="mb-3">{{ money2(pf.amount) }} · {{ x.extension_ref }} · facility {{ x.loan_number }}</p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Paid on *</label>
+            <input class="form-input" type="date" [(ngModel)]="payDraft.paid_on" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Method</label>
+            <select class="form-select" [(ngModel)]="payDraft.method">
+              @for (m of payMethods; track m) { <option [value]="m">{{ m }}</option> }
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Reference</label>
+            <input class="form-input" type="text" maxlength="80" placeholder="optional" [(ngModel)]="payDraft.reference" />
+          </div>
+        </div>
+        <div modalFooter class="d-flex justify-content-end gap-2">
+          <button uiButton variant="ghost" type="button" (click)="payFee.set(null)">Cancel</button>
+          <button uiButton variant="primary" type="button" [disabled]="busy() === 'pay'" (click)="markPaid()">{{ busy() === 'pay' ? 'Saving…' : 'Mark paid' }}</button>
+        </div>
+      </ui-modal>
+    }
+
+    @if (confirm(); as c) {
+      <ui-modal [title]="c.title" (closed)="confirm.set(null)">
+        <p>{{ c.text }}</p>
+        @if (c.action === 'cancel') {
+          <label class="form-label">Reason</label>
+          <textarea class="form-input" rows="2" [(ngModel)]="cancelReason"></textarea>
+        }
+        <div modalFooter class="d-flex justify-content-end gap-2">
+          <button uiButton variant="ghost" type="button" (click)="confirm.set(null)">Back</button>
+          <button uiButton [variant]="c.danger ? 'danger' : 'primary'" type="button" (click)="confirmYes()">Confirm</button>
+        </div>
+      </ui-modal>
+    }
+  </div>
+}

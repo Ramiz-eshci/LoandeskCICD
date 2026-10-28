@@ -1,0 +1,24 @@
+    <div class="au-title">
+      <i class="bi bi-shield-lock"></i>
+      <ui-page-header title="Audit Trail" [subtitle]="subtitle()" />
+    </div>
+
+    <div class="row g-3 mb-3">
+      @for (kpi of kpis(); track kpi.label) {
+        <div class="col-12 col-sm-6 col-xl-3">
+          <ui-kpi-card labelStyle="plain" iconPlacement="inline" [icon]="kpi.icon" [label]="kpi.label"
+            [value]="kpi.value" [caption]="kpi.caption" [tone]="kpi.tone" [valueSize]="30" />
+        </div>
+      }
+    </div>
+
+    <ui-tab-filters class="mb-3" [tabs]="tabs()" [(active)]="activeTab" />
+
+    <ui-card>
+      <ui-data-table [columns]="columns" [rows]="filtered()" emptyText="No audit events in this view.">
+        <ng-template uiCell="action" let-row>
+          <ui-tag [tone]="actionTone(row.category)">{{ row.action }}</ui-tag>
+        </ng-template>
+      </ui-data-table>
+    </ui-card>
+  

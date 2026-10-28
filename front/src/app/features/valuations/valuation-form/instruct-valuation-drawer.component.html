@@ -1,0 +1,48 @@
+    <ui-drawer title="Instruct Valuation" (closed)="closed.emit()">
+      <form [formGroup]="form" novalidate>
+        <ui-form-field label="Application ID" [error]="errorFor('applicationId')">
+          <input class="form-input font-mono" formControlName="applicationId" placeholder="e.g. APP-0031" />
+        </ui-form-field>
+
+        <ui-form-field label="Property address" [error]="errorFor('address')">
+          <input class="form-input" formControlName="address" placeholder="Full property address" />
+        </ui-form-field>
+
+        <ui-form-field label="Valuation type">
+          <select class="form-select" formControlName="type">
+            @for (o of types; track o) { <option [value]="o">{{ o }}</option> }
+          </select>
+        </ui-form-field>
+
+        <ui-form-field label="Valuer panel">
+          <select class="form-select" formControlName="valuer">
+            @for (o of panel; track o) { <option [value]="o">{{ o }}</option> }
+          </select>
+        </ui-form-field>
+
+        <ui-form-field label="Special instructions">
+          <textarea class="form-input" rows="3" formControlName="instructions" placeholder="Any specific instructions for the valuer…"></textarea>
+        </ui-form-field>
+
+        <div class="row g-3">
+          <div class="col-12 col-sm-6">
+            <ui-form-field label="Fee £">
+              <input class="form-input font-mono" formControlName="fee" placeholder="0" />
+            </ui-form-field>
+          </div>
+          <div class="col-12 col-sm-6">
+            <ui-form-field label="Required by">
+              <input class="form-input" type="date" formControlName="requiredBy" />
+            </ui-form-field>
+          </div>
+        </div>
+      </form>
+
+      <div drawerFooter class="drawer-actions">
+        <button uiButton variant="ghost" type="button" (click)="closed.emit()">Cancel</button>
+        <button uiButton variant="primary" type="button" [disabled]="form.invalid" (click)="submit()">
+          Instruct Valuation
+        </button>
+      </div>
+    </ui-drawer>
+  

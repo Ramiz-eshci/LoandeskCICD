@@ -1,0 +1,58 @@
+    <ui-page-header title="Users" [subtitle]="subtitle()">
+      <button *appHasPermission="'MASTERS.USER_MASTER.add'" uiButton variant="accent" type="button" class="ul-new" (click)="create()"><i class="bi bi-plus-lg"></i> New User</button>
+    </ui-page-header>
+
+    <div class="ul-filterbar">
+      <ui-search-input variant="field" width="360px" placeholder="Search name or email…" [(value)]="search" />
+      <select class="form-select" style="width: 200px" [ngModel]="roleId()" (ngModelChange)="applyRoleFilter($event)">
+        <option [ngValue]="null">All roles</option>
+        @for (r of roleOptions(); track r.role_id) { <option [ngValue]="r.role_id">{{ r.role_name }}</option> }
+      </select>
+      <button uiButton variant="ghost" type="button" (click)="applySearch()"><i class="bi bi-search"></i> Search</button>
+    </div>
+
+    @if (error()) { <ui-card class="mb-3"><p class="ul-error"><i class="bi bi-exclamation-circle"></i> {{ error() }}</p></ui-card> }
+
+    <ui-card bodyClass="">
+      <ui-data-table [columns]="columns" [rows]="rows()" [paginate]="false" emptyText="No users found.">
+        <ng-template uiCell="full_name" let-row><div class="ul-name">{{ row.full_name || '—' }}</div></ng-template>
+        <ng-template uiCell="rolesText" let-row><span class="ul-roles" [title]="rolesText(row)">{{ rolesText(row) }}</span></ng-template>
+        <ng-template uiCell="is_active" let-row>
+          <ui-tag [tone]="row.is_active ? 'success' : 'neutral'">{{ row.is_active ? 'Active' : 'Inactive' }}</ui-tag>
+        </ng-template>
+        <ng-template uiCell="actions" let-row>
+          <div class="ul-actions">
+            <button *appHasPermission="'MASTERS.USER_MASTER.edit'" uiButton variant="ghost" size="sm" type="button" (click)="edit(row)"><i class="bi bi-pencil"></i> Edit</button>
+            @if (row.is_active) {
+              <button *appHasPermission="'MASTERS.USER_MASTER.edit'" uiButton variant="ghost" size="sm" type="button" [disabled]="row.is_super_admin" (click)="ask(row)"><i class="bi bi-slash-circle"></i> Deactivate</button>
+            } @else {
+              <button *appHasPermission="'MASTERS.USER_MASTER.edit'" uiButton variant="ghost" size="sm" type="button" (click)="setActive(row, true)"><i class="bi bi-check-circle"></i> Activate</button>
+            }
+            <button *appHasPermission="'MASTERS.USER_MASTER.delete'" uiButton variant="ghost" size="sm" type="button" class="ul-delete" [disabled]="row.is_super_admin" (click)="askDelete(row)"><i class="bi bi-trash"></i> Delete</button>
+          </div>
+        </ng-template>
+      </ui-data-table>
+
+      <ui-pagination [summary]="pageSummary()" [hasPrevious]="page() > 1" [hasNext]="hasNext()" (previous)="prev()" (next)="next()" />
+    </ui-card>
+
+    @if (pending(); as u) {
+      <ui-modal title="Deactivate user" [subtitle]="u.email" (closed)="pending.set(null)">
+        <p>Deactivate <strong>{{ u.full_name || u.email }}</strong>? They will not be able to sign in.</p>
+        <div modalFooter class="ul-modal-footer">
+          <button uiButton variant="ghost" type="button" (click)="pending.set(null)">Cancel</button>
+          <button uiButton variant="primary" type="button" (click)="confirm(u)">Deactivate</button>
+        </div>
+      </ui-modal>
+    }
+
+    @if (pendingDelete(); as u) {
+      <ui-modal title="Delete user" [subtitle]="u.email" (closed)="pendingDelete.set(null)">
+        <p>Delete <strong>{{ u.full_name || u.email }}</strong>? The user will be removed from the list and will not be able to sign in.</p>
+        <div modalFooter class="ul-modal-footer">
+          <button uiButton variant="ghost" type="button" (click)="pendingDelete.set(null)">Cancel</button>
+          <button uiButton variant="primary" type="button" class="ul-delete-confirm" [disabled]="deleting()" (click)="confirmDelete(u)">{{ deleting() ? 'Deleting…' : 'Delete' }}</button>
+        </div>
+      </ui-modal>
+    }
+  

@@ -1,0 +1,70 @@
+    <div class="auth-centred">
+      <div class="mfa-panel">
+        <app-auth-brand />
+
+        <div class="mfa-icon">
+          <i class="bi" [class.bi-shield-lock]="hasEmail() && hasMobile()" [class.bi-envelope]="hasEmail() && !hasMobile()" [class.bi-phone]="!hasEmail()"></i>
+        </div>
+        <h1 class="auth-title text-center">Verify Your Identity</h1>
+        <p class="auth-subtitle text-center">
+          A 6-digit code has been sent to
+          @if (hasMobile()) {
+            <br /><strong class="font-mono">{{ maskedMobile() }}</strong>
+          }
+          @if (hasMobile() && hasEmail()) {
+            <br /><span class="mfa-and">and</span>
+          }
+          @if (hasEmail()) {
+            <br /><strong class="font-mono">{{ maskedEmail() }}</strong>
+          }
+          @if (noChannel()) {
+            <br /><span>Enter the 6-digit code to continue.</span>
+          }
+        </p>
+
+        <div class="card mfa-card">
+          <div class="mfa-boxes">
+            @for (d of digits(); track $index) {
+              <input
+                class="mfa-box font-mono"
+                inputmode="numeric"
+                maxlength="1"
+                [value]="d"
+                [class.filled]="!!d"
+                (input)="onInput($index, $any($event.target))"
+                (keydown)="onKeydown($index, $event)"
+              />
+            }
+          </div>
+
+          <p class="mfa-expiry">
+            @if (expired()) {
+              <span class="auth-error">Code expired — please resend.</span>
+            } @else {
+              Code expires in <strong class="font-mono tabular-nums">{{ countdown() }}</strong>
+            }
+          </p>
+
+          @if (otpError()) {
+            <p class="auth-error">{{ otpError() }}</p>
+          }
+          <button uiButton variant="primary" class="auth-submit" [disabled]="!complete() || verifying() || expired()" (click)="verify()">
+            {{ verifying() ? 'Verifying…' : 'Verify & Continue' }}
+          </button>
+          @if (auth.devOtp) {
+            <p class="mfa-devhint">Dev default OTP: <strong class="font-mono">{{ auth.devOtp }}</strong></p>
+          }
+
+          <div class="mfa-links">
+            <a href="javascript:void(0)" [class.disabled]="resending() || resendIn() > 0" (click)="resend()">
+              {{ resending() ? 'Sending…' : (resendIn() > 0 ? 'Resend Code (' + resendIn() + 's)' : 'Resend Code') }}
+            </a>
+            <!-- <a href="javascript:void(0)">Use Another Method</a> -->
+          </div>
+        </div>
+
+        <p class="auth-back">
+          <a href="javascript:void(0)" (click)="back()"><i class="bi bi-arrow-left"></i> Back to login</a>
+        </p>
+      </div>
+    </div>

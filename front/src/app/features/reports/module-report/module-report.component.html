@@ -1,0 +1,179 @@
+<div class="report-head">
+  <ui-page-header [title]="title()" [subtitle]="subtitle()" />
+  <div class="head-meta">
+    @if (loading() && data()) { <span class="updating"><span class="spinner"></span>Updating…</span> }
+    @if (failed() && data()) { <span class="updating updating--error">Refresh failed — showing the last report.</span> }
+    @if (generatedAt()) { <span class="generated">Generated {{ generatedAt() }}</span> }
+    @if (data() && !forbidden()) {
+      <button type="button" class="btn-primary btn-sm" (click)="exportExcel()" [disabled]="exporting()">
+        <i class="bi bi-file-earmark-excel"></i> {{ exporting() ? 'Preparing…' : 'Export' }}
+      </button>
+    }
+  </div>
+</div>
+
+@if (forbidden()) {
+  <div class="state state--error">You don't have permission to view this report.</div>
+} @else if (!data() && loading()) {
+  <div class="state">Loading report…</div>
+} @else if (!data() && failed()) {
+  <div class="state state--error">Could not load this report. Please try again.</div>
+} @else if (data()) {
+  <!-- Filters: one compact row (client 22-10-2026). -->
+  <div class="fbar">
+    <label class="f f--period">
+      <span>Period</span>
+      <select class="form-select" (change)="setPreset($event)">
+        @for (p of presets; track p.key) { <option [value]="p.key" [selected]="preset() === p.key">{{ p.label }}</option> }
+        <option value="" [selected]="!preset()">Custom dates</option>
+      </select>
+    </label>
+    <label class="f f--date"><span>From</span><input type="date" class="form-input" [value]="from()" (change)="setFrom($event)" /></label>
+    <label class="f f--date"><span>To</span><input type="date" class="form-input" [value]="to()" (change)="setTo($event)" /></label>
+    @if (statusOptions().length) {
+      <label class="f">
+        <span>Status</span>
+        <select class="form-select" (change)="setStatus($event)">
+          <option value="" [selected]="!status()">All</option>
+          @for (s of statusOptions(); track s) { <option [value]="s" [selected]="s === status()">{{ s }}</option> }
+        </select>
+      </label>
+    }
+    @if (bdmOptions().length) {
+      <label class="f">
+        <span>{{ bdmLabel() }}</span>
+        <select class="form-select" (change)="setBdm($event)">
+          <option value="" [selected]="!bdm()">All</option>
+          @for (b of bdmOptions(); track b.id) { <option [value]="b.id" [selected]="(b.id + '') === bdm()">{{ b.name }}</option> }
+        </select>
+      </label>
+    }
+    <label class="f f--grow">
+      <span>Search</span>
+      <input type="text" class="form-input" placeholder="Reference or name…" [value]="search()" (input)="setSearch($event)" (keyup.enter)="applyFilters()" />
+    </label>
+    <div class="f-actions">
+      <button type="button" class="btn-primary btn-sm" (click)="applyFilters()">Apply</button>
+      <button type="button" class="btn-ghost btn-sm" (click)="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  <div class="report-body" [class.report-body--busy]="loading()">
+    <!-- Headline figures: compact strip. -->
+    @if (kpis().length) {
+      <div class="stats">
+        @for (t of kpis(); track t.label) {
+          <div class="stat" [class]="'stat stat--' + (t.tone || 'default')">
+            <span class="stat-label"><i class="bi" [class]="'bi ' + t.icon"></i>{{ t.label }}</span>
+            <strong class="stat-value">{{ tileValue(t) }}</strong>
+            @if (t.caption) { <small class="stat-cap" [title]="t.caption">{{ t.caption }}</small> }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="row g-3 mb-3">
+      @for (card of cards(); track card.id) {
+        <div class="chart-col" [class]="card.full ? 'chart-col col-12' : 'chart-col col-12 col-xl-6'">
+          <ui-card [title]="card.title" bodyClass="p-3 pt-0">
+            @if (card.subtitle || card.options.length || card.drill) {
+              <div class="card-tools">
+                <p class="card-sub">{{ card.subtitle }}@if (card.drill && !card.subtitle) {<span class="drill-hint"><i class="bi bi-hand-index"></i> Click to see the records</span>}</p>
+                @if (card.options.length) {
+                  <ui-segmented class="card-toggle" [options]="card.options" [value]="card.selected" (valueChange)="setView(card.id, $event)" />
+                }
+              </div>
+            }
+            <div class="chart-box" [class.chart-box--fixed]="card.view.type === 'line' || card.view.type === 'bar'">
+              @if (card.view.hasData) {
+                @switch (card.view.type) {
+                  @case ('line') {
+                    <ui-line-chart [labels]="card.view.lineLabels" [series]="card.view.lineSeries" [height]="250" [valueFormat]="card.view.chartFormat" [ariaLabel]="card.title"
+                                   [slantLabels]="true" (pointClick)="drillIndex(card, $event, card.view.lineLabels)" />
+                    <div class="legend">
+                      @for (s of card.view.lineSeries; track s.name) {
+                        <span class="legend-item"><span class="dot" [style.background]="s.color"></span>{{ s.name }}@if (s.axis === 'right') { <span class="legend-axis">(right axis)</span> }</span>
+                      }
+                    </div>
+                  }
+                  @case ('bar') {
+                    <ui-bar-chart [data]="card.view.barGroups" [series]="card.view.barSeries" [height]="260" [valueFormat]="card.view.chartFormat"
+                                  [columnWidth]="card.view.barSeries.length > 2 ? '70%' : '45%'" [ariaLabel]="card.title"
+                                  [slantLabels]="true" (groupClick)="drillIndex(card, $event, barLabels(card.view))" />
+                    <!-- A days breakdown names its category + deal count in the legend, so it shows even with one series. -->
+                    @if (card.view.barSeries.length > 1 || card.view.format === 'days') {
+                      <div class="legend">
+                        @for (s of card.view.barSeries; track s.name) {
+                          <span class="legend-item"><span class="dot" [style.background]="s.color"></span>{{ s.name }}</span>
+                        }
+                      </div>
+                    }
+                  }
+                  @case ('donut') {
+                    <div class="donut-row">
+                      <ui-donut-chart [slices]="card.view.donutSlices" [height]="220" [showLegend]="false" [valueFormat]="card.view.chartFormat"
+                                      [centreValue]="card.view.donutTotal" centreLabel="Total" [ariaLabel]="card.title" (sliceClick)="drill(card, $event)" />
+                      <ul class="donut-legend">
+                        @for (s of card.view.donutSlices; track s.label) {
+                          <li [class.clickable]="!!card.drill" (click)="drill(card, s.label)">
+                            <span class="dot" [style.background]="s.color"></span>
+                            <span class="dl-name" [title]="s.label">{{ s.label }}</span>
+                            <b>{{ legendValue(s.value, card.view.format) }}</b>
+                            <small>{{ share(s.value, card.view.donutSlices) }}</small>
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                  @case ('barlist') {
+                    <ui-bar-list [items]="card.view.barList" [clickable]="!!card.drill" (itemClick)="drill(card, $event)" />
+                  }
+                  @case ('funnel') {
+                    <div class="funnel">
+                      @for (s of card.view.funnel; track s.label) {
+                        <div class="fn-row" [class.clickable]="!!(card.drill && s.drill)" (click)="drill(card, s.drill, s.label)">
+                          <span class="fn-label">{{ s.label }}</span>
+                          <div class="fn-track"><div class="fn-bar" [style.width.%]="s.width"><span>{{ s.display }}</span></div></div>
+                          <span class="fn-pct">{{ s.pct }}%</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                  @case ('radial') {
+                    <ui-ring-gauges [items]="card.view.rings" />
+                  }
+                  @case ('waterfall') {
+                    <ui-waterfall-chart [items]="card.view.waterfall" [height]="320" [valueFormat]="card.view.chartFormat" [ariaLabel]="card.title" />
+                    <div class="legend">
+                      <span class="legend-item"><span class="dot" [style.background]="waterfallColour.up"></span>New loans</span>
+                      <span class="legend-item"><span class="dot" [style.background]="waterfallColour.down"></span>Redemptions</span>
+                      <span class="legend-item"><span class="dot" [style.background]="waterfallColour.total"></span>Loan book (month end)</span>
+                    </div>
+                  }
+                  @case ('sankey') {
+                    <ui-sankey [nodes]="card.view.sankeyNodes" [links]="card.view.sankeyLinks" [valueFormat]="card.view.chartFormat" [ariaLabel]="card.title"
+                               (nodeClick)="drill(card, $event)" />
+                  }
+                }
+              } @else {
+                <p class="empty">No data for the current filters.</p>
+              }
+            </div>
+          </ui-card>
+        </div>
+      }
+    </div>
+
+    <div id="report-records">
+      <ui-card [title]="'Records'" bodyClass="">
+        @if (drillSel(); as d) {
+          <div class="drill-bar">
+            <i class="bi bi-funnel"></i> Showing <b>{{ d.label }}</b> from <i>{{ d.chart }}</i> — {{ detailRows().length }} record{{ detailRows().length === 1 ? '' : 's' }}
+            <button type="button" class="btn-ghost btn-sm" (click)="clearDrill()"><i class="bi bi-x-lg"></i> Show all</button>
+          </div>
+        }
+        <ui-data-table [columns]="detailColumns()" [rows]="detailRows()" [pageSize]="10" emptyText="No records match these filters." />
+      </ui-card>
+    </div>
+  </div>
+}

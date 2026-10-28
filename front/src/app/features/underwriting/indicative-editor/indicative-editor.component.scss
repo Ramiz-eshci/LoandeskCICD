@@ -1,0 +1,90 @@
+:host { display: contents; }
+
+.d-modal-field { display: flex; flex-direction: column; gap: 6px; font-size: 11px; font-weight: 600; color: #8CA8C0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.d-modal-field input, .d-modal-field select, .d-modal-field textarea { font-size: 14px; font-weight: 400; color: #0F2244; text-transform: none; letter-spacing: normal; }
+.d-modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+.d-warn { color: #DC2626; display: flex; align-items: center; gap: 8px; }
+.d-missing { margin: 6px 0 0 18px; }
+
+.d-note {
+  background: #eef3fb; border: 1px solid #cddcf3; color: #0d2340;
+  padding: 8px 10px; border-radius: 6px; font-size: 12.5px; margin-bottom: 12px;
+}
+
+.ind-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin-bottom: 14px; }
+.fee-row { display: flex; gap: 8px; align-items: stretch; }
+.fee-row .fee-mode { flex: 0 0 64px; width: 64px; }
+.fee-row .form-input { flex: 1 1 auto; min-width: 0; }
+
+.ind-dd { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin: 4px 0 14px; background: #f8fafc; overflow-x: auto; }
+.ind-dd .dd-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; color: #8CA8C0; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+
+.ind-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.ind-table td { padding: 6px 8px; border-bottom: 1px solid #ececec; }
+.ind-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.ind-table tr.strong td { font-weight: 700; }
+.ind-table tr.net td { font-weight: 700; color: #b00020; font-size: 15px; border-top: 2px solid #0d2340; }
+.ind-table td.ind-rate { text-align: right; color: #5A7394; width: 70px; }
+.ind-table tr.gap td { padding-top: 12px; }
+
+.ind-fill {
+  align-self: flex-start; margin-top: 4px; padding: 2px 6px;
+  font-size: 11px; font-weight: 600; color: #1d4ed8;
+  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; cursor: pointer;
+}
+.ind-fill:hover { background: #dbeafe; }
+
+.ind-calc-type { display: block; margin: 4px 0 6px; }
+.ind-sec-title { margin: 14px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #0d2340; }
+
+.dd-table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+.dd-table th { text-align: left; font-size: 10px; font-weight: 700; color: #5A7394; padding: 4px 4px; white-space: normal; line-height: 1.2; vertical-align: bottom; }
+.dd-table th:nth-child(1) { width: 84px; }
+.dd-table th:last-child { width: 72px; }
+.dd-table th:nth-child(2) { width: 22%; }
+.dd-table th:nth-child(3) { width: 12%; }
+.dd-table td { padding: 3px 4px; vertical-align: middle; }
+.dd-table .form-input { width: 100%; min-width: 0; padding-left: 8px; padding-right: 6px; }
+.dd-table .dd-lbl { font-weight: 600; white-space: nowrap; color: #0d2340; }
+.dd-table .dd-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-table th.dd-num { white-space: normal; }
+@media (max-width: 640px) { .dd-table { min-width: 520px; } .ind-grid { grid-template-columns: 1fr; } }
+
+.ind-error {
+  display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 4px; padding: 12px 14px;
+  border: 1px solid #f3c6c2; border-left: 3px solid #d64535; border-radius: 8px;
+  background: #fdf3f2; color: #8a2a1e; font-size: 13px; line-height: 1.45;
+}
+.ind-error i { margin-top: 2px; font-size: 15px; color: #d64535; }
+.ind-error ul { margin: 0; padding-left: 18px; }
+.ind-error li { margin: 2px 0; }
+.ind-error b { color: #6f1f16; }
+
+.d-modal-field .form-input[readonly] { background: #f1f3f5; color: #495057; cursor: not-allowed; }
+
+/* Footer buttons — these figma button classes are defined scoped in enquiry/
+ * application detail components, so they did not reach this popup and the
+ * Cancel / Save & Update Deal buttons rendered unstyled (client 14-10-2026). */
+.f-btn-dark { background-color: #0F2244; color: #fff; border: 1px solid #0F2244; padding: 7px 16px; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+.f-btn-dark:hover:not(:disabled) { background-color: #16305C; }
+.f-btn-dark:disabled { opacity: .5; cursor: not-allowed; }
+.f-btn-outline { background-color: #fff; color: #0F2244; border: 1px solid #C8D8E8; padding: 7px 16px; font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+.f-btn-outline:hover { background-color: #F8FAFC; border-color: #C8D8E8; }
+
+/* Revised-offer e-mail CC (client 16-10-2026) */
+.cc-box { border: 1px solid #e4ebf3; border-radius: 8px; padding: 10px 12px; margin: 0 0 14px; background: #f8fafc; }
+.cc-title { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #64748b; margin-bottom: 6px; }
+.cc-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 3px 0; cursor: pointer; }
+.cc-row span { overflow-wrap: anywhere; }
+.cc-x { margin-left: auto; background: none; border: 0; color: #b42318; cursor: pointer; }
+.cc-empty { font-size: 12px; color: #64748b; }
+.cc-add { display: flex; gap: 8px; margin-top: 8px; }
+.cc-add .form-input { flex: 1 1 auto; min-width: 0; }
+.cc-err { margin-top: 6px; font-size: 12px; color: #b42318; }
+
+.cc-line { font-size: 12.5px; color: #0d2340; margin: -4px 0 12px; overflow-wrap: anywhere; }
+
+/* Client 20-10-2026: Day 1 row on the Drawdowns table + editable Drawdown Net */
+.dd-table tr.dd-day1 td { background: #f4f7fb; border-top: 1px solid #dfe6ef; }
+.dd-table .dd-day1-m { color: #5A7394; font-weight: 600; }
+.dd-table .form-input.dd-net { text-align: right; }

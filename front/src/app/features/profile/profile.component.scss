@@ -1,0 +1,10 @@
+      .pf-error { margin: 0; color: var(--danger, #b42318); display: flex; align-items: center; gap: 8px; }
+      .pf-hint { font-size: 13px; color: var(--muted-foreground); margin: 0 0 12px; }
+      .pf-avatar-row { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+      .pf-avatar-actions { flex: 1; min-width: 220px; }
+      .pf-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+      .pf-upload { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; }
+      .pf-upload.disabled { opacity: 0.6; pointer-events: none; }
+      .pf-roles { display: flex; flex-wrap: wrap; gap: 8px; min-height: 38px; align-items: center; }
+      .pf-role { padding: 4px 10px; border-radius: 999px; background: var(--muted, #eef2f7); font-size: 13px; }
+      .pf-actions { display: flex; justify-content: flex-end; margin-top: 16px; }
