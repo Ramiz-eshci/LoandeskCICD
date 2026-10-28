@@ -1,6 +1,6 @@
 name: LoanDesk CI/CD (IIS)
 
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #  push  -> development / production : full deploy (API -> Angular -> React)
 #  pull_request -> development / production : build check only, server untouched
 #
