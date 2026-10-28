@@ -1,0 +1,536 @@
+name: LoanDesk CI/CD (IIS)
+
+# ---------------------------------------------------------------------------
+#  push  -> development / production : full deploy (API -> Angular -> React)
+#  pull_request -> development / production : build check only, server untouched
+#
+#  Branch 'development' -> GitHub Environment 'development' -> runner label 'loandesk-development'
+#  Branch 'production'  -> GitHub Environment 'production'  -> runner label 'loandesk-production'
+#
+#  All secrets / variables live in Settings -> Environments -> <env>.
+#  Full list: .github/CICD-SETUP.md
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [development, production]
+  pull_request:
+    branches: [development, production]
+  workflow_dispatch:
+
+concurrency:
+  group: loandesk-${{ github.event_name == 'pull_request' && github.ref || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # =========================================================================
+  #  PR CHECK - builds all three apps on a GitHub-hosted runner.
+  #  Nothing is deployed and your server is never touched by PR code.
+  # =========================================================================
+  pr-check:
+    name: PR build check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: API - npm ci
+        working-directory: api
+        run: npm ci --omit=dev --no-audit --no-fund
+
+      - name: Angular - build
+        working-directory: front
+        run: |
+          npm ci --no-audit --no-fund
+          npx ng build --configuration production --base-href /app/
+
+      - name: React website - build
+        working-directory: website
+        run: |
+          if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+          echo "VITE_API_BASE_URL=/api" > .env.production.local
+          npm run build
+
+  # =========================================================================
+  #  1. API  - npm install -> write .env from GitHub -> restart app pool
+  # =========================================================================
+  api:
+    name: 1. API (install, .env, restart)
+    if: github.event_name != 'pull_request' && (github.ref_name == 'development' || github.ref_name == 'production')
+    runs-on: [self-hosted, Windows, "loandesk-${{ github.ref_name }}"]
+    environment: ${{ github.ref_name }}
+    defaults:
+      run:
+        shell: powershell
+    env:
+      TARGET_ENV:       ${{ github.ref_name }}
+      SITE_ROOT:        ${{ vars.IIS_SITE_ROOT }}
+      APP_POOL:         ${{ vars.IIS_APP_POOL }}
+      SITE_URL:         ${{ vars.SITE_URL }}
+      BACKUP_ROOT:      ${{ vars.BACKUP_ROOT }}
+      BACKUP_KEEP:      ${{ vars.BACKUP_KEEP }}
+      HEALTH_SKIP_CERT: ${{ vars.HEALTH_SKIP_CERT }}
+      RUN_MIGRATIONS:   ${{ vars.RUN_MIGRATIONS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check environment configuration
+        run: |
+          $missing = @()
+          if ([string]::IsNullOrWhiteSpace($env:SITE_ROOT)) { $missing += 'IIS_SITE_ROOT (variable)' }
+          if ([string]::IsNullOrWhiteSpace($env:APP_POOL))  { $missing += 'IIS_APP_POOL (variable)' }
+          if ([string]::IsNullOrWhiteSpace($env:SITE_URL))  { $missing += 'SITE_URL (variable)' }
+          if ($missing.Count) { throw "GitHub environment '$env:TARGET_ENV' is missing: $($missing -join ', ')" }
+
+          Import-Module WebAdministration
+          if (-not (Test-Path "IIS:\AppPools\$env:APP_POOL")) { throw "IIS app pool '$env:APP_POOL' does not exist on this server." }
+          if (-not (Test-Path $env:SITE_ROOT)) { throw "Site root '$env:SITE_ROOT' does not exist on this server." }
+
+          $root = $env:SITE_ROOT.TrimEnd('\')
+          $bk   = if ($env:BACKUP_ROOT) { $env:BACKUP_ROOT.TrimEnd('\') } else { "C:\deploy-backups\loandesk-$env:TARGET_ENV" }
+          if ($bk.ToLower().StartsWith($root.ToLower())) { throw "BACKUP_ROOT '$bk' must not be inside the site root '$root'." }
+
+          $url = $env:SITE_URL.TrimEnd('/')
+          Add-Content $env:GITHUB_ENV "SITE_ROOT=$root"
+          Add-Content $env:GITHUB_ENV "API_PATH=$root\api"
+          Add-Content $env:GITHUB_ENV "BACKUP_DIR=$bk"
+          Add-Content $env:GITHUB_ENV "SITE_URL=$url"
+          Write-Host "env=$env:TARGET_ENV  root=$root  pool=$env:APP_POOL  url=$url  backups=$bk"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      # ---- step 1: install packages (server not touched yet) ----
+      - name: Install API packages (npm ci)
+        working-directory: api
+        run: |
+          npm ci --omit=dev --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE) - nothing was deployed." }
+
+      # ---- check required .env values exist before stopping anything ----
+      - name: Check required API secrets
+        env:
+          NODE_ENV:                  ${{ vars.NODE_ENV }}
+          DB_HOST:                   ${{ secrets.DB_HOST }}
+          DB_USER:                   ${{ secrets.DB_USER }}
+          DB_PASS:                   ${{ secrets.DB_PASS }}
+          DB_NAME:                   ${{ secrets.DB_NAME }}
+          JWT_SECRET:                ${{ secrets.JWT_SECRET }}
+          JWT_REFRESH_SECRET:        ${{ secrets.JWT_REFRESH_SECRET }}
+          SECRET_KEY:                ${{ secrets.SECRET_KEY }}
+          CORS_ORIGINS:              ${{ vars.CORS_ORIGINS }}
+          ENCRYPTION_ENABLED:        ${{ vars.ENCRYPTION_ENABLED }}
+          CRYPTO_SESSION_MASTER_KEY: ${{ secrets.CRYPTO_SESSION_MASTER_KEY }}
+        run: |
+          $req = 'NODE_ENV','DB_HOST','DB_USER','DB_PASS','DB_NAME','JWT_SECRET','JWT_REFRESH_SECRET','SECRET_KEY','CORS_ORIGINS'
+          if ($env:ENCRYPTION_ENABLED -match '^(1|true|yes|on)$') { $req += 'CRYPTO_SESSION_MASTER_KEY' }
+          $missing = $req | Where-Object { [string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_)) }
+          if ($missing) { throw "GitHub environment '$env:TARGET_ENV' is missing: $($missing -join ', ')" }
+          Write-Host "All required API values present."
+
+      - name: Backup current API (code + .env)
+        run: |
+          $api = $env:API_PATH
+          $dir = "$env:BACKUP_DIR\api"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $stamp = "{0}_run{1}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'), $env:GITHUB_RUN_NUMBER
+          Add-Content $env:GITHUB_ENV "API_BACKUP_STAMP=$stamp"
+
+          if (-not (Test-Path $api)) { Write-Host "No API folder yet - first deploy."; exit 0 }
+
+          $stage = "$dir\_stage_$stamp"
+          robocopy $api $stage /E /XD "$api\node_modules" "$api\uploads" "$api\logs" "$api\iisnode" /XF ".env" /R:1 /W:1 /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw "API backup robocopy failed ($LASTEXITCODE)" }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [IO.Compression.ZipFile]::CreateFromDirectory($stage, "$dir\api_$stamp.zip")
+          Remove-Item $stage -Recurse -Force
+
+          # previous .env kept next to the zip (same server, never leaves it) for rollback
+          if (Test-Path "$api\.env") { Copy-Item "$api\.env" "$dir\env_$stamp.env" -Force }
+
+          $keep = if ($env:BACKUP_KEEP) { [int]$env:BACKUP_KEEP } else { 10 }
+          Get-ChildItem $dir -File -Filter 'api_*.zip' | Sort-Object LastWriteTime -Descending | Select-Object -Skip $keep | Remove-Item -Force
+          Get-ChildItem $dir -File -Filter 'env_*.env' | Sort-Object LastWriteTime -Descending | Select-Object -Skip $keep | Remove-Item -Force
+          Write-Host "Backup: $dir\api_$stamp.zip"
+          exit 0
+
+      - name: Stop app pool
+        run: |
+          Import-Module WebAdministration
+          Add-Content $env:GITHUB_ENV "API_TOUCHED=true"
+          if ((Get-WebAppPoolState -Name $env:APP_POOL).Value -ne 'Stopped') { Stop-WebAppPool -Name $env:APP_POOL }
+          for ($i = 0; $i -lt 30; $i++) {
+            if ((Get-WebAppPoolState -Name $env:APP_POOL).Value -eq 'Stopped') { break }
+            Start-Sleep -Seconds 1
+          }
+          Write-Host "App pool state: $((Get-WebAppPoolState -Name $env:APP_POOL).Value)"
+
+      - name: Copy API files to server
+        run: |
+          $src = "$env:GITHUB_WORKSPACE\api"
+          $api = $env:API_PATH
+          New-Item -ItemType Directory -Force -Path $api | Out-Null
+          # /MIR keeps server == repo, but these server-only things are never touched:
+          #   .env, web.config, uploads\, logs\, iisnode\
+          robocopy $src $api /MIR `
+            /XD "$src\tests" "$api\uploads" "$api\logs" "$api\iisnode" `
+            /XF ".env" ".env.*" "web.config" `
+            /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw "robocopy (api) failed ($LASTEXITCODE)" }
+          New-Item -ItemType Directory -Force -Path "$api\logs" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$api\uploads" | Out-Null
+          exit 0
+
+      # ---- step 2: write .env from GitHub secrets/variables ----
+      # Every DOTENV__<KEY> below becomes KEY=value in api\.env.
+      # Empty values are skipped, so the app's own default applies.
+      - name: Write api\.env from GitHub
+        env:
+          DOTENV__NODE_ENV:                   ${{ vars.NODE_ENV }}
+          DOTENV__HOST:                       ${{ vars.HOST }}
+          DOTENV__DB_HOST:                    ${{ secrets.DB_HOST }}
+          DOTENV__DB_PORT:                    ${{ vars.DB_PORT }}
+          DOTENV__DB_USER:                    ${{ secrets.DB_USER }}
+          DOTENV__DB_PASS:                    ${{ secrets.DB_PASS }}
+          DOTENV__DB_NAME:                    ${{ secrets.DB_NAME }}
+          DOTENV__DB_ENCRYPT:                 ${{ vars.DB_ENCRYPT }}
+          DOTENV__DB_TRUST_SERVER_CERT:       ${{ vars.DB_TRUST_SERVER_CERT }}
+          DOTENV__DB_POOL_MAX:                ${{ vars.DB_POOL_MAX }}
+          DOTENV__DB_POOL_MIN:                ${{ vars.DB_POOL_MIN }}
+          DOTENV__DB_POOL_IDLE_MS:            ${{ vars.DB_POOL_IDLE_MS }}
+          DOTENV__JWT_SECRET:                 ${{ secrets.JWT_SECRET }}
+          DOTENV__JWT_ACCESS_TTL:             ${{ vars.JWT_ACCESS_TTL }}
+          DOTENV__JWT_REFRESH_SECRET:         ${{ secrets.JWT_REFRESH_SECRET }}
+          DOTENV__JWT_REFRESH_TTL:            ${{ vars.JWT_REFRESH_TTL }}
+          DOTENV__REFRESH_COOKIE_NAME:        ${{ vars.REFRESH_COOKIE_NAME }}
+          DOTENV__REFRESH_COOKIE_PATH:        ${{ vars.REFRESH_COOKIE_PATH }}
+          DOTENV__CSRF_COOKIE_NAME:           ${{ vars.CSRF_COOKIE_NAME }}
+          DOTENV__PASSWORD_RESET_TTL_MINUTES: ${{ vars.PASSWORD_RESET_TTL_MINUTES }}
+          DOTENV__SECRET_KEY:                 ${{ secrets.SECRET_KEY }}
+          DOTENV__ENCRYPTION_ENABLED:         ${{ vars.ENCRYPTION_ENABLED }}
+          DOTENV__CRYPTO_SESSION_MASTER_KEY:  ${{ secrets.CRYPTO_SESSION_MASTER_KEY }}
+          DOTENV__CRYPTO_SESSION_TTL_SECONDS: ${{ vars.CRYPTO_SESSION_TTL_SECONDS }}
+          DOTENV__CORS_ORIGINS:               ${{ vars.CORS_ORIGINS }}
+          DOTENV__RATE_LIMIT_WINDOW_MS:       ${{ vars.RATE_LIMIT_WINDOW_MS }}
+          DOTENV__RATE_LIMIT_MAX:             ${{ vars.RATE_LIMIT_MAX }}
+          DOTENV__AUTH_RATE_LIMIT_MAX:        ${{ vars.AUTH_RATE_LIMIT_MAX }}
+          DOTENV__JSON_BODY_LIMIT:            ${{ vars.JSON_BODY_LIMIT }}
+          DOTENV__UPLOAD_BODY_LIMIT:          ${{ vars.UPLOAD_BODY_LIMIT }}
+          DOTENV__MAX_UPLOAD_SIZE:            ${{ vars.MAX_UPLOAD_SIZE }}
+          DOTENV__ALLOWED_EXTENSIONS:         ${{ vars.ALLOWED_EXTENSIONS }}
+          DOTENV__EMAIL_HOST:                 ${{ vars.EMAIL_HOST }}
+          DOTENV__EMAIL_PORT:                 ${{ vars.EMAIL_PORT }}
+          DOTENV__EMAIL_USER:                 ${{ secrets.EMAIL_USER }}
+          DOTENV__EMAIL_PASS:                 ${{ secrets.EMAIL_PASS }}
+          DOTENV__FRONT_URL:                  ${{ vars.FRONT_URL }}
+          DOTENV__OTP_DEFAULT_ENABLED:        ${{ vars.OTP_DEFAULT_ENABLED }}
+          DOTENV__OTP_DEFAULT_CODE:           ${{ secrets.OTP_DEFAULT_CODE }}
+          DOTENV__OTP_LENGTH:                 ${{ vars.OTP_LENGTH }}
+          DOTENV__OTP_TTL_SECONDS:            ${{ vars.OTP_TTL_SECONDS }}
+          DOTENV__OTP_MAX_ATTEMPTS:           ${{ vars.OTP_MAX_ATTEMPTS }}
+          DOTENV__IS_LOGIN_OTP_SENT_MOBILE:   ${{ vars.IS_LOGIN_OTP_SENT_MOBILE }}
+          DOTENV__IS_LOGIN_OTP_SENT_EMAIL:    ${{ vars.IS_LOGIN_OTP_SENT_EMAIL }}
+          DOTENV__MS_TENANT_ID:               ${{ secrets.MS_TENANT_ID }}
+          DOTENV__MS_CLIENT_ID:               ${{ secrets.MS_CLIENT_ID }}
+          DOTENV__MS_CLIENT_SECRET:           ${{ secrets.MS_CLIENT_SECRET }}
+          DOTENV__OUTLOOK_MAILBOX:            ${{ vars.OUTLOOK_MAILBOX }}
+          DOTENV__EMAIL_FILTER_FROM:          ${{ vars.EMAIL_FILTER_FROM }}
+          DOTENV__EMAIL_FILTER_SUBJECT:       ${{ vars.EMAIL_FILTER_SUBJECT }}
+          DOTENV__GRAPH_WEBHOOK_URL:          ${{ vars.GRAPH_WEBHOOK_URL }}
+          DOTENV__GRAPH_LIFECYCLE_URL:        ${{ vars.GRAPH_LIFECYCLE_URL }}
+          DOTENV__GRAPH_CLIENT_STATE:         ${{ secrets.GRAPH_CLIENT_STATE }}
+          DOTENV__GRAPH_SUBSCRIPTION_MINUTES: ${{ vars.GRAPH_SUBSCRIPTION_MINUTES }}
+          DOTENV__GRAPH_AUTO_RENEW:           ${{ vars.GRAPH_AUTO_RENEW }}
+          DOTENV__ANTHROPIC_API_KEY:          ${{ secrets.ANTHROPIC_API_KEY }}
+          DOTENV__ANTHROPIC_MODEL:            ${{ vars.ANTHROPIC_MODEL }}
+        run: |
+          $lines = @(
+            "# Generated by GitHub Actions - environment '$env:TARGET_ENV', run $env:GITHUB_RUN_NUMBER, commit $env:GITHUB_SHA",
+            "# Do not edit on the server - change the value in GitHub (Settings > Environments > $env:TARGET_ENV) and redeploy."
+          )
+          $count = 0
+          Get-ChildItem env: | Where-Object { $_.Name -like 'DOTENV__*' } | Sort-Object Name | ForEach-Object {
+            $key = $_.Name.Substring(8)
+            $val = $_.Value
+            if ([string]::IsNullOrEmpty($val)) { return }
+            if ($val -match "[\r\n]") { throw "$key contains a line break - not allowed in .env" }
+            if ($val -notmatch "'")     { $lines += "$key='$val'" }
+            elseif ($val -notmatch '"') { $lines += "$key=`"$val`"" }
+            else { throw "$key contains both ' and `" quotes - not supported" }
+            $count++
+          }
+          [IO.File]::WriteAllText("$env:API_PATH\.env", ($lines -join "`r`n") + "`r`n", (New-Object Text.UTF8Encoding($false)))
+          Write-Host "Wrote $count keys to $env:API_PATH\.env"
+
+      - name: Run DB migrations (only if RUN_MIGRATIONS=true)
+        if: env.RUN_MIGRATIONS == 'true'
+        working-directory: ${{ env.API_PATH }}
+        run: |
+          node cli.js migrate
+          if ($LASTEXITCODE -ne 0) { throw "migrations failed ($LASTEXITCODE)" }
+
+      # ---- step 3: start / recycle app pool ----
+      - name: Start app pool (API restart)
+        run: |
+          Import-Module WebAdministration
+          Start-WebAppPool -Name $env:APP_POOL
+          Start-Sleep -Seconds 2
+          Write-Host "App pool state: $((Get-WebAppPoolState -Name $env:APP_POOL).Value)"
+
+      - name: API health check
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          if ($env:HEALTH_SKIP_CERT -eq 'true') { [Net.ServicePointManager]::ServerCertificateValidationCallback = { $true } }
+          $url = "$env:SITE_URL/api/health"
+          for ($i = 1; $i -le 10; $i++) {
+            try {
+              $r = Invoke-WebRequest $url -UseBasicParsing -TimeoutSec 30
+              if ($r.StatusCode -eq 200 -and $r.Content -match '"status":\s*true') { Write-Host "OK $url"; exit 0 }
+              Write-Host "attempt ${i}: $($r.StatusCode)"
+            } catch { Write-Host "attempt ${i}: $($_.Exception.Message)" }
+            Start-Sleep -Seconds 5
+          }
+          throw "API health check failed: $url"
+
+      - name: ROLLBACK API
+        if: failure() && env.API_TOUCHED == 'true'
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Import-Module WebAdministration
+          $api = $env:API_PATH
+          $zip = "$env:BACKUP_DIR\api\api_$env:API_BACKUP_STAMP.zip"
+          $envBk = "$env:BACKUP_DIR\api\env_$env:API_BACKUP_STAMP.env"
+          if (-not (Test-Path $zip)) { Write-Host "::error::No backup '$zip' - cannot roll back. Fix and redeploy."; exit 1 }
+
+          Stop-WebAppPool -Name $env:APP_POOL -ErrorAction SilentlyContinue
+          Start-Sleep -Seconds 3
+          $tmp = "$env:BACKUP_DIR\api\_restore_$env:API_BACKUP_STAMP"
+          if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [IO.Compression.ZipFile]::ExtractToDirectory($zip, $tmp)
+          robocopy $tmp $api /MIR /XD "$api\node_modules" "$api\uploads" "$api\logs" "$api\iisnode" /XF ".env" "web.config" /R:1 /W:1 /NFL /NDL /NJH /NJS /NP
+          if (Test-Path $envBk) { Copy-Item $envBk "$api\.env" -Force }
+          Push-Location $api; npm ci --omit=dev --no-audit --no-fund; Pop-Location
+          Remove-Item $tmp -Recurse -Force
+          Start-WebAppPool -Name $env:APP_POOL
+          Write-Host "::warning::API rolled back to $zip"
+          exit 0
+
+  # =========================================================================
+  #  2. ANGULAR  - set API base URL -> build -> empty \app -> copy
+  # =========================================================================
+  front:
+    name: 2. Angular app (\app)
+    needs: api
+    runs-on: [self-hosted, Windows, "loandesk-${{ github.ref_name }}"]
+    environment: ${{ github.ref_name }}
+    defaults:
+      run:
+        shell: powershell
+    env:
+      TARGET_ENV:   ${{ github.ref_name }}
+      SITE_ROOT:    ${{ vars.IIS_SITE_ROOT }}
+      BACKUP_ROOT:  ${{ vars.BACKUP_ROOT }}
+      BACKUP_KEEP:  ${{ vars.BACKUP_KEEP }}
+      API_BASE_URL: ${{ secrets.ANGULAR_API_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Set apiBaseUrl in environment.ts
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:API_BASE_URL)) { throw "Secret ANGULAR_API_BASE_URL is not set for '$env:TARGET_ENV'." }
+          $url = $env:API_BASE_URL.Trim().TrimEnd('/')
+          if ($url -match "['\\]") { throw "ANGULAR_API_BASE_URL must not contain quotes or backslashes." }
+          $f = 'front\src\environments\environment.ts'
+          $c = Get-Content $f -Raw
+          if ($c -notmatch "apiBaseUrl:\s*'[^']*'") { throw "apiBaseUrl: '...' not found in $f" }
+          $c = $c -replace "apiBaseUrl:\s*'[^']*'", ("apiBaseUrl: '" + $url.Replace('$', '$$') + "'")
+          [IO.File]::WriteAllText((Resolve-Path $f), $c, (New-Object Text.UTF8Encoding($false)))
+          Write-Host "apiBaseUrl set (value hidden)."
+
+      - name: npm ci + ng build (base-href /app/)
+        working-directory: front
+        run: |
+          npm ci --no-audit --no-fund
+          if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE)" }
+          npx ng build --configuration production --base-href /app/
+          if ($LASTEXITCODE -ne 0) { throw "ng build failed ($LASTEXITCODE)" }
+          $out = 'dist\loandesk-front\browser'
+          if (-not (Test-Path "$out\index.html")) { throw "Build output missing: $out\index.html" }
+          if ((Get-Content "$out\index.html" -Raw) -notmatch '<base href="/app/"') { throw "index.html does not have <base href=""/app/"">" }
+
+      - name: Backup current \app
+        run: |
+          $root = $env:SITE_ROOT.TrimEnd('\')
+          $bk   = if ($env:BACKUP_ROOT) { $env:BACKUP_ROOT.TrimEnd('\') } else { "C:\deploy-backups\loandesk-$env:TARGET_ENV" }
+          $dir  = "$bk\app"
+          if (-not (Test-Path "$root\app")) { Write-Host "No \app folder yet."; exit 0 }
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $stamp = "{0}_run{1}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'), $env:GITHUB_RUN_NUMBER
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [IO.Compression.ZipFile]::CreateFromDirectory("$root\app", "$dir\app_$stamp.zip")
+          $keep = if ($env:BACKUP_KEEP) { [int]$env:BACKUP_KEEP } else { 10 }
+          Get-ChildItem $dir -File -Filter 'app_*.zip' | Sort-Object LastWriteTime -Descending | Select-Object -Skip $keep | Remove-Item -Force
+          Write-Host "Backup: $dir\app_$stamp.zip"
+
+      - name: Empty \app and copy new build
+        run: |
+          $app = "$($env:SITE_ROOT.TrimEnd('\'))\app"
+          New-Item -ItemType Directory -Force -Path $app | Out-Null
+          # delete everything in \app (a web.config there, if any, is kept)
+          Get-ChildItem $app -Force | Where-Object { $_.Name -ne 'web.config' } | Remove-Item -Recurse -Force
+          robocopy "$env:GITHUB_WORKSPACE\front\dist\loandesk-front\browser" $app /E /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw "robocopy (app) failed ($LASTEXITCODE)" }
+          Write-Host "Angular deployed to $app"
+          exit 0
+
+  # =========================================================================
+  #  3. REACT LANDING PAGE  - set VITE_* -> build -> clean root -> copy
+  # =========================================================================
+  website:
+    name: 3. React landing page (root)
+    needs: front
+    runs-on: [self-hosted, Windows, "loandesk-${{ github.ref_name }}"]
+    environment: ${{ github.ref_name }}
+    defaults:
+      run:
+        shell: powershell
+    env:
+      TARGET_ENV:         ${{ github.ref_name }}
+      SITE_ROOT:          ${{ vars.IIS_SITE_ROOT }}
+      SITE_URL:           ${{ vars.SITE_URL }}
+      BACKUP_ROOT:        ${{ vars.BACKUP_ROOT }}
+      BACKUP_KEEP:        ${{ vars.BACKUP_KEEP }}
+      ROOT_KEEP:          ${{ vars.ROOT_KEEP }}
+      HEALTH_SKIP_CERT:   ${{ vars.HEALTH_SKIP_CERT }}
+      VITE_API_BASE_URL:  ${{ secrets.VITE_API_BASE_URL }}
+      VITE_APP_LOGIN_URL: ${{ vars.VITE_APP_LOGIN_URL }}
+      VITE_SALES_EMAIL:   ${{ vars.VITE_SALES_EMAIL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Write website\.env.production.local
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:VITE_API_BASE_URL)) { throw "Secret VITE_API_BASE_URL is not set for '$env:TARGET_ENV'." }
+          $lines = @("VITE_API_BASE_URL=$($env:VITE_API_BASE_URL.Trim())")
+          if ($env:VITE_APP_LOGIN_URL) { $lines += "VITE_APP_LOGIN_URL=$($env:VITE_APP_LOGIN_URL.Trim())" }
+          if ($env:VITE_SALES_EMAIL)   { $lines += "VITE_SALES_EMAIL=$($env:VITE_SALES_EMAIL.Trim())" }
+          [IO.File]::WriteAllText("$env:GITHUB_WORKSPACE\website\.env.production.local", ($lines -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
+          Write-Host "Wrote $($lines.Count) VITE_* values."
+
+      - name: npm install + build
+        working-directory: website
+        run: |
+          if (Test-Path package-lock.json) { npm ci --no-audit --no-fund } else { npm install --no-audit --no-fund }
+          if ($LASTEXITCODE -ne 0) { throw "npm install failed ($LASTEXITCODE)" }
+          npm run build
+          if ($LASTEXITCODE -ne 0) { throw "website build failed ($LASTEXITCODE)" }
+          if (-not (Test-Path 'dist\index.html')) { throw "Build output missing: website\dist\index.html" }
+
+      - name: Work out what to keep in the root
+        run: |
+          # Always kept: web.config, api, app.  Extra server-only items come from ROOT_KEEP.
+          $keep = @('web.config', 'api', 'app')
+          $extra = if ($env:ROOT_KEEP) { $env:ROOT_KEEP } else { 'MailAPI,.well-known,aspnet_client' }
+          $keep += $extra.Split(',') | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+          $keep = $keep | Select-Object -Unique
+          Add-Content $env:GITHUB_ENV ("ROOT_KEEP_LIST=" + ($keep -join '|'))
+          Write-Host "Kept in root: $($keep -join ', ')"
+
+      - name: Backup current landing page
+        run: |
+          $root = $env:SITE_ROOT.TrimEnd('\')
+          $keep = $env:ROOT_KEEP_LIST.Split('|')
+          $bk   = if ($env:BACKUP_ROOT) { $env:BACKUP_ROOT.TrimEnd('\') } else { "C:\deploy-backups\loandesk-$env:TARGET_ENV" }
+          $dir  = "$bk\website"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $stamp = "{0}_run{1}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'), $env:GITHUB_RUN_NUMBER
+          $stage = "$dir\_stage_$stamp"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Get-ChildItem $root -Force | Where-Object { $keep -notcontains $_.Name } | Copy-Item -Destination $stage -Recurse -Force
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [IO.Compression.ZipFile]::CreateFromDirectory($stage, "$dir\website_$stamp.zip")
+          Remove-Item $stage -Recurse -Force
+          $n = if ($env:BACKUP_KEEP) { [int]$env:BACKUP_KEEP } else { 10 }
+          Get-ChildItem $dir -File -Filter 'website_*.zip' | Sort-Object LastWriteTime -Descending | Select-Object -Skip $n | Remove-Item -Force
+          Write-Host "Backup: $dir\website_$stamp.zip"
+
+      - name: Clean root (keep web.config, api, app, ...) and copy new build
+        run: |
+          $root = $env:SITE_ROOT.TrimEnd('\')
+          $keep = $env:ROOT_KEEP_LIST.Split('|')
+          Get-ChildItem $root -Force | Where-Object { $keep -notcontains $_.Name } | ForEach-Object {
+            Write-Host "delete $($_.Name)"
+            Remove-Item $_.FullName -Recurse -Force
+          }
+          # never overwrite the server's root web.config, never write into api / app
+          robocopy "$env:GITHUB_WORKSPACE\website\dist" $root /E /XF web.config /XD "$root\api" "$root\app" /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw "robocopy (website) failed ($LASTEXITCODE)" }
+          Write-Host "Landing page deployed to $root"
+          exit 0
+
+      - name: Final health check (landing, app, api)
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          if ($env:HEALTH_SKIP_CERT -eq 'true') { [Net.ServicePointManager]::ServerCertificateValidationCallback = { $true } }
+          $base = $env:SITE_URL.TrimEnd('/')
+          $checks = @(
+            @{ url = "$base/";           match = '<div id="root"' },
+            @{ url = "$base/app/";       match = '<app-root' },
+            @{ url = "$base/api/health"; match = '"status":\s*true' }
+          )
+          $failed = @()
+          foreach ($c in $checks) {
+            $ok = $false
+            for ($i = 1; $i -le 5 -and -not $ok; $i++) {
+              try {
+                $r = Invoke-WebRequest $c.url -UseBasicParsing -TimeoutSec 30
+                if ($r.StatusCode -eq 200 -and $r.Content -match $c.match) { $ok = $true }
+              } catch { Write-Host "attempt ${i} $($c.url): $($_.Exception.Message)" }
+              if (-not $ok) { Start-Sleep -Seconds 4 }
+            }
+            if ($ok) { Write-Host "OK   $($c.url)" } else { Write-Host "FAIL $($c.url)"; $failed += $c.url }
+          }
+          if ($failed) { throw "Health check failed: $($failed -join ', ')" }
+
+      - name: Summary
+        if: always()
+        run: |
+          @(
+            "### LoanDesk deploy - $env:TARGET_ENV - run $env:GITHUB_RUN_NUMBER",
+            "",
+            "| | |", "|---|---|",
+            "| branch | ``$env:GITHUB_REF_NAME`` |",
+            "| commit | ``$env:GITHUB_SHA`` |",
+            "| site | $env:SITE_URL |",
+            "| root | ``$env:SITE_ROOT`` |"
+          ) | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
