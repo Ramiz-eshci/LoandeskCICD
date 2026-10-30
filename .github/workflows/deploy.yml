@@ -113,13 +113,6 @@ jobs:
           cache: npm
           cache-dependency-path: api/package-lock.json
 
-      # ---- step 1: install packages (server not touched yet) ----
-      - name: Install API packages (npm ci)
-        working-directory: api
-        run: |
-          npm ci --omit=dev --no-audit --no-fund
-          if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE) - nothing was deployed." }
-
       # ---- check required .env values exist before stopping anything ----
       - name: Check required API secrets
         env:
@@ -183,16 +176,26 @@ jobs:
           $src = "$env:GITHUB_WORKSPACE\api"
           $api = $env:API_PATH
           New-Item -ItemType Directory -Force -Path $api | Out-Null
-          # /MIR keeps server == repo, but these server-only things are never touched:
-          #   .env, web.config, uploads\, logs\, iisnode\
+          # /MIR keeps server code == repo, but these are never copied or deleted:
+          #   node_modules\ (installed on the server in the next step), .env, web.config, uploads\, logs\, iisnode\
           robocopy $src $api /MIR `
-            /XD "$src\tests" "$api\uploads" "$api\logs" "$api\iisnode" `
+            /XD "$src\node_modules" "$api\node_modules" "$src\tests" "$api\uploads" "$api\logs" "$api\iisnode" `
             /XF ".env" ".env.*" "web.config" `
             /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
           if ($LASTEXITCODE -ge 8) { throw "robocopy (api) failed ($LASTEXITCODE)" }
           New-Item -ItemType Directory -Force -Path "$api\logs" | Out-Null
           New-Item -ItemType Directory -Force -Path "$api\uploads" | Out-Null
           exit 0
+
+      # ---- step 1: npm install directly in the server's api folder ----
+      - name: Install API packages on server (npm ci)
+        run: |
+          Push-Location $env:API_PATH
+          try {
+            npm ci --omit=dev --no-audit --no-fund
+            if ($LASTEXITCODE -ne 0) { throw "npm ci failed ($LASTEXITCODE) in $env:API_PATH" }
+          } finally { Pop-Location }
+          Write-Host "node_modules installed in $env:API_PATH"
 
       # ---- step 2: write .env from GitHub secrets/variables ----
       # Every DOTENV__<KEY> below becomes KEY=value in api\.env.
